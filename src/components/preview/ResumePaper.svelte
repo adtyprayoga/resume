@@ -9,14 +9,18 @@
   import { t, type UiStringKey } from '$lib/i18n/ui'
   import { getSectionModule } from '$lib/sections/registry'
   import type { Locale, ResolvedResume } from '$lib/model/types'
+  import type { ResumePresentation } from '$lib/themes/types'
 
   let {
     resume,
     locale,
+    presentation = 'classic',
     element = $bindable<HTMLElement | undefined>(),
   }: {
     resume: ResolvedResume
     locale: Locale
+    /** Same content and article either way, so print and page guides follow the displayed layout. */
+    presentation?: ResumePresentation
     /** Exposed so the page-break overlay can measure the paper. */
     element?: HTMLElement | undefined
   } = $props()
@@ -27,26 +31,31 @@
       .filter((section) => section.enabled && resume[section.kind].length > 0)
       .map((section) => ({
         kind: section.kind,
-        title: t(locale, getSectionModule(section.kind).labelKey as UiStringKey),
+        title: t(
+          locale,
+          (presentation === 'ats' && section.kind === 'experience'
+            ? 'section.workExperience'
+            : getSectionModule(section.kind).labelKey) as UiStringKey,
+        ),
       })),
   )
 </script>
 
-<article lang={locale} class="resume-paper" bind:this={element}>
-  <ProfileHeader profile={resume.profile} contact={resume.contact} />
+<article lang={locale} class="resume-paper" data-presentation={presentation} bind:this={element}>
+  <ProfileHeader profile={resume.profile} contact={resume.contact} {locale} {presentation} />
 
   {#each visible as section (section.kind)}
     <SectionShell title={section.title}>
       {#if section.kind === 'experience'}
-        <ExperiencePreview items={resume.experience} {locale} />
+        <ExperiencePreview items={resume.experience} {locale} {presentation} />
       {:else if section.kind === 'education'}
-        <EducationPreview items={resume.education} {locale} />
+        <EducationPreview items={resume.education} {locale} {presentation} />
       {:else if section.kind === 'projects'}
-        <ProjectsPreview items={resume.projects} {locale} />
+        <ProjectsPreview items={resume.projects} {locale} {presentation} />
       {:else if section.kind === 'skills'}
-        <SkillsPreview items={resume.skills} />
+        <SkillsPreview items={resume.skills} {presentation} />
       {:else if section.kind === 'awards'}
-        <AwardsPreview items={resume.awards} {locale} />
+        <AwardsPreview items={resume.awards} {locale} {presentation} />
       {/if}
     </SectionShell>
   {/each}

@@ -58,4 +58,5 @@
       {t(prefs.uiLocale, 'avatar.hint', { pixels: AVATAR_PIXELS })}
     </p>
   {/if}
+  <p class="field-hint">{t(prefs.uiLocale, 'avatar.layoutNote')}</p>
 </div>

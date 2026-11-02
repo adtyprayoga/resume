@@ -15,7 +15,7 @@
   import { prefs } from '$lib/state/preferences.svelte'
   import { recovery } from '$lib/state/recovery.svelte'
   import { clearDocument } from '$lib/storage/persist'
-  import { FONT_SCALES } from '$lib/themes/index'
+  import { FONT_SCALES, resumeThemes } from '$lib/themes/index'
   import type { FontScaleKey } from '$lib/themes/types'
 
   // Before PersistenceHost mounts, so autosave cannot write a fresh sample over
@@ -124,6 +124,20 @@
         {/each}
       </div>
 
+      <span class="toolbar-label">{t(prefs.uiLocale, 'app.layout')}</span>
+      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.layout')}>
+        {#each resumeThemes as theme (theme.key)}
+          <button
+            type="button"
+            aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
+            aria-pressed={prefs.themeKey === theme.key}
+            onclick={() => (prefs.themeKey = theme.key)}
+          >
+            {t(prefs.uiLocale, `layout.${theme.presentation}`)}
+          </button>
+        {/each}
+      </div>
+
       <span class="toolbar-label">{t(prefs.uiLocale, 'app.interfaceLanguage')}</span>
       <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.interfaceLanguage')}>
         {#each ['id', 'en'] as const as option (option)}
@@ -185,7 +199,7 @@
 
   <div class="preview-container" bind:this={previewContainer}>
     <div class="resume-paper-frame" style={`--preview-zoom: ${previewZoom}`}>
-      <ResumePaper {resume} {locale} bind:element={paperElement} />
+      <ResumePaper {resume} {locale} presentation={prefs.theme.presentation} bind:element={paperElement} />
       {#if prefs.showPageBreaks}
         <PageBreakOverlay paper={paperElement} />
       {/if}
