@@ -196,6 +196,29 @@ describe('settings panel', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Confirm reset' }))
     expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
   })
+
+  it('asks for confirmation before starting blank', async () => {
+    render(App)
+    const { user, dialog } = await openSettings()
+    await user.click(within(dialog).getByRole('button', { name: 'Start blank' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    await user.click(within(dialog).getByRole('button', { name: 'Confirm: erase and start blank' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('')
+    expect(resumeDoc.current.content.experience).toHaveLength(0)
+  })
+
+  it('discards an open draft when starting blank', async () => {
+    render(App)
+    editing.enter()
+    editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
+    editing.setDraft('profile.name', 'Draft')
+    const { user, dialog } = await openSettings()
+    await user.click(within(dialog).getByRole('button', { name: 'Start blank' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Confirm: erase and start blank' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Close' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('')
+    expect(editing.active).toBeFalsy()
+  })
 })
 
 describe('status', () => {
