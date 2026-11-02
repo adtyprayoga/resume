@@ -26,6 +26,8 @@
   prefs.hydrate()
   recovery.open()
 
+  const uid = $props.id()
+
   let paperElement = $state<HTMLElement | undefined>()
   let previewContainer = $state<HTMLDivElement | undefined>()
   let previewZoom = $state(1)
@@ -148,32 +150,41 @@
 <div class="app-shell">
   <header class="app-header" data-print-hide data-keeps-draft>
     <div class="app-header-row">
-      <p class="app-title">{t(prefs.uiLocale, 'app.title')}</p>
-
-      <div class="toggle-group layout-select" role="group" aria-label={t(prefs.uiLocale, 'app.layout')}>
-        {#each resumeThemes as theme (theme.key)}
-          <button
-            type="button"
-            aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
-            aria-pressed={prefs.themeKey === theme.key}
-            onclick={() => editing.setLayout(theme.key)}
-          >
-            {t(prefs.uiLocale, `layout.${theme.presentation}`)}
-          </button>
-        {/each}
+      <div class="app-brand">
+        <p class="app-title">{t(prefs.uiLocale, 'app.title')}</p>
+        <p class="app-status" class:error={statusKind === 'error'} role="status" aria-label={t(prefs.uiLocale, 'status.label')}>
+          {t(prefs.uiLocale, `status.${statusKind}`)}
+        </p>
       </div>
 
-      <p class="app-status" class:error={statusKind === 'error'} role="status" aria-label={t(prefs.uiLocale, 'status.label')}>
-        {t(prefs.uiLocale, `status.${statusKind}`)}
-      </p>
+      <div class="app-layout">
+        <span class="app-layout-label" aria-hidden="true">{t(prefs.uiLocale, 'app.layoutLabel')}</span>
+        <div class="toggle-group layout-select" role="group" aria-label={t(prefs.uiLocale, 'app.layout')}>
+          {#each resumeThemes as theme (theme.key)}
+            <button
+              type="button"
+              data-layout={theme.presentation}
+              aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
+              aria-describedby={theme.presentation === 'ats' ? `${uid}-ats-tip` : undefined}
+              aria-pressed={prefs.themeKey === theme.key}
+              onclick={() => editing.setLayout(theme.key)}
+            >
+              {t(prefs.uiLocale, `layout.${theme.presentation}`)}
+            </button>
+          {/each}
+        </div>
+        <span id="{uid}-ats-tip" role="tooltip" class="icon-tip layout-tip">{t(prefs.uiLocale, 'layout.atsHint')}</span>
+      </div>
 
       <div class="app-actions" role="toolbar" aria-label={t(prefs.uiLocale, 'app.actions')}>
-        <ExportMenu onPdf={exportPdf} onJson={exportJson} />
-        <IconButton icon="import" label={t(prefs.uiLocale, 'action.import')} haspopup="dialog" onclick={openImport} />
+        <ExportMenu onPdf={exportPdf} onJson={exportJson} showLabel="wide" />
+        <IconButton icon="import" label={t(prefs.uiLocale, 'action.import')} haspopup="dialog" onclick={openImport} showLabel="wide" />
         <IconButton
           icon={editing.mode === 'edit' ? 'done' : 'edit'}
           label={t(prefs.uiLocale, editing.mode === 'edit' ? 'action.done' : 'action.edit')}
           onclick={toggleEdit}
+          showLabel="always"
+          variant="primary"
         />
         <IconButton icon="settings" label={t(prefs.uiLocale, 'action.settings')} haspopup="dialog" onclick={openSettings} />
       </div>

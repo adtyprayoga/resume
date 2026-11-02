@@ -40,6 +40,23 @@ describe('toolbar actions', () => {
     expect(names).toEqual(['Ekspor', 'Impor', 'Sunting', 'Pengaturan'])
   })
 
+  it('labels Edit as a visible primary action', async () => {
+    render(App)
+    const edit = within(toolbar()).getByRole('button', { name: 'Edit' })
+    expect(edit).toHaveClass('primary')
+    expect(edit).toHaveTextContent('Edit')
+    await userEvent.setup().click(edit)
+    expect(within(toolbar()).getByRole('button', { name: 'Done' })).toHaveTextContent('Done')
+  })
+
+  it('shows text labels for Export and Import', () => {
+    render(App)
+    for (const name of ['Export', 'Import']) {
+      expect(within(toolbar()).getByRole('button', { name }).querySelector('.icon-btn-text')).toHaveTextContent(name)
+    }
+    expect(within(toolbar()).getByRole('button', { name: 'Settings' }).querySelector('.icon-btn-text')).toBeNull()
+  })
+
   it('shows a tooltip naming each action', () => {
     render(App)
     const settings = within(toolbar()).getByRole('button', { name: 'Settings' })

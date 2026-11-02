@@ -42,6 +42,14 @@ describe('resume layout selection', () => {
     expect(within(group).getByRole('button', { name: 'Resume layout: ATS' })).toHaveAttribute('aria-pressed', 'false')
   })
 
+  it('captions the layout toggle and explains ATS', () => {
+    render(App)
+    expect(screen.getByText('Layout')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Resume layout: ATS' })).toHaveAccessibleDescription(
+      'Plain single column that job portals read reliably',
+    )
+  })
+
   it('restores an explicit ATS selection', () => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'en', documentLocale: 'en', themeKey: 'ats', fontScale: 'standard' }))
     render(App)

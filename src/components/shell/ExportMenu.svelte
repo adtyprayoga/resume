@@ -5,7 +5,11 @@
   import { t } from '$lib/i18n/ui'
   import { prefs } from '$lib/state/preferences.svelte'
 
-  const { onPdf, onJson }: { onPdf: () => void; onJson: () => void } = $props()
+  const {
+    onPdf,
+    onJson,
+    showLabel,
+  }: { onPdf: () => void; onJson: () => void; showLabel?: 'always' | 'wide' } = $props()
 
   const uid = $props.id()
   let open = $state(false)
@@ -70,6 +74,7 @@
     icon="export"
     label={t(prefs.uiLocale, 'action.export')}
     haspopup="menu"
+    {showLabel}
     expanded={open}
     bind:element={button}
     onclick={() => (open ? close() : void show())}
