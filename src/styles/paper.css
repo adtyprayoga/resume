@@ -1,0 +1,17 @@
+/*
+ * Screen-only preview chrome. Hand-written rather than Tailwind utilities
+ * because Tailwind v4 ships a `print:` variant but no `screen:` variant, so
+ * there is no way to scope a utility to screen only.
+ *
+ * Scaling uses `zoom`, not `transform: scale`. A transform leaves the layout box
+ * at full size, so the surrounding pane needs negative-margin or calc() hacks to
+ * compensate; `zoom` affects used layout values, so the surrounding layout is
+ * correct for free. It is also the property the print-scaling bug reports point
+ * at as the fix.
+ */
+
+.resume-paper-frame {
+  zoom: var(--preview-zoom, 1);
+  margin-inline: auto;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.1);
+}

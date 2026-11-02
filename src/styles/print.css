@@ -1,0 +1,200 @@
+/*
+ * Everything that governs how the resume prints. Kept in one file on purpose:
+ * printing is the feature most easily broken by an unrelated style change.
+ *
+ * Constraints baked in here, each one load-bearing:
+ *   - A4 at zero page margin; the margin lives inside the DOM as paper padding,
+ *     so the same box is used on screen and on paper.
+ *   - `min-height`, never `height`. A fixed height forces a single page and
+ *     silently clips anything past 297mm.
+ *   - The paper subtree is block flow. Fragmentation inside flex and grid
+ *     containers is poorly specified and inconsistently implemented, and `gap`
+ *     does not collapse at a page break, so spacing uses margins.
+ *   - No background fills. The browser's "Background graphics" checkbox is the
+ *     user's to set and cannot be overridden, so the design must not depend on
+ *     one. Structure comes from rules and whitespace.
+ */
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.resume-paper {
+  /* The page box. Width is exact; height grows to as many pages as needed. */
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  padding: var(--paper-padding, 16mm 18mm);
+  background: #fff;
+  color: var(--paper-text, #1a1a1a);
+  color-scheme: light;
+  font-family: var(--paper-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: var(--paper-font-size, 10.5pt);
+  line-height: var(--paper-line-height, 1.45);
+}
+
+/* Block flow throughout: margins, not flex gap. */
+.resume-paper :where(section, article, ul, ol, p, h1, h2, h3) {
+  margin: 0;
+}
+
+.resume-section + .resume-section {
+  margin-top: var(--section-gap, 6mm);
+}
+
+.resume-section-title {
+  font-size: var(--title-font-size, 11pt);
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-bottom: 1.2mm;
+  border-bottom: 0.4mm solid var(--paper-rule, #1a1a1a);
+  margin-bottom: 3mm;
+  /* A heading must never be the last thing on a page. */
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+/*
+ * Every element carrying this attribute is an atom the printer should not split.
+ * The pagination simulation reads the same attribute, so the predicted break and
+ * the real one are driven by a single contract.
+ */
+.resume-paper [data-break-atom] {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.resume-paper [data-break-atom] + [data-break-atom] {
+  margin-top: var(--item-gap, 3.5mm);
+}
+
+.resume-paper li {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.resume-paper p,
+.resume-paper li {
+  /* Chrome ignores these for block boxes, Firefox honours them. Free either way. */
+  orphans: 2;
+  widows: 2;
+}
+
+@media print {
+  /* Chrome is not fully reliable about honouring body-level zoom when printing. */
+  .resume-paper,
+  .resume-paper-frame {
+    zoom: 1 !important;
+    transform: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .resume-paper {
+    /* The sheet already provides the edge; a border would print as a hairline. */
+    border: 0 !important;
+  }
+
+  /* Anything that is app furniture rather than resume content. */
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+}
+
+/* ---- Item typography. Block flow only; spacing via margins. ---- */
+
+.resume-header {
+  margin-bottom: var(--section-gap, 6mm);
+}
+
+.resume-name {
+  font-size: var(--name-font-size, 20pt);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.resume-headline {
+  font-size: var(--title-font-size, 11pt);
+  font-weight: 500;
+  margin-top: 1mm;
+}
+
+.resume-contact,
+.resume-summary {
+  margin-top: 2mm;
+}
+
+.resume-contact {
+  font-size: 9pt;
+  color: var(--paper-muted, #4a4a4a);
+}
+
+.item-head {
+  /* Flex is fine here: a single text line that cannot fragment. */
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4mm;
+}
+
+.item-title {
+  font-size: var(--item-title-font-size, 10.5pt);
+  font-weight: 650;
+}
+
+.item-role {
+  font-weight: 400;
+}
+
+.item-dates {
+  flex: none;
+  font-size: 9pt;
+  color: var(--paper-muted, #4a4a4a);
+  font-variant-numeric: tabular-nums;
+}
+
+.item-meta {
+  font-size: 9.5pt;
+  color: var(--paper-muted, #4a4a4a);
+  margin-top: 0.6mm;
+}
+
+.item-desc {
+  margin-top: 1.2mm;
+}
+
+.item-bullets {
+  margin-top: 1.2mm;
+  padding-left: 4.5mm;
+  list-style: disc;
+}
+
+.item-bullets li + li {
+  margin-top: 0.8mm;
+}
+
+.item-link {
+  margin-top: 1mm;
+  font-size: 9pt;
+  color: var(--paper-muted, #4a4a4a);
+}
+
+.skill-row {
+  display: grid;
+  grid-template-columns: 38mm 1fr;
+  gap: 3mm;
+}
+
+.skill-title {
+  font-weight: 650;
+}
