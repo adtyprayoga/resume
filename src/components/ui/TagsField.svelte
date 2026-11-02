@@ -6,12 +6,12 @@
     value = $bindable<string[]>([]),
     label,
     scope = 'localized',
-    hint = 'Separate with commas.',
+    placeholder = 'Separate with commas',
   }: {
     value?: string[]
     label: string
     scope?: 'localized' | 'shared'
-    hint?: string
+    placeholder?: string
   } = $props()
 
   const id = $props.id()
@@ -27,6 +27,5 @@
 
 <div class="field">
   <FieldLabel {label} {scope} forId={id} />
-  <input {id} class="field-input" bind:value={draft} oninput={commit} />
-  {#if hint}<p class="field-hint">{hint}</p>{/if}
+  <input {id} {placeholder} class="field-input" bind:value={draft} oninput={commit} />
 </div>

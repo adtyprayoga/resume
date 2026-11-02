@@ -36,10 +36,11 @@ describe('ProfileEditor', () => {
     expect(resumeDoc.resolved('en').contact.phone).toBe('+62 900')
   })
 
-  it('marks localized fields THIS and shared fields BOTH', () => {
+  it('labels the contact block as shared once, rather than badging each field', () => {
     render(ProfileEditor)
-    expect(screen.getAllByText('THIS').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('BOTH').length).toBeGreaterThan(0)
+    expect(screen.getByText('shared by both languages')).toBeInTheDocument()
+    // Every field in this pane matches its pane's scope, so none needs a badge.
+    expect(screen.queryAllByText(/^(this|both) languages?$/)).toHaveLength(0)
   })
 
   it('edits the other locale after the document locale changes', async () => {

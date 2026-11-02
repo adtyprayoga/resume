@@ -1,13 +1,21 @@
 <script lang="ts">
-  /** `scope` shows whether a value is shared or belongs to the locale being edited. */
+  import { getPaneScope, type FieldScope } from '$lib/ui/scope'
+
   const {
     label,
     scope = 'localized',
     forId,
-  }: { label: string; scope?: 'localized' | 'shared'; forId?: string } = $props()
+  }: { label: string; scope?: FieldScope; forId?: string } = $props()
+
+  const paneScope = getPaneScope()
+  const showBadge = $derived(paneScope !== null && scope !== paneScope)
 </script>
 
 <label class="field-label" for={forId}>
   {label}
-  <span class="field-scope {scope}">{scope === 'shared' ? 'BOTH' : 'THIS'}</span>
+  {#if showBadge}
+    <span class="field-scope {scope}">
+      {scope === 'shared' ? 'both languages' : 'this language'}
+    </span>
+  {/if}
 </label>

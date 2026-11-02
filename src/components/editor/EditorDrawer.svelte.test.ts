@@ -86,3 +86,21 @@ describe('EditorDrawer', () => {
     expect(resumeDoc.current.sections.find((s) => s.kind === 'awards')?.enabled).toBe(false)
   })
 })
+
+describe('scope badges', () => {
+  it('badges only the fields whose scope differs from the pane', async () => {
+    render(EditorDrawer)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Experience' }))
+
+    // Experience is per-language, so only Company and Dates are marked shared.
+    expect(screen.queryAllByText('this language')).toHaveLength(0)
+    expect(screen.getAllByText('both languages').length).toBeGreaterThan(0)
+  })
+
+  it('keeps the shared marker off per-language fields', async () => {
+    render(EditorDrawer)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Skills' }))
+    // Every skills field is per-language, so nothing needs a badge at all.
+    expect(screen.queryAllByText('both languages')).toHaveLength(0)
+  })
+})

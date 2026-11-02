@@ -5,10 +5,13 @@
   import TextField from '$components/ui/TextField.svelte'
   import { t } from '$lib/i18n/ui'
   import { resumeDoc } from '$lib/state/document.svelte'
+  import { setPaneScope } from '$lib/ui/scope'
   import { prefs } from '$lib/state/preferences.svelte'
 
   const items = $derived(resumeDoc.current.content.experience)
   const locale = $derived(prefs.documentLocale)
+
+  setPaneScope('localized')
 </script>
 
 <RepeatableList

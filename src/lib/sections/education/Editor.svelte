@@ -5,10 +5,13 @@
   import TextField from '$components/ui/TextField.svelte'
   import { t } from '$lib/i18n/ui'
   import { resumeDoc } from '$lib/state/document.svelte'
+  import { setPaneScope } from '$lib/ui/scope'
   import { prefs } from '$lib/state/preferences.svelte'
 
   const items = $derived(resumeDoc.current.content.education)
   const locale = $derived(prefs.documentLocale)
+
+  setPaneScope('localized')
 </script>
 
 <RepeatableList
@@ -19,7 +22,7 @@
   onMove={(id, delta) => resumeDoc.moveItem('education', id, delta)}
 >
   {#snippet children(item)}
-    <TextField label="GPA" scope="shared" bind:value={item.gpa} hint="Leave blank to hide." />
+    <TextField label="GPA" scope="shared" bind:value={item.gpa} />
     <DateRangeField bind:value={item.dates} presentLabel={t(prefs.uiLocale, 'date.present')} />
     {#key locale}
       <TextField label="School" bind:value={item.text[locale].school} />

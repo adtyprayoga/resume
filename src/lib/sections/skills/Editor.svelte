@@ -3,10 +3,13 @@
   import TagsField from '$components/ui/TagsField.svelte'
   import TextField from '$components/ui/TextField.svelte'
   import { resumeDoc } from '$lib/state/document.svelte'
+  import { setPaneScope } from '$lib/ui/scope'
   import { prefs } from '$lib/state/preferences.svelte'
 
   const items = $derived(resumeDoc.current.content.skills)
   const locale = $derived(prefs.documentLocale)
+
+  setPaneScope('localized')
 </script>
 
 <RepeatableList

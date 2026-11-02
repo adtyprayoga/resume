@@ -10,13 +10,13 @@
     value = $bindable<string[]>([]),
     label,
     scope = 'localized',
-    hint = 'One per line.',
+    placeholder = 'One per line',
     rows = 4,
   }: {
     value?: string[]
     label: string
     scope?: 'localized' | 'shared'
-    hint?: string
+    placeholder?: string
     rows?: number
   } = $props()
 
@@ -33,6 +33,6 @@
 
 <div class="field">
   <FieldLabel {label} {scope} forId={id} />
-  <textarea {id} {rows} class="field-textarea" bind:value={draft} oninput={commit}></textarea>
-  {#if hint}<p class="field-hint">{hint}</p>{/if}
+  <textarea {id} {rows} {placeholder} class="field-textarea" bind:value={draft} oninput={commit}
+  ></textarea>
 </div>
