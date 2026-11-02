@@ -16,7 +16,8 @@ const minimal: ResumeThemeConfig = {
     rule: '#1a1a1a',
   },
   layout: {
-    paperPadding: '16mm 18mm',
+    pageMarginY: '16mm',
+    pageMarginX: '18mm',
     sectionGap: '6mm',
     itemGap: '3.5mm',
   },

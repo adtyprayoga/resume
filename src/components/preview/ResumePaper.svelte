@@ -10,7 +10,16 @@
   import { getSectionModule } from '$lib/sections/registry'
   import type { Locale, ResolvedResume } from '$lib/model/types'
 
-  const { resume, locale }: { resume: ResolvedResume; locale: Locale } = $props()
+  let {
+    resume,
+    locale,
+    element = $bindable<HTMLElement | undefined>(),
+  }: {
+    resume: ResolvedResume
+    locale: Locale
+    /** Exposed so the page-break overlay can measure the paper. */
+    element?: HTMLElement | undefined
+  } = $props()
 
   /**
    * A section renders only when it is enabled AND has content, so an empty
@@ -26,7 +35,7 @@
   )
 </script>
 
-<article class="resume-paper">
+<article class="resume-paper" bind:this={element}>
   <ProfileHeader profile={resume.profile} contact={resume.contact} />
 
   {#each visible as section (section.kind)}

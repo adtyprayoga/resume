@@ -29,7 +29,8 @@ describe('buildThemeStyleVars', () => {
   it('emits every variable the print stylesheet reads', () => {
     const vars = buildThemeStyleVars(defaultTheme)
     for (const name of [
-      '--paper-padding',
+      '--page-margin-y',
+      '--page-margin-x',
       '--section-gap',
       '--item-gap',
       '--paper-text',
@@ -52,7 +53,7 @@ describe('buildThemeStyleVars', () => {
     expect(parseFloat(large['--paper-font-size']!)).toBeGreaterThan(
       parseFloat(standard['--paper-font-size']!),
     )
-    expect(large['--paper-padding']).toBe(standard['--paper-padding'])
+    expect(large['--page-margin-y']).toBe(standard['--page-margin-y'])
   })
 
   it('keeps standard scale at exactly 1 so it is the unscaled baseline', () => {

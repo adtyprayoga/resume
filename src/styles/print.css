@@ -15,17 +15,27 @@
  *     one. Structure comes from rules and whitespace.
  */
 
+/*
+ * The margin lives on `@page`, not on the element, so EVERY page gets it.
+ * An element's padding applies once at the top of the first page and once at
+ * the bottom of the last, which leaves interior pages flush against the paper
+ * edge — measured at 1.8pt from the top before this was fixed.
+ *
+ * The literal is a fallback for engines that ignore `var()` inside `@page`;
+ * where it is supported the second declaration wins and the theme drives it.
+ */
 @page {
   size: A4;
-  margin: 0;
+  margin: 16mm 18mm;
+  margin: var(--page-margin-y, 16mm) var(--page-margin-x, 18mm);
 }
 
 .resume-paper {
-  /* The page box. Width is exact; height grows to as many pages as needed. */
+  /* On screen the element mimics a sheet, padding included. */
   width: 210mm;
   min-height: 297mm;
   box-sizing: border-box;
-  padding: var(--paper-padding, 16mm 18mm);
+  padding: var(--page-margin-y, 16mm) var(--page-margin-x, 18mm);
   background: #fff;
   color: var(--paper-text, #1a1a1a);
   color-scheme: light;
@@ -93,7 +103,14 @@
   }
 
   .resume-paper {
-    /* The sheet already provides the edge; a border would print as a hairline. */
+    /*
+     * In print the page box already supplies the margin, so the element drops
+     * its padding and narrows to the printable width. The content box is
+     * 174mm either way, so the layout is identical on screen and on paper.
+     */
+    width: calc(210mm - 2 * var(--page-margin-x, 18mm)) !important;
+    min-height: 0 !important;
+    padding: 0 !important;
     border: 0 !important;
   }
 

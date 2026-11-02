@@ -38,7 +38,8 @@ export const buildThemeStyleVars = (
   const scale = FONT_SCALES[fontScale]
 
   return {
-    '--paper-padding': theme.layout.paperPadding,
+    '--page-margin-y': theme.layout.pageMarginY,
+    '--page-margin-x': theme.layout.pageMarginX,
     '--section-gap': theme.layout.sectionGap,
     '--item-gap': theme.layout.itemGap,
     '--paper-text': theme.palette.text,

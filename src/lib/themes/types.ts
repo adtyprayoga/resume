@@ -10,8 +10,15 @@ export interface ResumeThemePalette {
 }
 
 export interface ResumeThemeLayout {
-  /** Page margin, applied as paper padding so screen and print share one box. */
-  paperPadding: string
+  /**
+   * Page margin, split so it can drive `@page` directly.
+   *
+   * It cannot be a single padding value: with `@page { margin: 0 }` an
+   * element's padding applies once at the very top and once at the very bottom,
+   * so every interior page would print flush against the paper edge.
+   */
+  pageMarginY: string
+  pageMarginX: string
   sectionGap: string
   itemGap: string
 }

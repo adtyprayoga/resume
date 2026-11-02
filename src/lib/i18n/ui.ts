@@ -19,6 +19,9 @@ const strings = {
     'action.edit': 'Edit',
     'app.demoNotice':
       'The resume shown is a fictional example, for demonstrating layout and export only.',
+    'app.printHint':
+      'In the print dialog choose A4, set margins to Default or None, and turn off headers and footers — browsers add a URL and date that no page can suppress.',
+    'app.pageBreakHint': 'Page break guides are approximate; the print preview is authoritative.',
   },
   id: {
     'section.experience': 'Pengalaman Kerja',
@@ -33,6 +36,9 @@ const strings = {
     'action.edit': 'Sunting',
     'app.demoNotice':
       'Resume yang ditampilkan adalah contoh fiktif, hanya untuk mendemonstrasikan tata letak dan ekspor.',
+    'app.printHint':
+      'Pada dialog cetak, pilih A4, atur margin ke Default atau None, lalu matikan header dan footer — peramban menambahkan URL dan tanggal yang tidak dapat dihilangkan oleh halaman.',
+    'app.pageBreakHint': 'Panduan batas halaman bersifat perkiraan; pratinjau cetak adalah acuan utama.',
   },
 } as const satisfies Record<Locale, Record<string, string>>
 

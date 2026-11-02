@@ -1,7 +1,9 @@
 <script lang="ts">
   import ImportDialog from './components/ImportDialog.svelte'
   import PersistenceHost from './components/PersistenceHost.svelte'
+  import ThemeHost from './components/ThemeHost.svelte'
   import EditorDrawer from './components/editor/EditorDrawer.svelte'
+  import PageBreakOverlay from './components/preview/PageBreakOverlay.svelte'
   import ResumePaper from './components/preview/ResumePaper.svelte'
   import { sampleDocument } from './data/sample'
   import { resumeFileName, serializeResume } from '$lib/io/exportJson'
@@ -11,7 +13,7 @@
   import { resumeDoc } from '$lib/state/document.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
   import { clearDocument, loadDocument } from '$lib/storage/persist'
-  import { FONT_SCALES, themeStyleAttr } from '$lib/themes/index'
+  import { FONT_SCALES } from '$lib/themes/index'
   import type { FontScaleKey } from '$lib/themes/types'
 
   /*
@@ -21,6 +23,7 @@
   prefs.hydrate()
   resumeDoc.replace(loadDocument() ?? sampleDocument())
 
+  let paperElement = $state<HTMLElement | undefined>()
   let importing = $state(false)
   let confirmReset = $state(false)
 
@@ -53,6 +56,7 @@
 </script>
 
 <PersistenceHost />
+<ThemeHost />
 
 <div class="min-h-screen bg-neutral-100 py-6">
   <div class="mx-auto mb-4 max-w-[210mm] px-4" data-print-hide>
@@ -114,6 +118,16 @@
         {/each}
       </div>
 
+      <div class="toggle-group">
+        <button
+          type="button"
+          aria-pressed={prefs.showPageBreaks}
+          onclick={() => (prefs.showPageBreaks = !prefs.showPageBreaks)}
+        >
+          Page breaks
+        </button>
+      </div>
+
       {#if untranslated > 0}
         <button
           type="button"
@@ -127,13 +141,19 @@
 
     {#if prefs.saveStatus.kind === 'error'}
       <p class="save-status error">{prefs.saveStatus.message}</p>
-    {:else}
-      <p class="save-status">{t(prefs.uiLocale, 'app.demoNotice')}</p>
     {/if}
+    <p class="save-status">{t(prefs.uiLocale, 'app.printHint')}</p>
+    <p class="save-status">
+      {t(prefs.uiLocale, 'app.demoNotice')}
+      {#if prefs.showPageBreaks}{' '}{t(prefs.uiLocale, 'app.pageBreakHint')}{/if}
+    </p>
   </div>
 
-  <div class="resume-paper-frame" style={themeStyleAttr(prefs.theme, prefs.fontScale)}>
-    <ResumePaper {resume} {locale} />
+  <div class="resume-paper-frame">
+    <ResumePaper {resume} {locale} bind:element={paperElement} />
+    {#if prefs.showPageBreaks}
+      <PageBreakOverlay paper={paperElement} />
+    {/if}
   </div>
 </div>
 

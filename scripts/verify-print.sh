@@ -30,5 +30,30 @@ for chrome in 'Save as PDF' 'Export JSON' 'fictional example'; do
   fi
 done
 
+# Every page must carry the top margin, not just the first. With the margin on
+# the element instead of @page, interior pages printed flush to the paper edge.
+margins=$(pdftotext -bbox-layout "$OUT" - 2>/dev/null | python3 -I -c '
+import sys, re
+doc = sys.stdin.read()
+for index, page in enumerate(re.split(r"<page ", doc)[1:], 1):
+    words = re.findall(r"<word xMin=\"([\d.]+)\" yMin=\"([\d.]+)\"", page)
+    if not words:
+        continue
+    top = min(float(y) for _, y in words)
+    left = min(float(x) for x, _ in words)
+    print(f"{index} {top:.1f} {left:.1f}")
+')
+
+echo "$margins" | while read -r page top left; do
+  echo "page $page: top ${top}pt, left ${left}pt"
+done
+
+if echo "$margins" | awk '{ if ($2 < 40 || $3 < 45) exit 1 }'; then
+  :
+else
+  echo "FAIL: a page is missing its margin (expected top >= 40pt, left >= 45pt)"
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then echo "print check: OK"; fi
 exit "$fail"
