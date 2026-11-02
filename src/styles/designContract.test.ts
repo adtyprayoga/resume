@@ -102,3 +102,15 @@ describe('chrome sources', () => {
     expect(auditCss(path.endsWith('.svelte') ? styleBlocks(raw) : raw, path)).toEqual([])
   })
 })
+
+describe('controls', () => {
+  it('controls keep 44px targets', () => {
+    const css = read('src/components/editor/drawer.css')
+    expect(css).toMatch(/\.tool-btn,\s*\n\.toggle-group button,\s*\n\.repeat-btn,\s*\n\.avatar-pick\s*\{[^}]*min-width: 44px;[^}]*min-height: 44px;/)
+  })
+
+  it('invalid inputs get a 2px danger border', () => {
+    const css = read('src/components/ui/field.css')
+    expect(css).toMatch(/\[aria-invalid='true'\][^{]*\{[^}]*border: 2px solid var\(--color-danger\)/)
+  })
+})

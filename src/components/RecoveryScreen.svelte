@@ -73,6 +73,6 @@
 {/if}
 
 <style>
-  .recovery { max-width: 40rem; margin: 3rem auto; padding: 1.5rem; display: grid; gap: 1rem; background: white; border-radius: 0.625rem; }
-  .recovery-title { font-size: 1.25rem; font-weight: 600; }
+  .recovery { max-width: 40rem; margin: 3rem auto; padding: 2rem; display: grid; gap: 1rem; background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: 0; box-shadow: var(--shadow-card); }
+  .recovery-title { margin: 0; font-size: var(--text-h1); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: 1.1; }
 </style>

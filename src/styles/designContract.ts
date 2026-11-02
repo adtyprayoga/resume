@@ -4,7 +4,12 @@
  */
 
 /** Repo-relative paths of stylesheets (or Svelte files with <style>) migrated to the tokens. */
-export const CHROME_SOURCES: string[] = []
+export const CHROME_SOURCES: string[] = [
+  'src/components/ui/field.css',
+  'src/components/editor/drawer.css',
+  'src/components/ImportDialog.svelte',
+  'src/components/RecoveryScreen.svelte',
+]
 
 const TRANSITIONABLE = new Set([
   'opacity',
