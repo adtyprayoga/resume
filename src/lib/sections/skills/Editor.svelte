@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/ui'
   import RepeatableList from '$components/ui/RepeatableList.svelte'
   import TagsField from '$components/ui/TagsField.svelte'
   import TextField from '$components/ui/TextField.svelte'
@@ -14,15 +15,15 @@
 
 <RepeatableList
   {items}
-  addLabel="+ Add skill group"
+  addLabel={t(prefs.uiLocale, 'add.skills')}
   onAdd={() => resumeDoc.addItem('skills')}
   onRemove={(id) => resumeDoc.removeItem('skills', id)}
   onMove={(id, delta) => resumeDoc.moveItem('skills', id, delta)}
 >
   {#snippet children(item)}
     {#key locale}
-      <TextField label="Group" bind:value={item.text[locale].title} />
-      <TagsField label="Skills" bind:value={item.text[locale].items} />
+      <TextField label={t(prefs.uiLocale, 'field.group')} bind:value={item.text[locale].title} />
+      <TagsField label={t(prefs.uiLocale, 'field.skills')} bind:value={item.text[locale].items} />
     {/key}
   {/snippet}
 </RepeatableList>

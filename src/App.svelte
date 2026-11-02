@@ -1,29 +1,57 @@
 <script lang="ts">
   import ImportDialog from './components/ImportDialog.svelte'
   import PersistenceHost from './components/PersistenceHost.svelte'
+  import RecoveryScreen from './components/RecoveryScreen.svelte'
   import ThemeHost from './components/ThemeHost.svelte'
   import EditorDrawer from './components/editor/EditorDrawer.svelte'
   import PageBreakOverlay from './components/preview/PageBreakOverlay.svelte'
   import ResumePaper from './components/preview/ResumePaper.svelte'
   import { sampleDocument } from './data/sample'
   import { resumeFileName, serializeResume } from '$lib/io/exportJson'
-  import { t } from '$lib/i18n/ui'
+  import { t, translatedMessage } from '$lib/i18n/ui'
   import type { Locale } from '$lib/model/types'
   import { printResume } from '$lib/print/print'
   import { resumeDoc } from '$lib/state/document.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
-  import { clearDocument, loadDocument } from '$lib/storage/persist'
+  import { recovery } from '$lib/state/recovery.svelte'
+  import { clearDocument } from '$lib/storage/persist'
   import { FONT_SCALES } from '$lib/themes/index'
   import type { FontScaleKey } from '$lib/themes/types'
 
   // Before PersistenceHost mounts, so autosave cannot write a fresh sample over
-  // stored work on first paint.
+  // stored work on first paint. Unreadable data blocks the app behind recovery.
   prefs.hydrate()
-  resumeDoc.replace(loadDocument() ?? sampleDocument())
+  recovery.open()
 
   let paperElement = $state<HTMLElement | undefined>()
+  let previewContainer = $state<HTMLDivElement | undefined>()
+  let previewZoom = $state(1)
   let importing = $state(false)
   let confirmReset = $state(false)
+
+  $effect(() => { document.documentElement.lang = prefs.uiLocale })
+
+  $effect(() => {
+    if (!previewContainer || !paperElement) return
+    const container = previewContainer
+    const paper = paperElement
+    const fit = (availableWidth: number) => {
+      if (paper.offsetWidth > 0) previewZoom = Math.min(1, availableWidth / paper.offsetWidth)
+    }
+    const styles = getComputedStyle(container)
+    fit(container.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight))
+    let frame = 0
+    const resize = new ResizeObserver(([entry]) => {
+      if (!entry) return
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => fit(entry.contentRect.width))
+    })
+    resize.observe(container)
+    return () => {
+      resize.disconnect()
+      cancelAnimationFrame(frame)
+    }
+  })
 
   const locale = $derived(prefs.documentLocale)
   const resume = $derived(resumeDoc.resolved(locale))
@@ -56,8 +84,13 @@
 <PersistenceHost />
 <ThemeHost />
 
-<div class="min-h-screen bg-neutral-100 py-6">
-  <div class="mx-auto mb-4 max-w-[210mm] px-4" data-print-hide>
+{#if recovery.blocked}
+<div class="app-shell min-h-screen bg-neutral-100 py-6">
+  <RecoveryScreen />
+</div>
+{:else}
+<div class="app-shell min-h-screen bg-neutral-100 py-6">
+  <div class="app-controls mx-auto mb-4" data-print-hide>
     <div class="toolbar">
       <button type="button" class="tool-btn primary" onclick={() => printResume(fileName)}>
         {t(prefs.uiLocale, 'action.print')}
@@ -72,16 +105,17 @@
         {t(prefs.uiLocale, 'action.importJson')}
       </button>
       <button type="button" class="tool-btn" onclick={reset}>
-        {confirmReset ? 'Confirm reset' : 'Reset to sample'}
+        {t(prefs.uiLocale, confirmReset ? 'action.confirmReset' : 'action.reset')}
       </button>
     </div>
 
     <div class="toolbar">
-      <span class="toolbar-label">Resume</span>
-      <div class="toggle-group">
+      <span class="toolbar-label">{t(prefs.uiLocale, 'app.resumeLanguage')}</span>
+      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.resumeLanguage')}>
         {#each ['id', 'en'] as const as option (option)}
           <button
             type="button"
+            aria-label={t(prefs.uiLocale, 'app.documentLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
             aria-pressed={prefs.documentLocale === option}
             onclick={() => (prefs.documentLocale = option)}
           >
@@ -90,11 +124,12 @@
         {/each}
       </div>
 
-      <span class="toolbar-label">Interface</span>
-      <div class="toggle-group">
+      <span class="toolbar-label">{t(prefs.uiLocale, 'app.interfaceLanguage')}</span>
+      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.interfaceLanguage')}>
         {#each ['id', 'en'] as const as option (option)}
           <button
             type="button"
+            aria-label={t(prefs.uiLocale, 'app.interfaceLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
             aria-pressed={prefs.uiLocale === option}
             onclick={() => (prefs.uiLocale = option)}
           >
@@ -103,11 +138,12 @@
         {/each}
       </div>
 
-      <span class="toolbar-label">Size</span>
-      <div class="toggle-group">
+      <span class="toolbar-label">{t(prefs.uiLocale, 'app.fontSize')}</span>
+      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.fontSize')}>
         {#each Object.keys(FONT_SCALES) as FontScaleKey[] as scale (scale)}
           <button
             type="button"
+            aria-label={t(prefs.uiLocale, 'app.fontSizeOption', { size: t(prefs.uiLocale, `size.${scale}`) })}
             aria-pressed={prefs.fontScale === scale}
             onclick={() => (prefs.fontScale = scale)}
           >
@@ -122,7 +158,7 @@
           aria-pressed={prefs.showPageBreaks}
           onclick={() => (prefs.showPageBreaks = !prefs.showPageBreaks)}
         >
-          Page breaks
+          {t(prefs.uiLocale, 'app.pageBreaks')}
         </button>
       </div>
 
@@ -132,13 +168,13 @@
           class="tool-btn"
           onclick={() => resumeDoc.copyLocale(otherLocale(locale), locale)}
         >
-          Fill {untranslated} untranslated from {otherLocale(locale).toUpperCase()}
+          {t(prefs.uiLocale, 'app.fillUntranslated', { count: untranslated, language: otherLocale(locale).toUpperCase() })}
         </button>
       {/if}
     </div>
 
     {#if prefs.saveStatus.kind === 'error'}
-      <p class="save-status error">{prefs.saveStatus.message}</p>
+      <p class="save-status error">{translatedMessage(prefs.uiLocale, prefs.saveStatus, prefs.saveStatus.message)}</p>
     {/if}
     <p class="save-status">{t(prefs.uiLocale, 'app.printHint')}</p>
     <p class="save-status">
@@ -147,11 +183,13 @@
     </p>
   </div>
 
-  <div class="resume-paper-frame">
-    <ResumePaper {resume} {locale} bind:element={paperElement} />
-    {#if prefs.showPageBreaks}
-      <PageBreakOverlay paper={paperElement} />
-    {/if}
+  <div class="preview-container" bind:this={previewContainer}>
+    <div class="resume-paper-frame" style={`--preview-zoom: ${previewZoom}`}>
+      <ResumePaper {resume} {locale} bind:element={paperElement} />
+      {#if prefs.showPageBreaks}
+        <PageBreakOverlay paper={paperElement} />
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -161,4 +199,5 @@
 
 {#if importing}
   <ImportDialog onClose={() => (importing = false)} />
+{/if}
 {/if}

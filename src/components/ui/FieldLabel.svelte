@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/ui'
+  import { prefs } from '$lib/state/preferences.svelte'
   import { getPaneScope, type FieldScope } from '$lib/ui/scope'
 
   const {
@@ -15,7 +17,7 @@
   {label}
   {#if showBadge}
     <span class="field-scope {scope}">
-      {scope === 'shared' ? 'both languages' : 'this language'}
+      {t(prefs.uiLocale, scope === 'shared' ? 'scope.shared' : 'scope.localized')}
     </span>
   {/if}
 </label>

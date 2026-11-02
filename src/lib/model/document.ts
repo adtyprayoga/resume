@@ -83,7 +83,7 @@ export const emptyDocument = (): ResumeDocument => ({
 
 /** Containers checked strictly, leaves coerced, so garbage never reaches state. */
 export const validateDocument = (raw: unknown): Result<ResumeDocument> => {
-  if (!isRecord(raw)) return err('This file does not look like a resume.')
+  if (!isRecord(raw)) return err('This file does not look like a resume.', { messageKey: 'error.notResume' })
 
   return ok({
     schemaVersion: SCHEMA_VERSION,

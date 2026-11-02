@@ -6,13 +6,17 @@ export interface PageMetrics {
   contentTop: number
 }
 
-/** Probes a 297mm element rather than assuming 96dpi. */
-
+/**
+ * Probes a 297mm element rather than assuming 96dpi. The probe goes on the body,
+ * outside the paper: inside it, the insertion would trip the paper's own
+ * MutationObserver and remeasure forever. Outside the zoomed preview frame it
+ * also measures unscaled layout pixels, the same space as the atoms' offsets.
+ */
 export const measurePageMetrics = (paper: HTMLElement): PageMetrics => {
   const probe = paper.ownerDocument.createElement('div')
   probe.style.cssText =
     'position:absolute;visibility:hidden;pointer-events:none;width:1mm;height:297mm;top:0;left:0'
-  paper.appendChild(probe)
+  paper.ownerDocument.body.appendChild(probe)
   const sheetHeight = probe.offsetHeight
   probe.remove()
 

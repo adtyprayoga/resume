@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/ui'
+  import { prefs } from '$lib/state/preferences.svelte'
   import FieldLabel from './FieldLabel.svelte'
 
   /**
@@ -10,7 +12,7 @@
     value = $bindable<string[]>([]),
     label,
     scope = 'localized',
-    placeholder = 'One per line',
+    placeholder,
     rows = 4,
   }: {
     value?: string[]
@@ -33,6 +35,6 @@
 
 <div class="field">
   <FieldLabel {label} {scope} forId={id} />
-  <textarea {id} {rows} {placeholder} class="field-textarea" bind:value={draft} oninput={commit}
+  <textarea {id} {rows} placeholder={placeholder ?? t(prefs.uiLocale, 'placeholder.lines')} class="field-textarea" bind:value={draft} oninput={commit}
   ></textarea>
 </div>

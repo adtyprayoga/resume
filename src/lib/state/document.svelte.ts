@@ -15,9 +15,12 @@ interface Identified {
  */
 class ResumeDocumentStore {
   current = $state<ResumeDocument>(emptyDocument())
+  /** Bumped on every wholesale replacement, so per-document session state can tell documents apart. */
+  generation = $state(0)
 
   replace(doc: ResumeDocument): void {
     this.current = doc
+    this.generation += 1
   }
 
   /** Unproxied copy. Everything leaving the store for serialisation goes through this. */

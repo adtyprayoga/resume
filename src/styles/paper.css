@@ -6,11 +6,20 @@
  * at full size, so the surrounding pane would need calc() hacks to compensate.
  */
 
+.app-controls,
+.preview-container {
+  box-sizing: border-box;
+  width: 100%;
+  /* Leave room for offsetWidth's whole-pixel A4 measurement at full size. */
+  max-width: calc(210mm + 34px);
+  padding-inline: 16px;
+  margin-inline: auto;
+}
+
 .resume-paper-frame {
   zoom: var(--preview-zoom, 1);
   /* Sized to the sheet so the page-break rule cannot overhang the paper. */
   width: 210mm;
-  max-width: 100%;
   margin-inline: auto;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.1);
 }
@@ -19,7 +28,7 @@
   position: relative;
 }
 
-/* A sibling of the paper, never a child, so it cannot print. */
+/* Screen guides are siblings of the paper and explicitly hidden in print.css. */
 .page-break {
   position: absolute;
   left: 0;

@@ -1,3 +1,4 @@
+import type { UiMessage } from '$lib/i18n/ui'
 import { serializeResume } from '$lib/io/exportJson'
 import { validateDocument } from '$lib/model/document'
 import { migrate } from '$lib/model/migrate'
@@ -9,7 +10,7 @@ export const PREFERENCES_KEY = 'resume-preferences-v1'
 export type SaveStatus =
   | { kind: 'idle' }
   | { kind: 'saved'; at: number }
-  | { kind: 'error'; message: string }
+  | ({ kind: 'error'; message: string } & Partial<UiMessage>)
 
 /** Reading localStorage can itself throw when storage is blocked. */
 const defaultStorage = (): Storage | null => {
@@ -34,7 +35,7 @@ export const saveDocument = (
   storage?: Storage | null,
 ): SaveStatus => {
   const target = resolveStorage(storage)
-  if (!target) return { kind: 'error', message: 'This browser has no local storage available.' }
+  if (!target) return { kind: 'error', message: 'This browser has no local storage available.', messageKey: 'error.storageUnavailable' }
 
   try {
     target.setItem(DOCUMENT_KEY, serializeResume(doc))
@@ -44,38 +45,63 @@ export const saveDocument = (
       return {
         kind: 'error',
         message:
-          'Out of browser storage, so this change was not saved. A large embedded avatar is the usual cause — use an image URL instead, then export your JSON as a backup.',
+          'Out of browser storage, so this change was not saved. Remove or resize your photo, then export your JSON as a backup.',
+        messageKey: 'error.storageQuota',
       }
     }
-    return { kind: 'error', message: 'This change could not be saved to this browser.' }
+    return { kind: 'error', message: 'This change could not be saved to this browser.', messageKey: 'error.storageSave' }
   }
 }
 
-/** Null for absent or unusable data; never throws. */
-export const loadDocument = (storage?: Storage | null): ResumeDocument | null => {
+export type LoadResult =
+  | { kind: 'empty' }
+  | { kind: 'loaded'; document: ResumeDocument }
+  /** `raw` is the stored string exactly as read, so it can be downloaded untouched. */
+  | ({ kind: 'recovery'; raw: string; error: string } & Partial<UiMessage>)
+  | ({ kind: 'unavailable'; error: string } & Partial<UiMessage>)
+
+/**
+ * Only an absent key is `empty`. Anything else that cannot be opened is
+ * `recovery`, so the caller never replaces data it merely failed to read.
+ * Never throws.
+ */
+export const loadDocument = (storage?: Storage | null): LoadResult => {
+  const unavailable = (error: string, messageKey: UiMessage['messageKey']): LoadResult =>
+    ({ kind: 'unavailable', error, messageKey })
+
   const target = resolveStorage(storage)
-  if (!target) return null
+  if (!target) return unavailable('This browser has no local storage available.', 'error.storageUnavailable')
 
   let raw: string | null
   try {
     raw = target.getItem(DOCUMENT_KEY)
   } catch {
-    return null
+    return unavailable('Browser storage could not be read.', 'error.storageRead')
   }
-  if (!raw) return null
+  if (raw === null) return { kind: 'empty' }
+
+  const recovery = ({ error, messageKey, messageParams }: { error: string } & Partial<UiMessage>): LoadResult => ({
+    kind: 'recovery',
+    raw,
+    error,
+    ...(messageKey && { messageKey }),
+    ...(messageParams && { messageParams }),
+  })
+
+  if (!raw.trim()) return recovery({ error: 'The saved resume is empty.', messageKey: 'error.storedEmpty' })
 
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
   } catch {
-    return null
+    return recovery({ error: 'The saved resume is not valid JSON.', messageKey: 'error.storedJson' })
   }
 
   const migrated = migrate(parsed)
-  if (!migrated.ok) return null
+  if (!migrated.ok) return recovery(migrated)
 
   const validated = validateDocument(migrated.value)
-  return validated.ok ? validated.value : null
+  return validated.ok ? { kind: 'loaded', document: validated.value } : recovery(validated)
 }
 
 export const clearDocument = (storage?: Storage | null): void => {

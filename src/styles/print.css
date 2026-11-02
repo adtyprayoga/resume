@@ -76,6 +76,15 @@
 }
 
 @media print {
+  .app-shell,
+  .preview-container {
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
   /* Chrome is unreliable about body-level zoom when printing. */
   .resume-paper-frame {
     width: auto !important;
@@ -100,7 +109,8 @@
   }
 
   /* App furniture, not resume content. */
-  [data-print-hide] {
+  [data-print-hide],
+  .page-break {
     display: none !important;
   }
 

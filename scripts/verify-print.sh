@@ -30,6 +30,11 @@ for chrome in 'Save as PDF' 'Export JSON' 'fictional example'; do
   fi
 done
 
+if grep -Eq '^[[:space:]]*(Page|Halaman)[[:space:]]+[0-9]+[[:space:]]*$' <<<"$text"; then
+  echo "FAIL: a page guide leaked into the PDF"
+  fail=1
+fi
+
 # Every page must carry the top margin, not just the first. With the margin on
 # the element instead of @page, interior pages printed flush to the paper edge.
 margins=$(pdftotext -bbox-layout "$OUT" - 2>/dev/null | python3 -I -c '

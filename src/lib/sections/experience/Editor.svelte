@@ -16,21 +16,21 @@
 
 <RepeatableList
   {items}
-  addLabel="+ Add role"
+  addLabel={t(prefs.uiLocale, 'add.experience')}
   onAdd={() => resumeDoc.addItem('experience')}
   onRemove={(id) => resumeDoc.removeItem('experience', id)}
   onMove={(id, delta) => resumeDoc.moveItem('experience', id, delta)}
 >
   {#snippet children(item)}
-    <TextField label="Company" scope="shared" bind:value={item.company} />
+    <TextField label={t(prefs.uiLocale, 'field.company')} scope="shared" bind:value={item.company} />
     <DateRangeField bind:value={item.dates} presentLabel={t(prefs.uiLocale, 'date.present')} />
     {#key locale}
-      <TextField label="Role" bind:value={item.text[locale].role} />
+      <TextField label={t(prefs.uiLocale, 'field.role')} bind:value={item.text[locale].role} />
       <div class="field-row">
-        <TextField label="Team" bind:value={item.text[locale].team} />
-        <TextField label="Location" bind:value={item.text[locale].location} />
+        <TextField label={t(prefs.uiLocale, 'field.team')} bind:value={item.text[locale].team} />
+        <TextField label={t(prefs.uiLocale, 'field.location')} bind:value={item.text[locale].location} />
       </div>
-      <LinesField label="Highlights" bind:value={item.text[locale].bullets} rows={5} />
+      <LinesField label={t(prefs.uiLocale, 'field.highlights')} bind:value={item.text[locale].bullets} rows={5} />
     {/key}
   {/snippet}
 </RepeatableList>

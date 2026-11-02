@@ -1,4 +1,6 @@
 <script lang="ts" generics="T extends { id: string }">
+  import { t } from '$lib/i18n/ui'
+  import { prefs } from '$lib/state/preferences.svelte'
   import type { Snippet } from 'svelte'
 
   const {
@@ -40,21 +42,21 @@
             type="button"
             class="repeat-btn"
             disabled={index === 0}
-            aria-label="Move up"
+            aria-label={t(prefs.uiLocale, 'action.moveUp')}
             onclick={() => { armed = null; onMove(item.id, -1) }}>↑</button
           >
           <button
             type="button"
             class="repeat-btn"
             disabled={index === items.length - 1}
-            aria-label="Move down"
+            aria-label={t(prefs.uiLocale, 'action.moveDown')}
             onclick={() => { armed = null; onMove(item.id, 1) }}>↓</button
           >
           <button
             type="button"
             class="repeat-btn danger"
             onclick={() => remove(item.id)}
-          >{armed === item.id ? 'Confirm' : 'Delete'}</button>
+          >{t(prefs.uiLocale, armed === item.id ? 'action.confirm' : 'action.delete')}</button>
         </div>
       </header>
       {@render children(item, index)}

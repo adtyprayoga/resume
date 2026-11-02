@@ -3,12 +3,14 @@
   // module; the state modules stay effect-free.
   import { Autosaver } from '$lib/state/autosave'
   import { resumeDoc } from '$lib/state/document.svelte'
+  import { recovery } from '$lib/state/recovery.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
   import { savePreferences } from '$lib/storage/persist'
 
-  const autosaver = new Autosaver((status) => (prefs.saveStatus = status))
+  const autosaver = new Autosaver((status) => (prefs.saveStatus = status), () => !recovery.blocked)
 
   $effect(() => {
+    if (recovery.blocked) return
     // Snapshotting walks the document, registering a dependency on every field.
     const snapshot = resumeDoc.snapshot()
     autosaver.schedule(snapshot)

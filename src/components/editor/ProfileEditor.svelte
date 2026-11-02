@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/ui'
   import ContactEditor from './ContactEditor.svelte'
   import TextArea from '$components/ui/TextArea.svelte'
   import TextField from '$components/ui/TextField.svelte'
@@ -14,11 +15,11 @@
 
 {#key locale}
   <div class="field-row">
-    <TextField label="Name" bind:value={text[locale].name} />
-    <TextField label="Location" bind:value={text[locale].location} />
+    <TextField label={t(prefs.uiLocale, 'field.name')} bind:value={text[locale].name} />
+    <TextField label={t(prefs.uiLocale, 'field.location')} bind:value={text[locale].location} />
   </div>
-  <TextField label="Headline" bind:value={text[locale].headline} />
-  <TextArea label="Summary" bind:value={text[locale].summary} rows={3} />
+  <TextField label={t(prefs.uiLocale, 'field.headline')} bind:value={text[locale].headline} />
+  <TextArea label={t(prefs.uiLocale, 'field.summary')} bind:value={text[locale].summary} rows={3} />
 {/key}
 
 <ContactEditor />

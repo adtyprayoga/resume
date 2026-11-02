@@ -45,7 +45,7 @@ describe('saveDocument / loadDocument', () => {
   it('round-trips a document unchanged', () => {
     const doc = sampleDocument()
     expect(saveDocument(doc, storage).kind).toBe('saved')
-    expect(loadDocument(storage)).toEqual(doc)
+    expect(loadDocument(storage)).toEqual({ kind: 'loaded', document: doc })
   })
 
   it('reports a quota failure with actionable advice instead of failing silently', () => {
@@ -54,7 +54,10 @@ describe('saveDocument / loadDocument', () => {
     expect(status.kind).toBe('error')
     if (status.kind === 'error') {
       expect(status.message).toMatch(/storage/i)
-      expect(status.message).toMatch(/avatar/i)
+      expect(status.message).toMatch(/remove or resize your photo/i)
+      expect(status.message).toMatch(/export your JSON/i)
+      expect(status.message).not.toMatch(/image URL/i)
+      expect(status.messageKey).toBe('error.storageQuota')
     }
   })
 
@@ -63,18 +66,21 @@ describe('saveDocument / loadDocument', () => {
     expect(saveDocument(emptyDocument(), storage).kind).toBe('error')
   })
 
-  it('returns null when nothing is stored', () => {
-    expect(loadDocument(storage)).toBeNull()
+  it('is empty only when the key is absent', () => {
+    expect(loadDocument(storage)).toEqual({ kind: 'empty' })
   })
 
-  it('returns null for corrupt stored JSON rather than throwing', () => {
-    storage.setItem(DOCUMENT_KEY, '{not json')
-    expect(loadDocument(storage)).toBeNull()
-  })
-
-  it('returns null for a stored document from a newer schema version', () => {
-    storage.setItem(DOCUMENT_KEY, JSON.stringify({ schemaVersion: 99 }))
-    expect(loadDocument(storage)).toBeNull()
+  it.each([
+    ['an empty string', '', 'error.storedEmpty'],
+    ['corrupt JSON', '{not json', 'error.storedJson'],
+    ['a newer schema', JSON.stringify({ schemaVersion: 99 }), 'error.newerSchema'],
+    ['a non-document value', '[1,2]', 'error.notResume'],
+  ])('enters recovery for %s and keeps the original string', (_label, raw, messageKey) => {
+    storage.setItem(DOCUMENT_KEY, raw)
+    const result = loadDocument(storage)
+    expect(result).toMatchObject({ kind: 'recovery', raw, messageKey })
+    if (result.kind === 'recovery') expect(result.error).toBeTruthy()
+    expect(storage.getItem(DOCUMENT_KEY)).toBe(raw)
   })
 
   it('repairs a partially valid stored document instead of discarding it', () => {
@@ -82,18 +88,22 @@ describe('saveDocument / loadDocument', () => {
       DOCUMENT_KEY,
       JSON.stringify({ schemaVersion: 1, content: { experience: 'nope' } }),
     )
-    expect(loadDocument(storage)?.content.experience).toEqual([])
+    const result = loadDocument(storage)
+    expect(result.kind === 'loaded' && result.document.content.experience).toEqual([])
   })
 
   it('clears the stored document', () => {
     saveDocument(emptyDocument(), storage)
     clearDocument(storage)
-    expect(loadDocument(storage)).toBeNull()
+    expect(loadDocument(storage)).toEqual({ kind: 'empty' })
   })
 
-  it('reports an error when there is no storage at all', () => {
+  it('reports unavailable, not empty, when storage is missing or blocked', () => {
     expect(saveDocument(emptyDocument(), null).kind).toBe('error')
-    expect(loadDocument(null)).toBeNull()
+    expect(loadDocument(null)).toMatchObject({ kind: 'unavailable', messageKey: 'error.storageUnavailable' })
+    const blocked = new FakeStorage()
+    blocked.getItem = () => { throw new DOMException('denied', 'SecurityError') }
+    expect(loadDocument(blocked)).toMatchObject({ kind: 'unavailable' })
   })
 
   it('treats an omitted argument as this browser, not as missing storage', () => {

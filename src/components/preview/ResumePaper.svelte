@@ -32,7 +32,7 @@
   )
 </script>
 
-<article class="resume-paper" bind:this={element}>
+<article lang={locale} class="resume-paper" bind:this={element}>
   <ProfileHeader profile={resume.profile} contact={resume.contact} />
 
   {#each visible as section (section.kind)}
