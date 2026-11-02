@@ -70,18 +70,16 @@
   })
 
   /** An uncommitted draft is never reported as saved. */
-  const statusKind = $derived(
+  const statusKind = $derived<'error' | 'draft' | 'saving' | 'saved' | null>(
     prefs.saveStatus.kind === 'error'
       ? 'error'
       : editing.active
-        ? 'editing'
+        ? 'draft'
         : prefs.saving
           ? 'saving'
-          : prefs.changeSaved && prefs.saveStatus.kind === 'saved'
+          : prefs.saveStatus.kind === 'saved'
             ? 'saved'
-            : editing.mode === 'edit'
-              ? 'editing'
-              : 'preview',
+            : null,
   )
 
   /** Exports read the document, so the open draft is applied and rendered first. */
@@ -153,7 +151,7 @@
       <div class="app-brand">
         <p class="app-title">{t(prefs.uiLocale, 'app.title')}</p>
         <p class="app-status" class:error={statusKind === 'error'} role="status" aria-label={t(prefs.uiLocale, 'status.label')}>
-          {t(prefs.uiLocale, `status.${statusKind}`)}
+          {statusKind ? t(prefs.uiLocale, `status.${statusKind}`) : ''}
         </p>
       </div>
 

@@ -241,11 +241,19 @@ describe('settings panel', () => {
 describe('status', () => {
   const status = () => screen.getByRole('status', { name: 'Status' })
 
-  it('starts as Preview and shows Editing in Edit mode', async () => {
+  it('never shows the mode', async () => {
     render(App)
-    expect(status()).toHaveTextContent('Preview')
     await userEvent.setup().click(within(toolbar()).getByRole('button', { name: 'Edit' }))
-    expect(status()).toHaveTextContent('Editing')
+    expect(status()).not.toHaveTextContent('Preview')
+    expect(status()).not.toHaveTextContent('Editing')
+  })
+
+  it('shows Indonesian status text', async () => {
+    render(App)
+    prefs.uiLocale = 'id'
+    prefs.saveStatus = { kind: 'saved', at: Date.now() }
+    await tick()
+    expect(screen.getByRole('status', { name: 'Status' })).toHaveTextContent('Tersimpan di browser ini')
   })
 
   it('never calls an uncommitted draft saved', async () => {
@@ -253,11 +261,11 @@ describe('status', () => {
     prefs.saveStatus = { kind: 'saved', at: Date.now() }
     prefs.changeSaved = true
     await tick()
-    expect(status()).toHaveTextContent('Saved')
+    expect(status()).toHaveTextContent('Saved in this browser')
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     await tick()
-    expect(status()).toHaveTextContent('Editing')
+    expect(status()).toHaveTextContent('Change not applied yet')
     expect(status()).not.toHaveTextContent('Saved')
   })
 

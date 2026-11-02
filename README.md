@@ -107,9 +107,12 @@ at 320, 375, 768 and 1440px and phone landscape. Needs `chromium` and
 
 ## Workspace
 
-Above the resume are the title, the **Classic / ATS** layout selector, a status
-(Preview, Editing, Saving…, Saved, or a visible save error), and four icon
-actions, each with a tooltip:
+Above the resume are the title with a save status beneath it (Saving…, Saved
+in this browser, Change not applied yet, or a visible save error), the
+**Layout** selector (**Classic / ATS**; hovering or focusing ATS explains it),
+and four actions. **Edit / Done** is a labelled primary button; **Export** and
+**Import** show their names on wider screens and a tooltip on phones;
+**Settings** is an icon with a tooltip:
 
 | Action | What it does |
 | --- | --- |
