@@ -4,6 +4,7 @@
   import RecoveryScreen from './components/RecoveryScreen.svelte'
   import ThemeHost from './components/ThemeHost.svelte'
   import ExportMenu from './components/shell/ExportMenu.svelte'
+  import FirstRunIntro from './components/shell/FirstRunIntro.svelte'
   import IconButton from './components/shell/IconButton.svelte'
   import Icon from './components/shell/Icon.svelte'
   import EditLayer from './components/editing/EditLayer.svelte'
@@ -196,6 +197,8 @@
       </button>
     </div>
   {/if}
+
+  <FirstRunIntro onImport={openImport} />
 
   <div class="preview-container" bind:this={previewContainer}>
     <div class="resume-paper-frame" style={`--preview-zoom: ${previewZoom}`}>
