@@ -94,6 +94,11 @@
 
 @media print {
   /* Chrome is not fully reliable about honouring body-level zoom when printing. */
+  .resume-paper-frame {
+    width: auto !important;
+    max-width: none !important;
+  }
+
   .resume-paper,
   .resume-paper-frame {
     zoom: 1 !important;

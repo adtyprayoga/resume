@@ -10,7 +10,7 @@
   <article data-break-atom>
     <div class="item-head">
       <h3 class="item-title">
-        {item.name}{#if item.role}<span class="item-role"> — {item.role}</span>{/if}
+        {item.name}{#if item.role}<span class="item-role">&nbsp;— {item.role}</span>{/if}
       </h3>
       <span class="item-dates">{formatRange(item.dates, locale, t(locale, 'date.present'))}</span>
     </div>
