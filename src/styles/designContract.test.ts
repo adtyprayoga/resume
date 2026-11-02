@@ -67,27 +67,50 @@ describe('contrast', () => {
   })
 })
 
+const CONTRAST_PAIRS = [
+  ['--color-ink', '--color-surface', 7],
+  ['--color-ink', '--color-canvas', 7],
+  ['--color-ink', '--color-fill-hover', 7],
+  ['--color-muted', '--color-surface', 7],
+  ['--color-muted', '--color-canvas', 7],
+  ['--color-muted', '--color-fill-hover', 7],
+  ['--color-on-accent', '--color-accent-strong', 7],
+  ['--color-on-accent', '--color-accent-strong-hover', 7],
+  ['--color-danger', '--color-surface', 7],
+  ['--color-danger', '--color-canvas', 7],
+  ['--color-danger', '--color-danger-tint', 7],
+  ['--color-line', '--color-surface', 3],
+  ['--color-line', '--color-canvas', 3],
+  ['--color-accent-strong', '--color-surface', 3],
+  ['--color-accent-strong', '--color-canvas', 3],
+] as const
+
 describe('tokens', () => {
   const light = readTokens(tokensCss, 'light')
+  const dark = readTokens(tokensCss, 'dark')
 
-  it.each([
-    ['--color-ink', '--color-surface', 7],
-    ['--color-ink', '--color-canvas', 7],
-    ['--color-ink', '--color-fill-hover', 7],
-    ['--color-muted', '--color-surface', 7],
-    ['--color-muted', '--color-canvas', 7],
-    ['--color-muted', '--color-fill-hover', 7],
-    ['--color-on-accent', '--color-accent-strong', 7],
-    ['--color-on-accent', '--color-accent-strong-hover', 7],
-    ['--color-danger', '--color-surface', 7],
-    ['--color-danger', '--color-canvas', 7],
-    ['--color-danger', '--color-danger-tint', 7],
-    ['--color-line', '--color-surface', 3],
-    ['--color-line', '--color-canvas', 3],
-    ['--color-accent-strong', '--color-surface', 3],
-    ['--color-accent-strong', '--color-canvas', 3],
-  ] as const)('light %s on %s ≥ %d:1', (fg, bg, min) => {
+  it.each(CONTRAST_PAIRS)('light %s on %s ≥ %d:1', (fg, bg, min) => {
     expect(contrast(light[fg]!, light[bg]!)).toBeGreaterThanOrEqual(min)
+  })
+
+  it.each(CONTRAST_PAIRS)('dark %s on %s ≥ %d:1', (fg, bg, min) => {
+    expect(contrast(dark[fg]!, dark[bg]!)).toBeGreaterThanOrEqual(min)
+  })
+
+  it('has a distinct dark palette', () => {
+    expect(dark['--color-surface']).not.toBe(light['--color-surface'])
+  })
+
+  it('paper frame re-declares the light palette', () => {
+    const firstSelector = tokensCss.replace(/\/\*[\s\S]*?\*\//g, '').split('{')[0]!
+    expect(firstSelector.split(',').map((part) => part.trim())).toContain('.resume-paper-frame')
+    expect(tokensCss).toMatch(/@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{/)
+  })
+
+  it('declares color-scheme', () => {
+    expect(light['--color-ink']).toBeDefined()
+    expect(tokensCss).toMatch(/\.resume-paper-frame\s*\{[^}]*color-scheme: light;/)
+    expect(tokensCss).toMatch(/@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{[^}]*color-scheme: dark;/)
   })
 
   it('never uses pure black', () => {
