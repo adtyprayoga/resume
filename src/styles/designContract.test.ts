@@ -114,3 +114,15 @@ describe('controls', () => {
     expect(css).toMatch(/\[aria-invalid='true'\][^{]*\{[^}]*border: 2px solid var\(--color-danger\)/)
   })
 })
+
+describe('navigation', () => {
+  it('pressed toggle has a forced-colors outline', () => {
+    const css = read('src/components/editor/drawer.css')
+    expect(css).toMatch(/@media \(forced-colors: active\)\s*\{[^@]*\.toggle-group button\[aria-pressed='true'\][^}]*outline: 2px solid/)
+  })
+
+  it('marks the active toggle with the accent indicator', () => {
+    const css = read('src/components/editor/drawer.css')
+    expect(css).toMatch(/\.toggle-group button\[aria-pressed='true'\]\s*\{[^}]*font-weight: 500;[^}]*box-shadow: inset 0 -2px 0 var\(--color-accent-strong\)/)
+  })
+})
