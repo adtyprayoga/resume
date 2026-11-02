@@ -6,6 +6,7 @@ import { getSectionModule } from '$lib/sections/registry'
 
 interface Identified {
   id: string
+  [key: string]: unknown
 }
 
 /**
@@ -36,8 +37,9 @@ class ResumeDocumentStore {
     return this.current.content[kind] as unknown as Identified[]
   }
 
-  addItem(kind: ListSectionKind): string {
-    const item = getSectionModule(kind).emptyItem() as Identified
+  /** `prepared` is a staged entry confirmed by the editor; otherwise a blank item. */
+  addItem(kind: ListSectionKind, prepared?: Identified): string {
+    const item = prepared ?? (getSectionModule(kind).emptyItem() as Identified)
     this.list(kind).push(item)
     return item.id
   }

@@ -4,6 +4,7 @@ import { tick } from 'svelte'
 import App from './App.svelte'
 import { resumeDoc } from '$lib/state/document.svelte'
 import { prefs } from '$lib/state/preferences.svelte'
+import { editing } from '$lib/state/editing.svelte'
 import { AUTOSAVE_DELAY_MS } from '$lib/state/autosave'
 import { DOCUMENT_KEY, PREFERENCES_KEY } from '$lib/storage/persist'
 import { defaultTheme, getTheme } from '$lib/themes/index'
@@ -17,7 +18,7 @@ beforeEach(() => {
   prefs.themeKey = defaultTheme.key
   prefs.uiLocale = 'en'
   prefs.documentLocale = 'en'
-  prefs.drawerOpen = false
+  editing.reset()
 })
 
 afterEach(() => {
@@ -80,16 +81,15 @@ describe('resume layout selection', () => {
     expect(JSON.parse(localStorage.getItem(DOCUMENT_KEY)!)).toEqual(JSON.parse(before))
   })
 
-  it('keeps the open editor mounted with its unfinished input', async () => {
+  it('applies and closes an unfinished edit before switching layout', async () => {
     render(App)
-    prefs.openDrawer('profile')
-    await tick()
-    const input = screen.getByLabelText(/^Name/) as HTMLInputElement
-    input.value = 'half-typed'
-    prefs.themeKey = 'ats'
-    await tick()
-    expect(screen.getByLabelText(/^Name/)).toBe(input)
-    expect(input.value).toBe('half-typed')
+    editing.enter()
+    editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
+    editing.setDraft('profile.name', 'half-typed')
+    await fireEvent.click(screen.getByRole('button', { name: 'Resume layout: ATS' }))
+    expect(editing.active).toBeNull()
+    expect(resumeDoc.current.profile.text.en.name).toBe('half-typed')
+    expect(paper()).toHaveAttribute('data-presentation', 'ats')
   })
 
   it('hides the layout controls when printing', () => {

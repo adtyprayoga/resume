@@ -1,0 +1,228 @@
+/* Workspace chrome: warm off-white desk, white paper, thin rules. Screen only. */
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-block: 0 1.5rem;
+  background: #f6f4ef;
+  color: #262626;
+}
+
+.app-header {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(210mm + 34px);
+  margin-inline: auto;
+  padding: 0.75rem 16px;
+}
+
+.app-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #171717;
+}
+
+.app-status {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #57534e;
+  white-space: nowrap;
+}
+
+.app-status.error {
+  color: #b91c1c;
+}
+
+.app-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.app-header .save-status.error {
+  margin-top: 0.5rem;
+}
+
+.layout-select {
+  border-color: #e0dcd3;
+}
+
+/* ---- Icon actions ---- */
+
+.icon-action,
+.menu-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #e0dcd3;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #262626;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: #faf9f6;
+  border-color: #c8c2b6;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid #171717;
+  outline-offset: 2px;
+}
+
+.icon-btn[aria-expanded='true'] {
+  border-color: #171717;
+}
+
+.icon-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 40;
+  translate: -50% 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #171717;
+  color: #fff;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms;
+}
+
+.icon-btn:hover + .icon-tip,
+.icon-btn:focus-visible + .icon-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* The last action's tip would overhang the right edge on narrow screens. */
+.app-actions > :last-child .icon-tip {
+  left: auto;
+  right: 0;
+  translate: none;
+}
+
+.icon-btn[aria-expanded='true'] + .icon-tip {
+  visibility: hidden;
+}
+
+/* ---- Export menu ---- */
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 45;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 12rem;
+  padding: 0.375rem;
+  border: 1px solid #e0dcd3;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 0.625rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  font-size: 0.875rem;
+  color: #262626;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: #f5f3ee;
+  outline: 2px solid #171717;
+  outline-offset: -2px;
+}
+
+/* ---- Settings ---- */
+
+.settings-panel {
+  width: min(26rem, 100vw);
+}
+
+.settings-head {
+  align-items: center;
+}
+
+.settings-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.settings-group + .settings-group {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ededed;
+}
+
+.settings-subhead {
+  margin: 0 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #57534e;
+}
+
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.settings-row .field-label {
+  margin: 0;
+}
+
+.settings-body .field-hint + .field-hint {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 479px) {
+  .app-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app-title {
+    flex: 1;
+  }
+}

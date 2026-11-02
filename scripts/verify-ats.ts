@@ -357,10 +357,10 @@ class Cdp {
     return new Promise((resolve, reject) => this.pending.set(id, { resolve, reject }))
   }
 
-  once(method: string): Promise<any> {
+  once(method: string, accept: (params: any) => boolean = () => true): Promise<any> {
     return new Promise((resolve) => {
       const listener = (message: any) => {
-        if (message.method !== method) return
+        if (message.method !== method || !accept(message.params)) return
         this.listeners = this.listeners.filter((other) => other !== listener)
         resolve(message.params)
       }
@@ -415,6 +415,8 @@ const startChromium = async () => {
   cdp.sessionId = sessionId
   await cdp.send('Page.enable')
   await cdp.send('Runtime.enable')
+  // A background headless tab is otherwise unfocused, and focus events would not behave as in a window.
+  await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true })
   return { cdp, stop: () => { cdp.close(); browser.kill() } }
 }
 
@@ -422,6 +424,22 @@ const main = async () => {
   const server = process.argv[2] ? { url: process.argv[2], stop: () => {} } : await startServer()
   const chromium = await startChromium()
   const { cdp } = chromium
+  // Counts live listeners on window and visualViewport, so a closed editor
+  // that forgets to unsubscribe shows up as a leak.
+  await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `(() => {
+      const live = new Set(); const ids = new WeakMap(); let next = 0
+      const id = (fn) => { if (!ids.has(fn)) ids.set(fn, ++next); return ids.get(fn) }
+      const capture = (o) => typeof o === 'boolean' ? o : !!(o && o.capture)
+      for (const target of [window, window.visualViewport].filter(Boolean)) {
+        const name = target === window ? 'w' : 'v'
+        const add = target.addEventListener.bind(target), remove = target.removeEventListener.bind(target)
+        target.addEventListener = (type, fn, o) => { if (fn) live.add(name + type + id(fn) + capture(o)); return add(type, fn, o) }
+        target.removeEventListener = (type, fn, o) => { if (fn) live.delete(name + type + id(fn) + capture(o)); return remove(type, fn, o) }
+      }
+      window.__activeListeners = () => live.size
+    })()`,
+  })
 
   const evaluate = async (expression: string) => {
     const { result, exceptionDetails } = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
@@ -465,6 +483,43 @@ const main = async () => {
     return inspect(path)
   }
   const presentation = () => evaluate(`document.querySelector('.resume-paper')?.dataset.presentation`)
+  /** Document and app settings live in the Settings panel. */
+  const inSettings = async (label: string) => {
+    await click('Settings')
+    await click(label)
+    await key('Escape')
+  }
+  const clickSelector = async (selector: string) => {
+    const found = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return false; e.click(); return true })()`)
+    if (!found) throw new Error(`nothing matches ${selector}`)
+    await settle()
+  }
+  const KEYS: Record<string, { code: string; keyCode: number }> = {
+    Enter: { code: 'Enter', keyCode: 13 },
+    Escape: { code: 'Escape', keyCode: 27 },
+  }
+  const key = async (name: keyof typeof KEYS) => {
+    const { code, keyCode } = KEYS[name]!
+    for (const type of ['keyDown', 'keyUp'] as const) {
+      // Enter carries text so it also performs a form's implicit submission, as a real key does.
+      const text = type === 'keyDown' && name === 'Enter' ? { text: '\r', unmodifiedText: '\r' } : {}
+      await cdp.send('Input.dispatchKeyEvent', { type, key: name, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode, ...text })
+    }
+    await settle()
+  }
+  const typeText = async (text: string) => {
+    await cdp.send('Input.insertText', { text })
+    await settle()
+  }
+  const selectAll = () => evaluate(`document.activeElement?.select?.()`)
+  const storedDoc = async () => JSON.parse(await evaluate(`localStorage.getItem(${JSON.stringify(DOCUMENT_KEY)})`))
+  const samePdf = (left: PdfReport, right: PdfReport) =>
+    left.pages === right.pages &&
+    squash(left.normal) === squash(right.normal) &&
+    squash(left.raw) === squash(right.raw) &&
+    left.sizes.join() === right.sizes.join() &&
+    left.words.length === right.words.length &&
+    left.words.every((w, i) => Math.abs(w.xMin - right.words[i]!.xMin) < 0.5 && Math.abs(w.yMin - right.words[i]!.yMin) < 0.5)
 
   try {
     const prefs = { uiLocale: 'en', documentLocale: 'en', themeKey: 'minimal', fontScale: 'standard' }
@@ -498,10 +553,10 @@ const main = async () => {
     console.log('\nATS, page guides follow font size')
     const guides = () => evaluate(`[...document.querySelectorAll('.page-break')].map((e) => e.style.top).join(',')`)
     const before = await guides()
-    await click('Font size: large')
+    await inSettings('Font size: large')
     const after = await guides()
     check(before !== '' && after !== '' && before !== after, `guides moved (${before} → ${after})`)
-    await click('Font size: medium')
+    await inSettings('Font size: medium')
     check((await guides()) === before, 'guides return with the font size')
 
     console.log('\nATS, phone preview and background graphics')
@@ -516,7 +571,7 @@ const main = async () => {
     await viewport(1440, 900)
 
     console.log('\nATS, Indonesian')
-    await click('Resume language: Indonesian')
+    await inSettings('Resume language: Indonesian')
     const atsId = await print('ats-id-desktop')
     checkSequence('normal text', atsId.normal, atsSequence('id'))
     checkSequence('raw text', atsId.raw, atsSequence('id'))
@@ -527,7 +582,7 @@ const main = async () => {
     const atsIdPhone = await print('ats-id-phone-bg', true)
     check(atsIdPhone.pages === atsId.pages && squash(atsIdPhone.normal) === squash(atsId.normal), 'Indonesian matches from phone with backgrounds on')
     await viewport(1440, 900)
-    await click('Resume language: English')
+    await inSettings('Resume language: English')
 
     console.log('\nBack to Classic')
     await click('Resume layout: Classic')
@@ -549,6 +604,109 @@ const main = async () => {
     checkClean('ATS remote photo', remote)
     check(!(await evaluate(`document.querySelector('.resume-paper').textContent.includes('photos.invalid')`)), 'no consent prompt in the paper')
 
+    console.log('\nPreview and Edit print the same document')
+    for (const themeKey of ['minimal', 'ats']) {
+      for (const documentLocale of ['en', 'id']) {
+        await seed(fixture, { ...prefs, themeKey, documentLocale })
+        const preview = await print(`${themeKey}-${documentLocale}-preview`)
+        await click('Edit')
+        // Select an entry so its actions and the blank-field prompts are on screen.
+        await clickSelector('[data-entry="experience:exp_2"]')
+        const editingCount = await evaluate(`document.querySelectorAll('.edit-prompt, .entry-actions, .add-entry').length`)
+        const edit = await print(`${themeKey}-${documentLocale}-edit`)
+        check(editingCount > 3 && samePdf(preview, edit), `${themeKey} ${documentLocale}: identical text, reading order, pages and word positions (${edit.pages} pages, ${editingCount} edit controls on screen)`)
+        checkClean(`${themeKey} ${documentLocale} edit`, edit)
+        check(!/\+ (Team|Location|Add entry)|Edit entry|No entries yet/.test(edit.normal), `${themeKey} ${documentLocale}: no prompts or entry actions in the PDF`)
+        await click('Done')
+      }
+    }
+
+    console.log('\nEditing through the interface')
+    await seed(fixture, prefs)
+    const listeners = () => evaluate(`window.__activeListeners?.()`)
+    const frames = () => evaluate(`new Promise((done) => { let n = 0; const raf = window.requestAnimationFrame; window.requestAnimationFrame = (cb) => { n += 1; return raf(cb) }; setTimeout(() => { window.requestAnimationFrame = raf; done(n) }, 1000) })`)
+    const idleListeners = await listeners()
+    check((await frames()) === 0, 'no idle frame work in Preview')
+    await click('Edit')
+    check((await frames()) === 0, 'no idle frame work in Edit mode')
+
+    await clickSelector('[data-edit-key="profile.headline"]')
+    const inlineOutside = await evaluate(`(() => { const i = document.querySelector('.inline-editor input'); return !!i && document.activeElement === i && !document.querySelector('.resume-paper').contains(i) && parseFloat(getComputedStyle(i).fontSize) >= 16 })()`)
+    check(inlineOutside, 'inline editor opens outside the paper with 16px text')
+    await selectAll()
+    await typeText('Principal Engineer EDITED')
+    await key('Escape')
+    check((await storedDoc()).profile.text.en.headline === fixture.profile.text.en.headline, 'Escape leaves the headline unchanged')
+
+    await clickSelector('[data-edit-key="profile.headline"]')
+    await selectAll()
+    await typeText('Principal Engineer PHEADEDIT')
+    await key('Enter')
+    await Bun.sleep(900)
+    check((await storedDoc()).profile.text.en.headline === 'Principal Engineer PHEADEDIT', 'Enter applies and autosaves the headline')
+
+    await clickSelector('[data-add-entry="awards"]')
+    await typeText('Community Prize A3TITLE')
+    await key('Enter')
+    await Bun.sleep(900)
+    const awards = (await storedDoc()).content.awards
+    check(awards.length === 3 && awards[2].text.en.title === 'Community Prize A3TITLE', 'a staged award is added on Apply')
+
+    // An open draft must reach the PDF and the JSON export too.
+    await clickSelector('[data-edit-key="profile.name"]')
+    await selectAll()
+    await typeText('Kurniawati Wulandari PNAMEDRAFT')
+    const draftPdf = await print('draft-open')
+    check(squash(draftPdf.normal).includes('PNAMEDRAFT'), 'native printing applies the open draft first')
+    checkClean('draft PDF', draftPdf)
+
+    await clickSelector('[data-edit-key="contact.email"]')
+    await selectAll()
+    await typeText('json.export.ctmail@example.com')
+    await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: work, eventsEnabled: true }, '')
+    const downloaded = cdp.once('Browser.downloadProgress', (params) => params.state !== 'inProgress')
+    await click('Export')
+    await clickSelector('[role="menuitem"]:nth-child(2)')
+    const progress = await Promise.race([downloaded, Bun.sleep(10_000).then(() => ({ state: 'timeout' }))])
+    check(progress.state === 'completed', `JSON export downloads (${progress.state})`)
+    const exported = JSON.parse(await Bun.file(join(work, (await Array.fromAsync(new Bun.Glob('*.json').scan(work)))[0]!)).text())
+    check(exported.contact.email === 'json.export.ctmail@example.com', 'JSON export applies the open draft first')
+
+    await click('Done')
+    check((await listeners()) === idleListeners, `no listeners left after closing editors (${await listeners()} active, ${idleListeners} at rest)`)
+    check((await frames()) === 0, 'no idle frame work after editing')
+
+    await Bun.sleep(900)
+    await load()
+    const reloaded = await storedDoc()
+    check(
+      reloaded.profile.text.en.headline === 'Principal Engineer PHEADEDIT' &&
+        reloaded.profile.text.en.name === 'Kurniawati Wulandari PNAMEDRAFT' &&
+        reloaded.contact.email === 'json.export.ctmail@example.com' &&
+        reloaded.content.awards.length === 3,
+      'edits survive a reload',
+    )
+    check(squash(await evaluate(`document.querySelector('.resume-paper').textContent`)).includes('PHEADEDIT'), 'reloaded paper shows the edits')
+
+    console.log('\nPhone sheet with an open keyboard')
+    await seed(fixture, prefs)
+    await viewport(375, 812)
+    await click('Edit')
+    await clickSelector('[data-edit-key="profile.headline"]')
+    // A software keyboard shrinks the visual viewport; emulate it by shrinking the window.
+    await viewport(375, 420)
+    const sheet = await evaluate(`(() => {
+      const sheet = document.querySelector('.edit-sheet'); if (!sheet) return null
+      const apply = [...sheet.querySelectorAll('button')].find((b) => b.type === 'submit')
+      const r = apply.getBoundingClientRect(); const input = sheet.querySelector('input')
+      return { visible: r.bottom <= innerHeight && r.top >= 0, size: Math.min(r.width, r.height), font: parseFloat(getComputedStyle(input).fontSize), scale: getComputedStyle(sheet).zoom }
+    })()`)
+    check(!!sheet && sheet.visible && sheet.size >= 44 && sheet.font >= 16, `sheet actions stay visible above the keyboard (${JSON.stringify(sheet)})`)
+    const [sheetScroll, sheetClient] = await evaluate(`[document.documentElement.scrollWidth, document.documentElement.clientWidth]`)
+    check(sheetScroll <= sheetClient + 1, `no overflow with the sheet open (${sheetScroll} <= ${sheetClient} + 1)`)
+    await key('Escape')
+    await viewport(1440, 900)
+
     console.log('\nNo horizontal overflow')
     for (const themeKey of ['minimal', 'ats']) {
       await seed(fixture, { ...prefs, themeKey })
@@ -557,6 +715,15 @@ const main = async () => {
         const [scroll, client] = await evaluate(`[document.documentElement.scrollWidth, document.documentElement.clientWidth]`)
         check(scroll <= client + 1, `${themeKey} at ${width}x${height}: scrollWidth ${scroll} <= clientWidth ${client} + 1`)
       }
+      await click('Edit')
+      await clickSelector('[data-entry="experience:exp_1"]')
+      for (const [width, height] of [[320, 640], [375, 812], [768, 1024], [1440, 900], [812, 375]] as const) {
+        await viewport(width, height)
+        const [scroll, client] = await evaluate(`[document.documentElement.scrollWidth, document.documentElement.clientWidth]`)
+        const small = await evaluate(`[...document.querySelectorAll('.app-actions button, .entry-actions button, .add-entry')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && (r.width < 43.5 || r.height < 43.5) }).length`)
+        check(scroll <= client + 1 && small === 0, `${themeKey} editing at ${width}x${height}: scrollWidth ${scroll} <= ${client} + 1, ${small} targets under 44px`)
+      }
+      await click('Done')
     }
   } finally {
     chromium.stop()

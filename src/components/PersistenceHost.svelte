@@ -7,14 +7,28 @@
   import { prefs } from '$lib/state/preferences.svelte'
   import { savePreferences } from '$lib/storage/persist'
 
-  const autosaver = new Autosaver((status) => (prefs.saveStatus = status), () => !recovery.blocked)
+  // The first schedule writes what was just loaded; only later ones are the user's changes.
+  let initial = true
+  let changing = false
+
+  const autosaver = new Autosaver((status) => {
+    prefs.saveStatus = status
+    prefs.saving = false
+    if (changing && status.kind === 'saved') prefs.changeSaved = true
+  }, () => !recovery.blocked)
 
   $effect(() => {
     if (recovery.blocked) return
     // Snapshotting walks the document, registering a dependency on every field.
     const snapshot = resumeDoc.snapshot()
+    changing = !initial
+    initial = false
+    if (changing) prefs.saving = true
     autosaver.schedule(snapshot)
-    return () => autosaver.cancel()
+    return () => {
+      autosaver.cancel()
+      prefs.saving = false
+    }
   })
 
   $effect(() => {

@@ -1,7 +1,12 @@
 <script lang="ts">
+  import Editable from '$components/editing/Editable.svelte'
+  import EntryShell from '$components/editing/EntryShell.svelte'
+  import Joined from '$components/editing/Joined.svelte'
   import { formatRange } from '$lib/model/dates'
   import { t } from '$lib/i18n/ui'
+  import type { FieldRef } from '$lib/editing/fields'
   import type { Locale, ResolvedProjectItem } from '$lib/model/types'
+  import { editing } from '$lib/state/editing.svelte'
   import type { ResumePresentation } from '$lib/themes/types'
 
   const {
@@ -9,51 +14,61 @@
     locale,
     presentation = 'classic',
   }: { items: ResolvedProjectItem[]; locale: Locale; presentation?: ResumePresentation } = $props()
+
+  const R = (id: string, key: string): FieldRef => ({ owner: 'item', section: 'projects', id, key })
+  const editMode = $derived(editing.mode === 'edit')
 </script>
+
+{#snippet tail(item: ResolvedProjectItem)}
+  {#if item.description}
+    <p class="item-desc"><Editable ref={R(item.id, 'description')} value={item.description} /></p>
+  {:else if editMode}
+    <p class="item-desc" data-print-hide><Editable ref={R(item.id, 'description')} value="" /></p>
+  {/if}
+  {#if item.bullets.length}
+    <ul class="item-bullets">
+      {#each item.bullets as bullet, index (index)}
+        <li><Editable ref={R(item.id, 'bullets')} value={bullet} /></li>
+      {/each}
+    </ul>
+  {:else if editMode}
+    <p class="item-desc" data-print-hide><Editable ref={R(item.id, 'bullets')} value="" /></p>
+  {/if}
+  {#if item.link}
+    <p class="item-link"><Editable ref={R(item.id, 'link')} value={item.link} /></p>
+  {:else if editMode}
+    <p class="item-link" data-print-hide><Editable ref={R(item.id, 'link')} value="" /></p>
+  {/if}
+{/snippet}
 
 {#if presentation === 'ats'}
   {#each items as item (item.id)}
     {@const dates = formatRange(item.dates, locale, t(locale, 'date.present'))}
-    <article class="ats-entry" data-break-atom>
-      <h3 class="item-title">{[item.name, item.role].filter(Boolean).join(' — ')}</h3>
-      {#if dates}<p class="item-dates">{dates}</p>{/if}
-      {#if item.techStack.length}<p class="item-meta">{item.techStack.join(', ')}</p>{/if}
-      {#if item.description}<p class="item-desc">{item.description}</p>{/if}
-      {#if item.bullets.length}
-        <ul class="item-bullets">
-          {#each item.bullets as bullet, index (index)}
-            <li>{bullet}</li>
-          {/each}
-        </ul>
-      {/if}
-      {#if item.link}<p class="item-link">{item.link}</p>{/if}
-    </article>
+    {@const title = [{ ref: R(item.id, 'name'), value: item.name }, { ref: R(item.id, 'role'), value: item.role }]}
+    {@const tech = item.techStack.join(', ')}
+    <EntryShell section="projects" id={item.id} class="ats-entry">
+      <h3 class="item-title"><Joined parts={title} separator=" — " /></h3>
+      {#if dates}<p class="item-dates"><Editable ref={R(item.id, 'dates')} value={dates} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'dates')} value="" /></p>{/if}
+      {#if tech}<p class="item-meta"><Editable ref={R(item.id, 'techStack')} value={tech} /></p>{:else if editMode}<p class="item-meta" data-print-hide><Editable ref={R(item.id, 'techStack')} value="" /></p>{/if}
+      {@render tail(item)}
+    </EntryShell>
   {/each}
 {:else}
   {#each items as item (item.id)}
-    <article data-break-atom>
+    {@const tech = item.techStack.join(' · ')}
+    <EntryShell section="projects" id={item.id}>
       <div class="item-head">
         <h3 class="item-title">
-          {item.name}{#if item.role}<span class="item-role">&nbsp;— {item.role}</span>{/if}
+          <Editable ref={R(item.id, 'name')} value={item.name} />{#if item.role}<span class="item-role">&nbsp;— <Editable ref={R(item.id, 'role')} value={item.role} /></span>{:else if editMode}<Editable ref={R(item.id, 'role')} value="" />{/if}
         </h3>
-        <span class="item-dates">{formatRange(item.dates, locale, t(locale, 'date.present'))}</span>
+        <span class="item-dates"><Editable ref={R(item.id, 'dates')} value={formatRange(item.dates, locale, t(locale, 'date.present'))} /></span>
       </div>
-      {#if item.techStack.length}
-        <p class="item-meta">{item.techStack.join(' · ')}</p>
+      {#if tech}
+        <p class="item-meta"><Editable ref={R(item.id, 'techStack')} value={tech} /></p>
+      {:else if editMode}
+        <p class="item-meta" data-print-hide><Editable ref={R(item.id, 'techStack')} value="" /></p>
       {/if}
-      {#if item.description}
-        <p class="item-desc">{item.description}</p>
-      {/if}
-      {#if item.bullets.length}
-        <ul class="item-bullets">
-          {#each item.bullets as bullet, index (index)}
-            <li>{bullet}</li>
-          {/each}
-        </ul>
-      {/if}
-      {#if item.link}
-        <p class="item-link">{item.link}</p>
-      {/if}
-    </article>
+      {@render tail(item)}
+    </EntryShell>
   {/each}
 {/if}

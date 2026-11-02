@@ -3,20 +3,22 @@
   import PersistenceHost from './components/PersistenceHost.svelte'
   import RecoveryScreen from './components/RecoveryScreen.svelte'
   import ThemeHost from './components/ThemeHost.svelte'
-  import EditorDrawer from './components/editor/EditorDrawer.svelte'
+  import ExportMenu from './components/shell/ExportMenu.svelte'
+  import IconButton from './components/shell/IconButton.svelte'
+  import Icon from './components/shell/Icon.svelte'
+  import EditLayer from './components/editing/EditLayer.svelte'
+  import SettingsPanel from './components/shell/SettingsPanel.svelte'
   import PageBreakOverlay from './components/preview/PageBreakOverlay.svelte'
   import ResumePaper from './components/preview/ResumePaper.svelte'
-  import { sampleDocument } from './data/sample'
+  import { flushSync, untrack } from 'svelte'
   import { resumeFileName, serializeResume } from '$lib/io/exportJson'
   import { t, translatedMessage } from '$lib/i18n/ui'
-  import type { Locale } from '$lib/model/types'
   import { printResume } from '$lib/print/print'
   import { resumeDoc } from '$lib/state/document.svelte'
+  import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
   import { recovery } from '$lib/state/recovery.svelte'
-  import { clearDocument } from '$lib/storage/persist'
-  import { FONT_SCALES, resumeThemes } from '$lib/themes/index'
-  import type { FontScaleKey } from '$lib/themes/types'
+  import { resumeThemes } from '$lib/themes/index'
 
   // Before PersistenceHost mounts, so autosave cannot write a fresh sample over
   // stored work on first paint. Unreadable data blocks the app behind recovery.
@@ -27,7 +29,7 @@
   let previewContainer = $state<HTMLDivElement | undefined>()
   let previewZoom = $state(1)
   let importing = $state(false)
-  let confirmReset = $state(false)
+  let settingsOpen = $state(false)
 
   $effect(() => { document.documentElement.lang = prefs.uiLocale })
 
@@ -55,163 +57,165 @@
 
   const locale = $derived(prefs.documentLocale)
   const resume = $derived(resumeDoc.resolved(locale))
-  const fileName = $derived(resumeFileName(resume.profile.name, locale))
-  const untranslated = $derived(resumeDoc.untranslatedCount(locale))
+  /** Read at export time, after the draft is committed, never from a stale derived value. */
+  const currentFileName = () => resumeFileName(resumeDoc.resolved(locale).profile.name, locale)
 
-  const download = () => {
-    const blob = new Blob([serializeResume(resumeDoc.snapshot())], { type: 'application/json' })
+  // A confirmed import or reset replaces the document; an edit of the old one must not land on it.
+  $effect(() => {
+    void resumeDoc.generation
+    untrack(() => editing.discardStale())
+  })
+
+  /** An uncommitted draft is never reported as saved. */
+  const statusKind = $derived(
+    prefs.saveStatus.kind === 'error'
+      ? 'error'
+      : editing.active
+        ? 'editing'
+        : prefs.saving
+          ? 'saving'
+          : prefs.changeSaved && prefs.saveStatus.kind === 'saved'
+            ? 'saved'
+            : editing.mode === 'edit'
+              ? 'editing'
+              : 'preview',
+  )
+
+  /** Exports read the document, so the open draft is applied and rendered first. */
+  const commitForExport = () => {
+    editing.commit()
+    flushSync()
+  }
+
+  // The browser's own print command (Ctrl+P) must also see the latest edit.
+  $effect(() => {
+    window.addEventListener('beforeprint', commitForExport)
+    return () => window.removeEventListener('beforeprint', commitForExport)
+  })
+
+  const exportJson = () => {
+    commitForExport()
+    const snapshot = resumeDoc.snapshot()
+    const blob = new Blob([serializeResume(snapshot)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${fileName}.json`
+    link.download = `${currentFileName()}.json`
     link.click()
     URL.revokeObjectURL(url)
   }
 
-  const reset = () => {
-    if (!confirmReset) {
-      confirmReset = true
-      return
-    }
-    confirmReset = false
-    clearDocument()
-    resumeDoc.replace(sampleDocument())
+  const exportPdf = () => {
+    commitForExport()
+    void printResume(currentFileName())
   }
 
-  const otherLocale = (value: Locale): Locale => (value === 'id' ? 'en' : 'id')
+  const toggleEdit = () => {
+    if (editing.mode === 'edit') editing.finish()
+    else editing.enter()
+  }
+
+  const openSettings = () => {
+    editing.suspend()
+    settingsOpen = true
+  }
+
+  const closeSettings = () => {
+    settingsOpen = false
+    editing.resume()
+  }
+
+  const openImport = () => {
+    editing.suspend()
+    importing = true
+  }
+
+  const closeImport = () => {
+    importing = false
+    editing.resume()
+  }
 </script>
 
 <PersistenceHost />
 <ThemeHost />
 
 {#if recovery.blocked}
-<div class="app-shell min-h-screen bg-neutral-100 py-6">
+<div class="app-shell">
   <RecoveryScreen />
 </div>
 {:else}
-<div class="app-shell min-h-screen bg-neutral-100 py-6">
-  <div class="app-controls mx-auto mb-4" data-print-hide>
-    <div class="toolbar">
-      <button type="button" class="tool-btn primary" onclick={() => printResume(fileName)}>
-        {t(prefs.uiLocale, 'action.print')}
-      </button>
-      <button type="button" class="tool-btn" onclick={() => prefs.openDrawer('profile')}>
-        {t(prefs.uiLocale, 'action.edit')}
-      </button>
-      <button type="button" class="tool-btn" onclick={download}>
-        {t(prefs.uiLocale, 'action.exportJson')}
-      </button>
-      <button type="button" class="tool-btn" onclick={() => (importing = true)}>
-        {t(prefs.uiLocale, 'action.importJson')}
-      </button>
-      <button type="button" class="tool-btn" onclick={reset}>
-        {t(prefs.uiLocale, confirmReset ? 'action.confirmReset' : 'action.reset')}
-      </button>
-    </div>
+<div class="app-shell">
+  <header class="app-header" data-print-hide data-keeps-draft>
+    <div class="app-header-row">
+      <p class="app-title">{t(prefs.uiLocale, 'app.title')}</p>
 
-    <div class="toolbar">
-      <span class="toolbar-label">{t(prefs.uiLocale, 'app.resumeLanguage')}</span>
-      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.resumeLanguage')}>
-        {#each ['id', 'en'] as const as option (option)}
-          <button
-            type="button"
-            aria-label={t(prefs.uiLocale, 'app.documentLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
-            aria-pressed={prefs.documentLocale === option}
-            onclick={() => (prefs.documentLocale = option)}
-          >
-            {option.toUpperCase()}
-          </button>
-        {/each}
-      </div>
-
-      <span class="toolbar-label">{t(prefs.uiLocale, 'app.layout')}</span>
-      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.layout')}>
+      <div class="toggle-group layout-select" role="group" aria-label={t(prefs.uiLocale, 'app.layout')}>
         {#each resumeThemes as theme (theme.key)}
           <button
             type="button"
             aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
             aria-pressed={prefs.themeKey === theme.key}
-            onclick={() => (prefs.themeKey = theme.key)}
+            onclick={() => editing.setLayout(theme.key)}
           >
             {t(prefs.uiLocale, `layout.${theme.presentation}`)}
           </button>
         {/each}
       </div>
 
-      <span class="toolbar-label">{t(prefs.uiLocale, 'app.interfaceLanguage')}</span>
-      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.interfaceLanguage')}>
-        {#each ['id', 'en'] as const as option (option)}
-          <button
-            type="button"
-            aria-label={t(prefs.uiLocale, 'app.interfaceLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
-            aria-pressed={prefs.uiLocale === option}
-            onclick={() => (prefs.uiLocale = option)}
-          >
-            {option.toUpperCase()}
-          </button>
-        {/each}
-      </div>
+      <p class="app-status" class:error={statusKind === 'error'} role="status" aria-label={t(prefs.uiLocale, 'status.label')}>
+        {t(prefs.uiLocale, `status.${statusKind}`)}
+      </p>
 
-      <span class="toolbar-label">{t(prefs.uiLocale, 'app.fontSize')}</span>
-      <div class="toggle-group" role="group" aria-label={t(prefs.uiLocale, 'app.fontSize')}>
-        {#each Object.keys(FONT_SCALES) as FontScaleKey[] as scale (scale)}
-          <button
-            type="button"
-            aria-label={t(prefs.uiLocale, 'app.fontSizeOption', { size: t(prefs.uiLocale, `size.${scale}`) })}
-            aria-pressed={prefs.fontScale === scale}
-            onclick={() => (prefs.fontScale = scale)}
-          >
-            {scale === 'standard' ? 'M' : scale === 'xsmall' ? 'XS' : scale === 'small' ? 'S' : 'L'}
-          </button>
-        {/each}
+      <div class="app-actions" role="toolbar" aria-label={t(prefs.uiLocale, 'app.actions')}>
+        <ExportMenu onPdf={exportPdf} onJson={exportJson} />
+        <IconButton icon="import" label={t(prefs.uiLocale, 'action.import')} haspopup="dialog" onclick={openImport} />
+        <IconButton
+          icon={editing.mode === 'edit' ? 'done' : 'edit'}
+          label={t(prefs.uiLocale, editing.mode === 'edit' ? 'action.done' : 'action.edit')}
+          onclick={toggleEdit}
+        />
+        <IconButton icon="settings" label={t(prefs.uiLocale, 'action.settings')} haspopup="dialog" onclick={openSettings} />
       </div>
-
-      <div class="toggle-group">
-        <button
-          type="button"
-          aria-pressed={prefs.showPageBreaks}
-          onclick={() => (prefs.showPageBreaks = !prefs.showPageBreaks)}
-        >
-          {t(prefs.uiLocale, 'app.pageBreaks')}
-        </button>
-      </div>
-
-      {#if untranslated > 0}
-        <button
-          type="button"
-          class="tool-btn"
-          onclick={() => resumeDoc.copyLocale(otherLocale(locale), locale)}
-        >
-          {t(prefs.uiLocale, 'app.fillUntranslated', { count: untranslated, language: otherLocale(locale).toUpperCase() })}
-        </button>
-      {/if}
     </div>
 
     {#if prefs.saveStatus.kind === 'error'}
-      <p class="save-status error">{translatedMessage(prefs.uiLocale, prefs.saveStatus, prefs.saveStatus.message)}</p>
+      <p class="save-status error" role="alert">{translatedMessage(prefs.uiLocale, prefs.saveStatus, prefs.saveStatus.message)}</p>
     {/if}
-    <p class="save-status">{t(prefs.uiLocale, 'app.printHint')}</p>
-    <p class="save-status">
-      {t(prefs.uiLocale, 'app.demoNotice')}
-      {#if prefs.showPageBreaks}{' '}{t(prefs.uiLocale, 'app.pageBreakHint')}{/if}
-    </p>
-  </div>
+  </header>
+
+  {#if editing.mode === 'edit'}
+    <div class="edit-bar" data-print-hide>
+      <button
+        type="button"
+        class="tool-btn"
+        data-profile-details="true"
+        aria-haspopup="dialog"
+        onclick={() => editing.begin({ kind: 'profile' })}
+      >
+        <Icon name="user" />{t(prefs.uiLocale, 'edit.profileDetails')}
+      </button>
+    </div>
+  {/if}
 
   <div class="preview-container" bind:this={previewContainer}>
     <div class="resume-paper-frame" style={`--preview-zoom: ${previewZoom}`}>
       <ResumePaper {resume} {locale} presentation={prefs.theme.presentation} bind:element={paperElement} />
-      {#if prefs.showPageBreaks}
-        <PageBreakOverlay paper={paperElement} />
+      {#if prefs.showPageBreaks && editing.mode === 'preview'}
+        <!-- Guides are a Preview aid; editing would remeasure them on every change. -->
+        <div data-page-guides data-print-hide><PageBreakOverlay paper={paperElement} /></div>
       {/if}
     </div>
   </div>
 </div>
 
-{#if prefs.drawerOpen}
-  <EditorDrawer />
+<EditLayer />
+<div class="sr-only" aria-live="polite" aria-atomic="true" data-print-hide>{editing.announcement}</div>
+
+{#if settingsOpen}
+  <SettingsPanel onClose={closeSettings} />
 {/if}
 
 {#if importing}
-  <ImportDialog onClose={() => (importing = false)} />
+  <ImportDialog onClose={closeImport} />
 {/if}
 {/if}

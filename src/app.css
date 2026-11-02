@@ -3,6 +3,8 @@
 @import './styles/paper.css';
 @import './components/ui/field.css';
 @import './components/editor/drawer.css';
+@import './components/shell/shell.css';
+@import './components/editing/editing.css';
 
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;

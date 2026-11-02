@@ -1,5 +1,4 @@
 import type { Locale } from '$lib/model/types'
-import type { SectionKind } from '$lib/sections/kinds'
 import { loadPreferences } from '$lib/storage/persist'
 import type { SaveStatus } from '$lib/storage/persist'
 import { defaultTheme, FONT_SCALES, getTheme } from '$lib/themes/index'
@@ -12,9 +11,6 @@ const asLocale = (value: unknown, fallback: Locale): Locale =>
 
 const asFontScale = (value: unknown): FontScaleKey =>
   typeof value === 'string' && value in FONT_SCALES ? (value as FontScaleKey) : 'standard'
-
-/** Sections plus a settings pane, which is UI state rather than document content. */
-export type DrawerTab = SectionKind | 'settings'
 
 
 interface PersistablePreferences {
@@ -31,12 +27,14 @@ class PreferencesStore {
   themeKey = $state<string>(defaultTheme.key)
   fontScale = $state<FontScaleKey>('standard')
 
-  drawerOpen = $state(false)
-  drawerSection = $state<DrawerTab>('profile')
   showPageBreaks = $state(true)
 
   /** Surfaced in the UI; a silent autosave failure would be the worst bug here. */
   saveStatus = $state<SaveStatus>({ kind: 'idle' })
+  /** A committed change is waiting for the autosave timer. */
+  saving = $state(false)
+  /** A change made in this session has reached storage; the first-load save does not count. */
+  changeSaved = $state(false)
 
   get theme() {
     return getTheme(this.themeKey)
@@ -62,15 +60,6 @@ class PreferencesStore {
       themeKey: this.themeKey,
       fontScale: this.fontScale,
     }
-  }
-
-  openDrawer(section: DrawerTab): void {
-    this.drawerSection = section
-    this.drawerOpen = true
-  }
-
-  closeDrawer(): void {
-    this.drawerOpen = false
   }
 }
 
