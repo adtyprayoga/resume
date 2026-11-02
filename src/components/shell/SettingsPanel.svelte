@@ -7,6 +7,7 @@
   import { resumeDoc } from '$lib/state/document.svelte'
   import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
+  import { startBlank } from '$lib/state/actions'
   import { clearDocument } from '$lib/storage/persist'
   import { FONT_SCALES } from '$lib/themes/index'
   import type { FontScaleKey } from '$lib/themes/types'
@@ -16,6 +17,7 @@
   const uid = $props.id()
 
   let confirmReset = $state(false)
+  let confirmBlank = $state(false)
 
   const locale = $derived(prefs.documentLocale)
   const untranslated = $derived(resumeDoc.untranslatedCount(locale))
@@ -32,6 +34,16 @@
     editing.cancel()
     clearDocument()
     resumeDoc.replace(sampleDocument())
+  }
+
+  const blank = () => {
+    if (!confirmBlank) {
+      confirmBlank = true
+      return
+    }
+    confirmBlank = false
+    clearDocument()
+    startBlank()
   }
 
   const onKeydown = (event: KeyboardEvent) => {
@@ -142,9 +154,14 @@
 
       <section class="settings-group" style="--i: 3">
         <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.data')}</h3>
-        <button type="button" class="tool-btn" onclick={reset}>
-          {t(prefs.uiLocale, confirmReset ? 'action.confirmReset' : 'action.reset')}
-        </button>
+        <div class="repeat-actions">
+          <button type="button" class="tool-btn" onclick={reset}>
+            {t(prefs.uiLocale, confirmReset ? 'action.confirmReset' : 'action.reset')}
+          </button>
+          <button type="button" class="tool-btn" onclick={blank}>
+            {t(prefs.uiLocale, confirmBlank ? 'action.confirmBlank' : 'action.startBlank')}
+          </button>
+        </div>
       </section>
 
       <section class="settings-group" style="--i: 4">

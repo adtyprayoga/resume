@@ -187,3 +187,16 @@ export const sampleDocument = (): ResumeDocument => ({
     ],
   },
 })
+
+/** Key order differs after a storage round trip (validation rebuilds objects), so sort it away. */
+const canonical = (value: unknown): string =>
+  JSON.stringify(value, (_key, item: unknown) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : item,
+  )
+
+const SAMPLE = canonical(sampleDocument())
+
+/** True only for the bundled sample, untouched; a returning user's resume never matches. */
+export const isSampleDocument = (doc: ResumeDocument): boolean => canonical(doc) === SAMPLE

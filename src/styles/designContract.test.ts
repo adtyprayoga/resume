@@ -173,3 +173,11 @@ describe('motion', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[^@]*animation: none !important;[^}]*transition: none !important;/)
   })
 })
+
+describe('edit mode', () => {
+  it('outlines editable text on screen in Edit mode', () => {
+    const css = read('src/components/editing/editing.css')
+    expect(css).toMatch(/@media screen\s*\{[^@]*\.resume-paper\[data-editing\] \.editable\s*\{[^}]*outline: calc\(1px \/ var\(--preview-zoom, 1\)\) dashed var\(--color-accent\)/)
+    expect(css).toMatch(/\.resume-paper\[data-editing\] \.editable:focus-visible\s*\{[^}]*outline: 2px solid var\(--color-accent-strong\)/)
+  })
+})

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { sampleDocument } from './sample'
-import { validateDocument } from '$lib/model/document'
+import { isSampleDocument, sampleDocument } from './sample'
+import { emptyDocument, validateDocument } from '$lib/model/document'
 import { resolve } from '$lib/model/resolve'
 import { LOCALES } from '$lib/model/types'
 
@@ -36,5 +36,20 @@ describe('sampleDocument', () => {
   it('differs between locales where the text is genuinely translated', () => {
     const doc = sampleDocument()
     expect(resolve(doc, 'id').profile.headline).not.toBe(resolve(doc, 'en').profile.headline)
+  })
+})
+
+describe('isSampleDocument', () => {
+  it('recognises an untouched sample and nothing else', () => {
+    expect(isSampleDocument(sampleDocument())).toBe(true)
+    const changed = sampleDocument()
+    changed.profile.text.en.name = 'Someone Else'
+    expect(isSampleDocument(changed)).toBe(false)
+    expect(isSampleDocument(emptyDocument())).toBe(false)
+  })
+
+  it('still recognises the sample after a save and reload round trip', () => {
+    const reloaded = validateDocument(JSON.parse(JSON.stringify(sampleDocument())))
+    expect(reloaded.ok && isSampleDocument(reloaded.value)).toBe(true)
   })
 })

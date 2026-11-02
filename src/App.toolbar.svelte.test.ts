@@ -40,6 +40,30 @@ describe('toolbar actions', () => {
     expect(names).toEqual(['Ekspor', 'Impor', 'Sunting', 'Pengaturan'])
   })
 
+  it('labels Edit as a visible primary action', async () => {
+    render(App)
+    const edit = within(toolbar()).getByRole('button', { name: 'Edit' })
+    expect(edit).toHaveClass('primary')
+    expect(edit).toHaveTextContent('Edit')
+    await userEvent.setup().click(edit)
+    expect(within(toolbar()).getByRole('button', { name: 'Done' })).toHaveTextContent('Done')
+  })
+
+  it('shows text labels for Export and Import', () => {
+    render(App)
+    for (const name of ['Export', 'Import']) {
+      expect(within(toolbar()).getByRole('button', { name }).querySelector('.icon-btn-text')).toHaveTextContent(name)
+    }
+    expect(within(toolbar()).getByRole('button', { name: 'Settings' }).querySelector('.icon-btn-text')).toBeNull()
+  })
+
+  it('explains how to edit in Edit mode', async () => {
+    render(App)
+    expect(screen.queryByText(/Click or tap any outlined text/)).toBeNull()
+    await userEvent.setup().click(within(toolbar()).getByRole('button', { name: 'Edit' }))
+    expect(screen.getByText(/Click or tap any outlined text/).closest('[data-print-hide]')).not.toBeNull()
+  })
+
   it('shows a tooltip naming each action', () => {
     render(App)
     const settings = within(toolbar()).getByRole('button', { name: 'Settings' })
@@ -196,16 +220,47 @@ describe('settings panel', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Confirm reset' }))
     expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
   })
+
+  it('asks for confirmation before starting blank', async () => {
+    render(App)
+    const { user, dialog } = await openSettings()
+    await user.click(within(dialog).getByRole('button', { name: 'Start blank' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    await user.click(within(dialog).getByRole('button', { name: 'Confirm: erase and start blank' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('')
+    expect(resumeDoc.current.content.experience).toHaveLength(0)
+  })
+
+  it('discards an open draft when starting blank', async () => {
+    render(App)
+    editing.enter()
+    editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
+    editing.setDraft('profile.name', 'Draft')
+    const { user, dialog } = await openSettings()
+    await user.click(within(dialog).getByRole('button', { name: 'Start blank' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Confirm: erase and start blank' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Close' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('')
+    expect(editing.active).toBeFalsy()
+  })
 })
 
 describe('status', () => {
   const status = () => screen.getByRole('status', { name: 'Status' })
 
-  it('starts as Preview and shows Editing in Edit mode', async () => {
+  it('never shows the mode', async () => {
     render(App)
-    expect(status()).toHaveTextContent('Preview')
     await userEvent.setup().click(within(toolbar()).getByRole('button', { name: 'Edit' }))
-    expect(status()).toHaveTextContent('Editing')
+    expect(status()).not.toHaveTextContent('Preview')
+    expect(status()).not.toHaveTextContent('Editing')
+  })
+
+  it('shows Indonesian status text', async () => {
+    render(App)
+    prefs.uiLocale = 'id'
+    prefs.saveStatus = { kind: 'saved', at: Date.now() }
+    await tick()
+    expect(screen.getByRole('status', { name: 'Status' })).toHaveTextContent('Tersimpan di browser ini')
   })
 
   it('never calls an uncommitted draft saved', async () => {
@@ -213,11 +268,11 @@ describe('status', () => {
     prefs.saveStatus = { kind: 'saved', at: Date.now() }
     prefs.changeSaved = true
     await tick()
-    expect(status()).toHaveTextContent('Saved')
+    expect(status()).toHaveTextContent('Saved in this browser')
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     await tick()
-    expect(status()).toHaveTextContent('Editing')
+    expect(status()).toHaveTextContent('Change not applied yet')
     expect(status()).not.toHaveTextContent('Saved')
   })
 

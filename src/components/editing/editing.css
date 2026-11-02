@@ -61,11 +61,19 @@
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
   width: 100%;
   max-width: calc(210mm + 34px);
   margin: 0 auto 0.75rem;
   padding-inline: 16px;
+}
+
+.edit-hint {
+  flex: 1 1 16rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
 }
 
 .edit-bar .tool-btn {
@@ -245,6 +253,17 @@
 @media screen {
   .resume-paper[data-editing] [data-entry] {
     position: relative;
+  }
+
+  /* Shows touch users what is editable; never printed (print.css drops outlines). */
+  .resume-paper[data-editing] .editable {
+    outline: calc(1px / var(--preview-zoom, 1)) dashed var(--color-accent);
+    outline-offset: calc(1px / var(--preview-zoom, 1));
+  }
+
+  .resume-paper[data-editing] .editable:focus-visible {
+    outline: 2px solid var(--color-accent-strong);
+    outline-offset: 1px;
   }
 }
 

@@ -107,9 +107,12 @@ at 320, 375, 768 and 1440px and phone landscape. Needs `chromium` and
 
 ## Workspace
 
-Above the resume are the title, the **Classic / ATS** layout selector, a status
-(Preview, Editing, Saving…, Saved, or a visible save error), and four icon
-actions, each with a tooltip:
+Above the resume are the title with a save status beneath it (Saving…, Saved
+in this browser, Change not applied yet, or a visible save error), the
+**Layout** selector (**Classic / ATS**; hovering or focusing ATS explains it),
+and four actions. **Edit / Done** is a labelled primary button; **Export** and
+**Import** show their names on wider screens and a tooltip on phones;
+**Settings** is an icon with a tooltip:
 
 | Action | What it does |
 | --- | --- |
@@ -120,7 +123,15 @@ actions, each with a tooltip:
 
 ### Editing
 
-The app starts in **Preview**. Press **Edit** to reveal what can be changed:
+On a first visit the page shows a fictional sample resume with a short
+introduction above it, offering **Edit this resume**, **Start blank** or
+**Import JSON**. The introduction disappears once the sample is changed or the
+introduction is dismissed. **Start blank** is also in Settings → Data, where it
+asks for confirmation.
+
+The app starts in **Preview**. Press **Edit** to reveal what can be changed;
+editable text gets a dashed outline and a hint above the page explains the
+keys:
 
 - **Click any text** on the page. Single-line text opens a native input over it:
   **Enter** or clicking away applies, **Escape** cancels. Multi-line text keeps
