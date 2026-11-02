@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { t } from './ui'
+import { strings, t } from './ui'
 import { LOCALES } from '$lib/model/types'
 import { sectionModules } from '$lib/sections/registry'
 
@@ -20,5 +20,14 @@ describe('ui strings', () => {
 
   it('differs between locales', () => {
     expect(t('id', 'date.present')).not.toBe(t('en', 'date.present'))
+  })
+
+  it('has no cliché copy or emoji', () => {
+    for (const locale of LOCALES) {
+      for (const text of Object.values(strings[locale])) {
+        expect(text).not.toMatch(/elevate|seamless|unleash|next-gen/i)
+        expect(text).not.toMatch(/\p{Extended_Pictographic}/u)
+      }
+    }
   })
 })

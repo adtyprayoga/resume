@@ -10,6 +10,9 @@ export const CHROME_SOURCES: string[] = [
   'src/components/ImportDialog.svelte',
   'src/components/RecoveryScreen.svelte',
   'src/components/shell/shell.css',
+  'src/components/editing/editing.css',
+  'src/styles/paper.css',
+  'src/components/ui/AvatarImage.svelte',
 ]
 
 const TRANSITIONABLE = new Set([

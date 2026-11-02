@@ -21,7 +21,7 @@
   /* Sized to the sheet so the page-break rule cannot overhang the paper. */
   width: 210mm;
   margin-inline: auto;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.1);
+  box-shadow: var(--shadow-card);
 }
 
 .resume-paper-frame {
@@ -33,19 +33,21 @@
   position: absolute;
   left: 0;
   right: 0;
-  border-top: 1px dashed #dc2626;
+  border-top: 1px dashed var(--color-danger);
   pointer-events: none;
 }
 
 .page-break-label {
   position: absolute;
   right: 0;
-  top: -0.75rem;
+  top: -1.125rem;
+  line-height: 1.5;
   padding: 0 0.25rem;
-  background: #dc2626;
-  border-radius: 0.1875rem 0.1875rem 0 0;
-  font-size: 0.625rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.04em;
+  background: var(--color-danger);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-caps);
+  font-weight: 500;
+  color: var(--color-surface);
+  letter-spacing: var(--tracking-label);
 }

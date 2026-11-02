@@ -198,6 +198,15 @@ describe('adding entries', () => {
     expect(within(section).getByRole('button', { name: 'Add entry to Awards' })).toBeInTheDocument()
   })
 
+  it('shows an icon empty state for an empty section', async () => {
+    seed((doc) => { doc.content.awards = [] })
+    const user = userEvent.setup()
+    render(App)
+    await user.click(screen.getByRole('button', { name: 'Edit' }))
+    const empty = within(sectionOf('Awards')).getByText('No entries yet').closest('.section-empty')
+    expect(empty?.querySelector('svg')).not.toBeNull()
+  })
+
   it('offers no add action for a disabled section', async () => {
     seed((doc) => { doc.sections.find((section) => section.kind === 'awards')!.enabled = false })
     await startEditing()

@@ -2,6 +2,7 @@
   import ProfileHeader from './ProfileHeader.svelte'
   import SectionShell from './SectionShell.svelte'
   import AddEntry from '../editing/AddEntry.svelte'
+  import Icon from '../shell/Icon.svelte'
   import AwardsPreview from '$lib/sections/awards/Preview.svelte'
   import EducationPreview from '$lib/sections/education/Preview.svelte'
   import ExperiencePreview from '$lib/sections/experience/Preview.svelte'
@@ -54,7 +55,7 @@
   {#each visible as section (section.kind)}
     <SectionShell title={section.title} printHide={section.empty}>
       {#if section.empty}
-        <p class="section-empty">{t(prefs.uiLocale, 'section.empty')}</p>
+        <p class="section-empty"><Icon name="empty" size={18} /><span>{t(prefs.uiLocale, 'section.empty')}</span></p>
       {:else if section.kind === 'experience'}
         <ExperiencePreview items={resume.experience} {locale} {presentation} />
       {:else if section.kind === 'education'}
