@@ -1,65 +1,146 @@
 <script lang="ts">
-  import ResumePaper from '$components/preview/ResumePaper.svelte'
+  import ImportDialog from './components/ImportDialog.svelte'
+  import PersistenceHost from './components/PersistenceHost.svelte'
+  import EditorDrawer from './components/editor/EditorDrawer.svelte'
+  import ResumePaper from './components/preview/ResumePaper.svelte'
+  import { sampleDocument } from './data/sample'
   import { resumeFileName, serializeResume } from '$lib/io/exportJson'
   import { t } from '$lib/i18n/ui'
-  import { resolve } from '$lib/model/resolve'
   import type { Locale } from '$lib/model/types'
   import { printResume } from '$lib/print/print'
-  import { sampleDocument } from './data/sample'
+  import { resumeDoc } from '$lib/state/document.svelte'
+  import { prefs } from '$lib/state/preferences.svelte'
+  import { clearDocument, loadDocument } from '$lib/storage/persist'
+  import { FONT_SCALES, themeStyleAttr } from '$lib/themes/index'
+  import type { FontScaleKey } from '$lib/themes/types'
 
-  let locale = $state<Locale>('en')
-  const doc = $state(sampleDocument())
+  /*
+   * Hydrate before PersistenceHost mounts, so its autosave effect never writes
+   * an empty document over stored work on first paint.
+   */
+  prefs.hydrate()
+  resumeDoc.replace(loadDocument() ?? sampleDocument())
 
-  const resume = $derived(resolve(doc, locale))
+  let importing = $state(false)
+  let confirmReset = $state(false)
 
-  const print = () => printResume(resumeFileName(resume.profile.name, locale))
+  const locale = $derived(prefs.documentLocale)
+  const resume = $derived(resumeDoc.resolved(locale))
+  const fileName = $derived(resumeFileName(resume.profile.name, locale))
+  const untranslated = $derived(resumeDoc.untranslatedCount(locale))
 
-  const exportJson = () => {
-    const blob = new Blob([serializeResume(doc)], { type: 'application/json' })
+  const download = () => {
+    const blob = new Blob([serializeResume(resumeDoc.snapshot())], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${resumeFileName(resume.profile.name, locale)}.json`
+    link.download = `${fileName}.json`
     link.click()
     URL.revokeObjectURL(url)
   }
+
+  const reset = () => {
+    if (!confirmReset) {
+      confirmReset = true
+      return
+    }
+    confirmReset = false
+    clearDocument()
+    resumeDoc.replace(sampleDocument())
+  }
+
+  const otherLocale = (value: Locale): Locale => (value === 'id' ? 'en' : 'id')
 </script>
 
-<div class="min-h-screen bg-neutral-100 py-8">
-  <div class="mx-auto max-w-[210mm] px-4" data-print-hide>
-    <div class="mb-4 flex flex-wrap items-center gap-2">
-      <div class="flex overflow-hidden rounded-md border border-neutral-300 bg-white">
+<PersistenceHost />
+
+<div class="min-h-screen bg-neutral-100 py-6">
+  <div class="mx-auto mb-4 max-w-[210mm] px-4" data-print-hide>
+    <div class="toolbar">
+      <button type="button" class="tool-btn primary" onclick={() => printResume(fileName)}>
+        {t(prefs.uiLocale, 'action.print')}
+      </button>
+      <button type="button" class="tool-btn" onclick={() => prefs.openDrawer('profile')}>
+        {t(prefs.uiLocale, 'action.edit')}
+      </button>
+      <button type="button" class="tool-btn" onclick={download}>
+        {t(prefs.uiLocale, 'action.exportJson')}
+      </button>
+      <button type="button" class="tool-btn" onclick={() => (importing = true)}>
+        {t(prefs.uiLocale, 'action.importJson')}
+      </button>
+      <button type="button" class="tool-btn" onclick={reset}>
+        {confirmReset ? 'Confirm reset' : 'Reset to sample'}
+      </button>
+    </div>
+
+    <div class="toolbar">
+      <span class="toolbar-label">Resume</span>
+      <div class="toggle-group">
         {#each ['id', 'en'] as const as option (option)}
           <button
             type="button"
-            class="px-3 py-1.5 text-sm {locale === option
-              ? 'bg-neutral-900 text-white'
-              : 'text-neutral-700 hover:bg-neutral-50'}"
-            onclick={() => (locale = option)}
+            aria-pressed={prefs.documentLocale === option}
+            onclick={() => (prefs.documentLocale = option)}
           >
             {option.toUpperCase()}
           </button>
         {/each}
       </div>
-      <button
-        type="button"
-        class="rounded-md bg-neutral-900 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
-        onclick={print}
-      >
-        {t(locale, 'action.print')}
-      </button>
-      <button
-        type="button"
-        class="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
-        onclick={exportJson}
-      >
-        {t(locale, 'action.exportJson')}
-      </button>
+
+      <span class="toolbar-label">Interface</span>
+      <div class="toggle-group">
+        {#each ['id', 'en'] as const as option (option)}
+          <button
+            type="button"
+            aria-pressed={prefs.uiLocale === option}
+            onclick={() => (prefs.uiLocale = option)}
+          >
+            {option.toUpperCase()}
+          </button>
+        {/each}
+      </div>
+
+      <span class="toolbar-label">Size</span>
+      <div class="toggle-group">
+        {#each Object.keys(FONT_SCALES) as FontScaleKey[] as scale (scale)}
+          <button
+            type="button"
+            aria-pressed={prefs.fontScale === scale}
+            onclick={() => (prefs.fontScale = scale)}
+          >
+            {scale === 'standard' ? 'M' : scale === 'xsmall' ? 'XS' : scale === 'small' ? 'S' : 'L'}
+          </button>
+        {/each}
+      </div>
+
+      {#if untranslated > 0}
+        <button
+          type="button"
+          class="tool-btn"
+          onclick={() => resumeDoc.copyLocale(otherLocale(locale), locale)}
+        >
+          Fill {untranslated} untranslated from {otherLocale(locale).toUpperCase()}
+        </button>
+      {/if}
     </div>
-    <p class="mb-4 text-xs text-neutral-500">{t(locale, 'app.demoNotice')}</p>
+
+    {#if prefs.saveStatus.kind === 'error'}
+      <p class="save-status error">{prefs.saveStatus.message}</p>
+    {:else}
+      <p class="save-status">{t(prefs.uiLocale, 'app.demoNotice')}</p>
+    {/if}
   </div>
 
-  <div class="resume-paper-frame">
+  <div class="resume-paper-frame" style={themeStyleAttr(prefs.theme, prefs.fontScale)}>
     <ResumePaper {resume} {locale} />
   </div>
 </div>
+
+{#if prefs.drawerOpen}
+  <EditorDrawer />
+{/if}
+
+{#if importing}
+  <ImportDialog onClose={() => (importing = false)} />
+{/if}

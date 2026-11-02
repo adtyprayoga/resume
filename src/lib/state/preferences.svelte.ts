@@ -13,6 +13,12 @@ const asLocale = (value: unknown, fallback: Locale): Locale =>
 const asFontScale = (value: unknown): FontScaleKey =>
   typeof value === 'string' && value in FONT_SCALES ? (value as FontScaleKey) : 'standard'
 
+/**
+ * Drawer tabs are the resume sections plus a settings pane, which is UI state
+ * rather than a section of the document.
+ */
+export type DrawerTab = SectionKind | 'settings'
+
 /** Persisted settings, kept apart from document content. */
 interface PersistablePreferences {
   uiLocale: Locale
@@ -34,7 +40,7 @@ class PreferencesStore {
   fontScale = $state<FontScaleKey>('standard')
 
   drawerOpen = $state(false)
-  drawerSection = $state<SectionKind>('profile')
+  drawerSection = $state<DrawerTab>('profile')
   showPageBreaks = $state(true)
 
   /** Surfaced in the UI so a failed autosave is never silent. */
@@ -66,7 +72,7 @@ class PreferencesStore {
     }
   }
 
-  openDrawer(section: SectionKind): void {
+  openDrawer(section: DrawerTab): void {
     this.drawerSection = section
     this.drawerOpen = true
   }
