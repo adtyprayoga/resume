@@ -1,3 +1,6 @@
+// `?inline` emits a data URL at build time, so the sample document is
+// self-contained: its photo survives a JSON export the same way a user's does.
+import avatarSample from './avatar-sample.jpg?inline'
 import { emptyDocument } from '$lib/model/document'
 import type { ResumeDocument } from '$lib/model/types'
 
@@ -10,7 +13,7 @@ export const sampleDocument = (): ResumeDocument => ({
     website: 'https://budisantoso.example.com',
     github: 'https://github.com/example',
     linkedin: 'https://linkedin.com/in/example',
-    avatar: '/avatar-sample.svg',
+    avatar: avatarSample,
   },
   profile: {
     text: {
