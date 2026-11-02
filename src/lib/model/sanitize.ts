@@ -51,3 +51,24 @@ export const safeImageSrc = (value: string): string => {
   if (!scheme) return isSafeRelative(trimmed) ? trimmed : ''
   return scheme === 'http:' || scheme === 'https:' ? trimmed : ''
 }
+
+/**
+ * Turns what people actually type into a usable URL.
+ *
+ * `github.com/me` has no scheme, so it would otherwise be treated as a path
+ * relative to the current page. A root-relative path is left alone.
+ */
+export const normalizeUrl = (value: string): string => {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (schemeOf(trimmed)) return trimmed
+  if (trimmed.startsWith('//')) return `https:${trimmed}`
+  if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+    return trimmed
+  }
+
+  // A dot before the first slash means it reads as a hostname.
+  const firstSlash = trimmed.indexOf('/')
+  const host = firstSlash === -1 ? trimmed : trimmed.slice(0, firstSlash)
+  return host.includes('.') ? `https://${trimmed}` : trimmed
+}

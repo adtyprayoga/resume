@@ -199,3 +199,48 @@
   background: #fef2f2;
   color: #b91c1c;
 }
+
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.avatar-preview {
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+.avatar-preview.empty {
+  display: grid;
+  place-items: center;
+  color: #d4d4d4;
+}
+
+.avatar-actions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+/* The native file input is unstyleable, so the label is the button. */
+.avatar-pick {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.avatar-pick input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.field-hint.error {
+  color: #b91c1c;
+}

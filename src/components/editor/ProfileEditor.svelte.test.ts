@@ -57,3 +57,36 @@ describe('ProfileEditor', () => {
     expect(resumeDoc.current.profile.text.en.headline).not.toBe('Perekayasa Utama')
   })
 })
+
+describe('contact URLs', () => {
+  it('adds https to a bare host on blur, so typed input is usable', async () => {
+    render(ProfileEditor)
+    const user = userEvent.setup()
+    const field = screen.getByLabelText(/GitHub/)
+
+    await user.clear(field)
+    await user.type(field, 'github.com/budi')
+    await user.tab()
+
+    expect(resumeDoc.current.contact.github).toBe('https://github.com/budi')
+  })
+
+  it('leaves an explicit scheme alone', async () => {
+    render(ProfileEditor)
+    const user = userEvent.setup()
+    const field = screen.getByLabelText(/Website/)
+
+    await user.clear(field)
+    await user.type(field, 'http://budi.example.com')
+    await user.tab()
+
+    expect(resumeDoc.current.contact.website).toBe('http://budi.example.com')
+  })
+
+  it('offers a photo picker rather than a URL field, since there is no server', () => {
+    render(ProfileEditor)
+    expect(screen.queryByLabelText(/Avatar/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Choose image|Replace/)).toBeInTheDocument()
+    expect(screen.getByText(/no\s+server to upload to/)).toBeInTheDocument()
+  })
+})

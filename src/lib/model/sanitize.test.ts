@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { safeHref, safeImageSrc } from './sanitize'
+import { normalizeUrl, safeHref, safeImageSrc } from './sanitize'
 
 describe('safeHref', () => {
   it('allows http, https and mailto', () => {
@@ -53,5 +53,36 @@ describe('safeImageSrc', () => {
     expect(safeImageSrc('/images/me.png')).toBe('/images/me.png')
     expect(safeImageSrc('avatar.jpg')).toBe('avatar.jpg')
     expect(safeImageSrc('//evil.com/x.png')).toBe('')
+  })
+})
+
+describe('normalizeUrl', () => {
+  it('adds https to a bare host', () => {
+    expect(normalizeUrl('github.com/me')).toBe('https://github.com/me')
+    expect(normalizeUrl('example.com')).toBe('https://example.com')
+  })
+
+  it('leaves an explicit scheme alone', () => {
+    expect(normalizeUrl('http://example.com')).toBe('http://example.com')
+    expect(normalizeUrl('mailto:a@b.c')).toBe('mailto:a@b.c')
+  })
+
+  it('upgrades a protocol-relative URL rather than leaving it ambiguous', () => {
+    expect(normalizeUrl('//example.com/x')).toBe('https://example.com/x')
+  })
+
+  it('leaves a relative path alone', () => {
+    expect(normalizeUrl('/images/me.png')).toBe('/images/me.png')
+    expect(normalizeUrl('./me.png')).toBe('./me.png')
+  })
+
+  it('leaves something without a dotted host alone', () => {
+    expect(normalizeUrl('me')).toBe('me')
+    expect(normalizeUrl('some/path')).toBe('some/path')
+  })
+
+  it('trims and passes through blank', () => {
+    expect(normalizeUrl('   ')).toBe('')
+    expect(normalizeUrl('  example.com  ')).toBe('https://example.com')
   })
 })

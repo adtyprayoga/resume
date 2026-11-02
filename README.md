@@ -91,6 +91,11 @@ Your resume is held in this browser's local storage, which means clearing site
 data will erase it. **Export JSON** regularly; **Import JSON** restores from a
 file, a pasted payload or an `https` URL.
 
+There is no server, so a photo cannot be uploaded anywhere. Choosing one resizes
+it to 320px and embeds it in the document itself, which means it survives an
+export and travels with the JSON — and is why it is resized rather than stored
+whole, since the browser's storage budget is a few megabytes in total.
+
 Imported data is validated field by field rather than trusted: containers must
 have the right shape, leaves are coerced to safe defaults, URLs are restricted
 to safe schemes (`javascript:` and `data:image/svg+xml` are rejected), and a file
