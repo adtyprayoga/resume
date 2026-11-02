@@ -126,3 +126,10 @@ describe('navigation', () => {
     expect(css).toMatch(/\.toggle-group button\[aria-pressed='true'\]\s*\{[^}]*font-weight: 500;[^}]*box-shadow: inset 0 -2px 0 var\(--color-accent-strong\)/)
   })
 })
+
+describe('motion', () => {
+  it('reduced motion disables animation and transition', () => {
+    const css = read('src/styles/motion.css')
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[^@]*animation: none !important;[^}]*transition: none !important;/)
+  })
+})

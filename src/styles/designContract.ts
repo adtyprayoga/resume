@@ -13,6 +13,7 @@ export const CHROME_SOURCES: string[] = [
   'src/components/editing/editing.css',
   'src/styles/paper.css',
   'src/components/ui/AvatarImage.svelte',
+  'src/styles/motion.css',
 ]
 
 const TRANSITIONABLE = new Set([

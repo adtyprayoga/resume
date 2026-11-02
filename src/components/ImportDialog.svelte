@@ -193,7 +193,7 @@
           <button type="button" class="tool-btn primary" onclick={replace}>{t(prefs.uiLocale, 'import.replace')}</button>
         </div>
       {/if}
-      {#if busy}<p role="status" class="field-hint">{t(prefs.uiLocale, 'import.loading')}</p>{/if}
+      {#if busy}<div class="skeleton import-skeleton" aria-hidden="true"></div><p role="status" class="sr-only">{t(prefs.uiLocale, 'import.loading')}</p>{/if}
     </div>
   </div>
 </div>
@@ -210,4 +210,5 @@
   .import-counts { margin-block: 1rem; padding-left: 1.25rem; list-style: disc; }
   .import-warning { margin-block: 1rem; }
   .import-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .import-skeleton { height: 7.5rem; margin-top: 1rem; }
 </style>

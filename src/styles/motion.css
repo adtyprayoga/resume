@@ -1,0 +1,73 @@
+/*
+ * Motion (design.md): ease-out, entries fade and rise 16px over 420ms, lists
+ * cascade 80ms apart. Keyframes touch only opacity and transform.
+ */
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.menu,
+.form-popover,
+.drawer,
+.edit-sheet,
+.recovery,
+.entry-actions {
+  animation: enter var(--dur-enter) var(--ease-out);
+}
+
+/* The inline editor sits exactly over the text it edits, so it must not slide. */
+.drawer-overlay,
+.sheet-overlay,
+.inline-editor {
+  animation: fade var(--dur-fade) var(--ease-out);
+}
+
+.settings-group {
+  animation: enter var(--dur-enter) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+/* Loading placeholder: a band sweeps across; no circular spinners. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-fill-hover);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--color-surface), transparent);
+  opacity: 0.6;
+  transform: translateX(-100%);
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
