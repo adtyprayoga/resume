@@ -231,3 +231,72 @@
 .skill-title {
   font-weight: 650;
 }
+
+/* ---- ATS presentation ----
+ *
+ * Plain reading order for applicant tracking systems. Everything is block
+ * flow at body size: no right-aligned dates, grids or columns that a text
+ * extractor could interleave. Type sizes and spacing come from the ats preset
+ * through the same variables, so the manual font-size control still applies.
+ */
+
+.resume-paper[data-presentation='ats'] {
+  overflow-wrap: break-word;
+}
+
+.resume-paper[data-presentation='ats'] .ats-header {
+  display: block;
+  margin-bottom: var(--section-gap, 5mm);
+}
+
+.resume-paper[data-presentation='ats'] .resume-name {
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+.resume-paper[data-presentation='ats'] .resume-headline {
+  font-weight: 400;
+}
+
+.resume-paper[data-presentation='ats'] .ats-contact {
+  margin-top: 2mm;
+}
+
+.resume-paper[data-presentation='ats'] .resume-section-title {
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  padding-bottom: 0.8mm;
+  border-bottom-width: 0.3mm;
+  margin-bottom: 2.5mm;
+}
+
+.resume-paper[data-presentation='ats'] .resume-summary {
+  margin: 0;
+}
+
+.resume-paper[data-presentation='ats'] .item-title {
+  font-weight: 700;
+}
+
+.resume-paper[data-presentation='ats'] .item-meta,
+.resume-paper[data-presentation='ats'] .item-link {
+  font-size: inherit;
+  color: var(--paper-muted, #333333);
+}
+
+.resume-paper[data-presentation='ats'] .item-dates {
+  display: block;
+  margin-top: 0.4mm;
+  font-size: inherit;
+  font-variant-numeric: normal;
+  color: var(--paper-muted, #333333);
+}
+
+.resume-paper[data-presentation='ats'] .ats-skill + .ats-skill {
+  margin-top: 1.2mm;
+}
+
+.resume-paper[data-presentation='ats'] .ats-skill strong {
+  font-weight: 700;
+}

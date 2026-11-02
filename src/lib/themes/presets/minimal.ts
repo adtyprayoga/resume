@@ -7,7 +7,8 @@ import type { ResumeThemeConfig } from '../types'
  */
 const minimal: ResumeThemeConfig = {
   key: 'minimal',
-  name: 'Minimal',
+  presentation: 'classic',
+  name: 'Classic',
   description: 'Single column, rules and whitespace only. Prints identically everywhere.',
   order: 0,
   palette: {

@@ -78,6 +78,44 @@ headless Chromium and asserting A4 sizing, per-page margins, selectable text and
 the absence of app chrome. It needs `chromium` and `poppler-utils` installed,
 and `bun run dev` already running.
 
+```bash
+bun run verify:ats
+```
+
+`verify:ats` checks what a text extractor reads from each layout. It starts its
+own dev server (or takes a URL argument), drives headless Chromium over the
+DevTools protocol with a throwaway profile, seeds a multipage bilingual fixture,
+switches layouts and languages through the toolbar, and prints to PDF. It then
+extracts the text with `pdftotext`, in both normal and raw modes, and asserts
+that every field appears once and in reading order. It also checks A4 pages,
+margins, selectable text, embedded fonts, that the ATS output has no images,
+controls, consent notices or page-guide labels, and that Classic still shows
+the photo afterwards. The same output must come from phone and desktop preview
+widths, with background graphics on or off. Generated PDFs are deleted on
+success and kept for inspection on failure. Needs `chromium` and
+`poppler-utils`.
+
+## Layouts
+
+The **Resume layout** buttons beside the language controls switch between two
+presentations of the same content:
+
+- **Classic** (the default) has a photo, a single contact line, and dates
+  aligned on the right.
+- **ATS** is plain single-column reading order for applicant tracking systems.
+  It uses 11pt Arial or a close equivalent, puts each contact detail on its own
+  line with full URLs, and lists each entry top to bottom: title, details,
+  dates, then description or bullets. Skills appear as `Category: a, b, c`.
+  It leaves the photo out.
+
+Switching layouts changes presentation only. Content, section order, languages,
+the stored photo and any unfinished edit stay as they are, and the choice is
+remembered in this browser. The ATS layout aims for formatting that parsers
+handle well; it is not a score and cannot guarantee that every system reads a
+resume correctly. To see what a parser is likely to get, save the PDF and
+select all of its text, or run `pdftotext resume.pdf -`, and read it top to
+bottom.
+
 ## Printing
 
 In the print dialog: choose **A4**, set margins to **Default** or **None**, and

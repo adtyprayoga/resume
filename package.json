@@ -10,7 +10,8 @@
     "type-check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:print": "bash scripts/verify-print.sh"
+    "verify:print": "bash scripts/verify-print.sh",
+    "verify:ats": "bun scripts/verify-ats.ts"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "7.3.1",

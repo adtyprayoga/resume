@@ -27,8 +27,12 @@ export interface ResumeThemeType {
   lineHeight: number
 }
 
+/** How the shared renderer lays out the same content. */
+export type ResumePresentation = 'classic' | 'ats'
+
 export interface ResumeThemeConfig {
   key: string
+  presentation: ResumePresentation
   name: string
   description: string
   order: number
