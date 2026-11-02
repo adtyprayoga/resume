@@ -34,6 +34,16 @@ describe('items', () => {
     expect(validateDocument(resumeDoc.snapshot()).ok).toBe(true)
   })
 
+  it('appends a prepared item as given, so a staged entry keeps its id and text', () => {
+    const before = resumeDoc.current.content.awards.length
+    const id = resumeDoc.addItem('awards', {
+      id: 'awd_staged', date: '2024', text: { en: { title: 'T', issuer: '', description: '' }, id: { title: '', issuer: '', description: '' } },
+    })
+    expect(id).toBe('awd_staged')
+    expect(resumeDoc.current.content.awards).toHaveLength(before + 1)
+    expect(resumeDoc.current.content.awards.at(-1)?.text.en.title).toBe('T')
+  })
+
   it('removes an item by id and ignores an unknown id', () => {
     const id = resumeDoc.current.content.experience[0]!.id
     resumeDoc.removeItem('experience', id)

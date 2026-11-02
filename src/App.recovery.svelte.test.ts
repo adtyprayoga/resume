@@ -6,6 +6,7 @@ import { sampleDocument } from './data/sample'
 import { serializeResume } from '$lib/io/exportJson'
 import { AUTOSAVE_DELAY_MS } from '$lib/state/autosave'
 import { prefs } from '$lib/state/preferences.svelte'
+import { editing } from '$lib/state/editing.svelte'
 import { DOCUMENT_KEY } from '$lib/storage/persist'
 
 const NEWER = JSON.stringify({ schemaVersion: 99, profile: { keep: 'me' } })
@@ -21,7 +22,7 @@ beforeEach(() => {
   localStorage.clear()
   prefs.uiLocale = 'en'
   prefs.documentLocale = 'en'
-  prefs.closeDrawer()
+  editing.reset()
   vi.useFakeTimers({ shouldAdvanceTime: true })
 })
 

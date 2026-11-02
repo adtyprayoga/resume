@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/svelte'
 import ResumePaper from './ResumePaper.svelte'
-import AvatarField from '../editor/AvatarField.svelte'
+import PhotoField from '../editing/PhotoField.svelte'
 import { sampleDocument } from '../../data/sample'
 import { resolve } from '$lib/model/resolve'
 import type { Locale, ResumeDocument } from '$lib/model/types'
@@ -116,7 +116,7 @@ describe('ATS profile block', () => {
 
   it('tells the user in the photo editor that photos only appear in Classic', () => {
     resumeDoc.replace(sampleDocument())
-    render(AvatarField)
+    render(PhotoField, { value: resumeDoc.current.contact.avatar, label: 'Photo', scopeText: 'both languages', onchange: () => {} })
     expect(screen.getByText(/appears only in the Classic layout/)).toBeInTheDocument()
   })
 })

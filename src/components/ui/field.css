@@ -97,30 +97,6 @@ input[type='file']::file-selector-button {
   cursor: pointer;
 }
 
-.repeat-item {
-  padding: 0.5rem 0.625rem 0.625rem;
-  margin-bottom: 0.5rem;
-  border: 1px solid #e5e5e5;
-  border-radius: 0.375rem;
-  background: #fafafa;
-}
-
-.repeat-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.4375rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-/* The item's own first field names it, so the index only needs to be a marker. */
-.repeat-index {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: #525252;
-}
-
 .repeat-actions {
   display: flex;
   flex-wrap: wrap;
@@ -152,22 +128,6 @@ input[type='file']::file-selector-button {
 
 .repeat-btn.danger:hover {
   background: #fef2f2;
-}
-
-.repeat-add {
-  width: 100%;
-  padding: 0.375rem;
-  border: 1px dashed #a3a3a3;
-  border-radius: 0.5rem;
-  background: #fff;
-  font-size: 0.8125rem;
-  color: #404040;
-  cursor: pointer;
-}
-
-.repeat-add:hover {
-  background: #fafafa;
-  border-color: #525252;
 }
 
 .date-row {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { act, render, screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import ResumePaper from './ResumePaper.svelte'
-import AvatarField from '../editor/AvatarField.svelte'
+import PhotoField from '../editing/PhotoField.svelte'
 import { sampleDocument } from '../../data/sample'
 import { serializeResume } from '$lib/io/exportJson'
 import { resumeDoc } from '$lib/state/document.svelte'
@@ -24,7 +24,7 @@ const referencesHost = (host = 'photos.example') =>
 
 const mountBoth = () => {
   render(ResumePaper, { get resume() { return resumeDoc.resolved('en') }, locale: 'en' })
-  render(AvatarField)
+  render(PhotoField, { get value() { return resumeDoc.current.contact.avatar }, label: 'Photo', scopeText: 'both languages', onchange: () => {} })
 }
 
 const photos = () => document.querySelectorAll<HTMLImageElement>('img.resume-avatar, img.avatar-preview')
