@@ -193,15 +193,15 @@
           <button type="button" class="tool-btn primary" onclick={replace}>{t(prefs.uiLocale, 'import.replace')}</button>
         </div>
       {/if}
-      {#if busy}<p role="status" class="field-hint">{t(prefs.uiLocale, 'import.loading')}</p>{/if}
+      {#if busy}<div class="skeleton import-skeleton" aria-hidden="true"></div><p role="status" class="sr-only">{t(prefs.uiLocale, 'import.loading')}</p>{/if}
     </div>
   </div>
 </div>
 
 <style>
   .import-overlay { align-items: center; justify-content: center; }
-  .import-dialog { width: min(32rem, 100%); max-height: 90dvh; border-radius: 0.625rem; }
-  .import-title { flex: 1; font-size: 1rem; font-weight: 600; }
+  .import-dialog { width: min(32rem, 100%); max-height: 90dvh; border: 1px solid var(--color-hairline); border-radius: 0; }
+  .import-title { flex: 1; margin: 0; font-size: var(--text-h2); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: 1.2; }
   .import-sources { min-width: 0; padding: 0; border: 0; }
   .import-url-row { display: flex; gap: 0.5rem; }
   .import-url-row input { flex: 1; min-width: 0; }
@@ -210,4 +210,5 @@
   .import-counts { margin-block: 1rem; padding-left: 1.25rem; list-style: disc; }
   .import-warning { margin-block: 1rem; }
   .import-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .import-skeleton { height: 7.5rem; margin-top: 1rem; }
 </style>

@@ -1,0 +1,74 @@
+/*
+ * Design tokens for the app chrome (design.md, Swiss style). The only chrome
+ * file allowed colour literals; designContract.test.ts enforces that.
+ *
+ * `.resume-paper-frame` re-declares the light palette so the paper, and the
+ * edit affordances drawn on it, stay light whatever the OS scheme.
+ */
+
+:root,
+.resume-paper-frame {
+  color-scheme: light;
+
+  --color-ink: #111111;
+  --color-surface: #ffffff;
+  --color-canvas: #f5f1e8;
+  --color-muted: #4d4d4d;
+  --color-line: #808080;
+  --color-hairline: #e3ded2;
+  --color-fill-hover: #efeae0;
+  --color-accent: #b38b6d;
+  --color-accent-strong: #5c4130;
+  --color-accent-strong-hover: #553c2c;
+  --color-on-accent: #ffffff;
+  --color-danger: #991b1b;
+  --color-danger-tint: #fef2f2;
+
+  --text-caps: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-h2: 1.5rem;
+  --text-h1: 2.25rem;
+  --leading-body: 1.6;
+  --tracking-label: 0.01em;
+  --tracking-caps: 0.06em;
+  --tracking-tight: -0.02em;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-hover: 200ms;
+  --dur-fade: 200ms;
+  --dur-enter: 420ms;
+  --stagger: 80ms;
+
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 0.06);
+  --shadow-lift: 0 4px 12px rgb(0 0 0 / 0.1);
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.12);
+  --backdrop: rgb(17 17 17 / 0.45);
+
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 500;
+}
+
+/* Chrome only: the paper frame above keeps the light values on itself. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-ink: #f5f1e8;
+    --color-surface: #1a1a1a;
+    --color-canvas: #111111;
+    --color-muted: #b3b3b3;
+    --color-line: #808080;
+    --color-hairline: #2e2b26;
+    --color-fill-hover: #262626;
+    --color-accent: #b38b6d;
+    --color-accent-strong: #d9bfa6;
+    --color-accent-strong-hover: #c8b099;
+    --color-on-accent: #111111;
+    --color-danger: #fca5a5;
+    --color-danger-tint: #2a1515;
+  }
+}

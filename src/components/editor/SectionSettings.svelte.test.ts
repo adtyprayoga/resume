@@ -12,6 +12,20 @@ beforeEach(() => {
 })
 
 describe('section reorder controls', () => {
+  it('uses icons, not glyphs, for reorder controls', () => {
+    const { container } = render(SectionSettings)
+    const handles = container.querySelectorAll('.drag-handle')
+    expect(handles.length).toBeGreaterThan(0)
+    for (const handle of handles) {
+      expect(handle.querySelector('svg')).not.toBeNull()
+      expect(handle.textContent?.trim()).toBe('')
+    }
+    for (const button of screen.getAllByRole('button', { name: /^Move .* (up|down)$/ })) {
+      expect(button.querySelector('svg')).not.toBeNull()
+      expect(button.textContent).not.toMatch(/[↑↓⠿]/)
+    }
+  })
+
   it('offers tap moves with disabled boundaries and preserves focus on the moved section', async () => {
     render(SectionSettings)
     expect(screen.getByRole('button', { name: 'Move Experience up' })).toBeDisabled()

@@ -148,6 +148,16 @@ describe('import review', () => {
     expect(resumeDoc.snapshot()).toEqual(before)
   })
 
+  it('shows a skeleton, not a spinner, while loading a URL', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
+    const { container } = mount()
+    await userEvent.type(screen.getByLabelText('Resume JSON URL'), 'https://example.com/resume.json')
+    await userEvent.click(screen.getByRole('button', { name: 'Load' }))
+    expect(container.ownerDocument.querySelector('.skeleton')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByRole('status')).toHaveTextContent('Loading…')
+    expect(screen.getByRole('status')).toHaveClass('sr-only')
+  })
+
   it.each(['Close', 'Escape', 'backdrop'])('%s discards a reviewed import without touching storage', async method => {
     const before = resumeDoc.snapshot()
     const stored = JSON.stringify(before)

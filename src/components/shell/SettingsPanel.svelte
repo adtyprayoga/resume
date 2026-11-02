@@ -60,7 +60,7 @@
     </header>
 
     <div class="drawer-body settings-body">
-      <section class="settings-group">
+      <section class="settings-group" style="--i: 0">
         <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.document')}</h3>
 
         <div class="settings-row">
@@ -116,12 +116,12 @@
         {/if}
       </section>
 
-      <section class="settings-group">
+      <section class="settings-group" style="--i: 1">
         <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.sections')}</h3>
         <SectionSettings />
       </section>
 
-      <section class="settings-group">
+      <section class="settings-group" style="--i: 2">
         <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.interface')}</h3>
         <div class="settings-row">
           <span class="field-label" id="{uid}-ui">{t(prefs.uiLocale, 'app.interfaceLanguage')}</span>
@@ -140,14 +140,14 @@
         </div>
       </section>
 
-      <section class="settings-group">
+      <section class="settings-group" style="--i: 3">
         <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.data')}</h3>
         <button type="button" class="tool-btn" onclick={reset}>
           {t(prefs.uiLocale, confirmReset ? 'action.confirmReset' : 'action.reset')}
         </button>
       </section>
 
-      <section class="settings-group">
+      <section class="settings-group" style="--i: 4">
         <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.help')}</h3>
         <p class="field-hint">{t(prefs.uiLocale, 'app.printHint')}</p>
         <p class="field-hint">{t(prefs.uiLocale, 'app.pageBreakHint')}</p>

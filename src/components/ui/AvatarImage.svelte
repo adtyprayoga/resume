@@ -43,9 +43,9 @@
     height: auto;
     max-width: 14rem;
     padding: 0.375rem;
-    border: 1px dashed #a3a3a3;
-    font: 400 0.6875rem/1.3 system-ui, sans-serif;
-    color: #525252;
+    border: 1px dashed var(--color-line);
+    font: 400 var(--text-caps)/1.3 var(--font-sans);
+    color: var(--color-muted);
     object-fit: initial;
   }
 </style>

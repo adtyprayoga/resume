@@ -4,19 +4,19 @@
  */
 
 .editable {
-  border-radius: 1px;
+  border-radius: 0;
   cursor: text;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
 
 .editable:hover {
-  background: rgb(250 204 21 / 0.18);
-  box-shadow: 0 0 0 1px rgb(161 98 7 / 0.35);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .editable:focus-visible {
-  outline: 2px solid #171717;
+  outline: 2px solid var(--color-accent-strong);
   outline-offset: 1px;
 }
 
@@ -30,24 +30,24 @@
   display: inline-block;
   margin-inline: 0.25em;
   padding: 0 0.35em;
-  border: 1px dashed #a8a29e;
-  border-radius: 2px;
+  border: 1px dashed var(--color-line);
+  border-radius: 0;
   font-size: 0.85em;
   font-weight: 400;
   font-style: normal;
   letter-spacing: normal;
   text-transform: none;
-  color: #78716c;
+  color: var(--color-muted);
   cursor: pointer;
 }
 
 .edit-prompt:hover {
-  border-color: #57534e;
-  color: #292524;
+  border-color: var(--color-ink);
+  color: var(--color-ink);
 }
 
 .edit-prompt:focus-visible {
-  outline: 2px solid #171717;
+  outline: 2px solid var(--color-accent-strong);
   outline-offset: 1px;
 }
 
@@ -76,14 +76,14 @@
 
 .inline-editor {
   position: fixed;
-  z-index: 30;
+  z-index: var(--z-overlay);
   display: grid;
   gap: 0.5rem;
   padding: 4px;
-  border: 1px solid #171717;
-  border-radius: 0.375rem;
-  background: #fff;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.16);
+  border: 1px solid var(--color-ink);
+  border-radius: 0;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
 }
 
 .inline-input {
@@ -96,7 +96,7 @@
   font: inherit;
   font-size: 16px;
   line-height: 1.4;
-  color: #171717;
+  color: var(--color-ink);
   resize: vertical;
 }
 
@@ -114,15 +114,16 @@
 
 .form-popover {
   position: fixed;
-  z-index: 30;
+  z-index: var(--z-overlay);
   box-sizing: border-box;
   width: min(24rem, calc(100vw - 16px));
   max-height: min(80vh, 36rem);
   overflow-y: auto;
-  border: 1px solid #e0dcd3;
-  border-radius: 0.625rem;
-  background: #fff;
-  box-shadow: 0 10px 32px rgb(0 0 0 / 0.16);
+  border: 1px solid var(--color-hairline);
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-pop);
 }
 
 .edit-form-head {
@@ -131,9 +132,10 @@
 
 .edit-form-title {
   margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #171717;
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-ink);
 }
 
 .edit-form-body {
@@ -167,8 +169,8 @@
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
-  background: rgb(0 0 0 / 0.35);
+  z-index: var(--z-modal);
+  background: var(--backdrop);
 }
 
 .edit-sheet {
@@ -179,9 +181,11 @@
   display: flex;
   flex-direction: column;
   max-height: calc(var(--sheet-viewport, 100dvh) - 24px);
-  border-radius: 0.875rem 0.875rem 0 0;
-  background: #fff;
-  box-shadow: 0 -8px 32px rgb(0 0 0 / 0.18);
+  border-top: 1px solid var(--color-hairline);
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-pop);
 }
 
 .edit-form.sheet {
@@ -194,11 +198,11 @@
 .edit-form.sheet .edit-form-head {
   flex: none;
   padding: 0.875rem 1rem 0.625rem;
-  border-bottom: 1px solid #ededed;
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .edit-form.sheet .edit-form-title {
-  font-size: 1rem;
+  font-size: var(--text-h2);
 }
 
 .edit-form.sheet .edit-form-body {
@@ -211,7 +215,7 @@
 .edit-form.sheet .edit-form-actions {
   flex: none;
   padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid #ededed;
+  border-top: 1px solid var(--color-hairline);
 }
 
 @media print {
@@ -250,27 +254,27 @@
 
 .resume-paper[data-editing] [data-entry]:hover,
 .resume-paper[data-editing] .entry-selected {
-  box-shadow: 0 0 0 calc(3px / var(--preview-zoom, 1)) rgb(214 211 209 / 0.7);
-  border-radius: 1px;
+  box-shadow: 0 0 0 calc(3px / var(--preview-zoom, 1)) var(--color-hairline);
+  border-radius: 0;
 }
 
 .resume-paper[data-editing] [data-entry]:focus-visible {
-  box-shadow: 0 0 0 calc(2px / var(--preview-zoom, 1)) #171717;
+  box-shadow: 0 0 0 calc(2px / var(--preview-zoom, 1)) var(--color-accent-strong);
 }
 
 .entry-actions {
   position: absolute;
   right: 0;
   bottom: 100%;
-  z-index: 5;
+  z-index: 1;
   display: flex;
   gap: calc(8px / var(--preview-zoom, 1));
   padding: calc(4px / var(--preview-zoom, 1));
-  border: 1px solid #e0dcd3;
-  border-radius: calc(8px / var(--preview-zoom, 1));
-  background: #fff;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
-  font: 400 calc(13px / var(--preview-zoom, 1)) / 1 system-ui, sans-serif;
+  border: 1px solid var(--color-hairline);
+  border-radius: 0;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+  font: 500 calc(14px / var(--preview-zoom, 1)) / 1 var(--font-sans);
   letter-spacing: normal;
   text-transform: none;
   white-space: nowrap;
@@ -284,12 +288,13 @@
   min-width: calc(44px / var(--preview-zoom, 1));
   min-height: calc(44px / var(--preview-zoom, 1));
   padding: 0 calc(8px / var(--preview-zoom, 1));
-  border: 1px solid #e0dcd3;
-  border-radius: calc(6px / var(--preview-zoom, 1));
-  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: 0;
+  background: var(--color-surface);
   font: inherit;
-  color: #262626;
+  color: var(--color-ink);
   cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease-out);
 }
 
 .entry-btn svg {
@@ -298,21 +303,22 @@
 }
 
 .entry-btn:hover:not(:disabled) {
-  background: #f5f3ee;
+  background: var(--color-fill-hover);
 }
 
 .entry-btn:focus-visible {
-  outline: calc(2px / var(--preview-zoom, 1)) solid #171717;
+  outline: calc(2px / var(--preview-zoom, 1)) solid var(--color-accent-strong);
   outline-offset: calc(2px / var(--preview-zoom, 1));
 }
 
 .entry-btn:disabled {
-  color: #a8a29e;
+  color: var(--color-muted);
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .entry-btn.danger {
-  color: #b91c1c;
+  color: var(--color-danger);
 }
 
 .add-entry-row {
@@ -324,27 +330,33 @@
   align-items: center;
   min-height: calc(44px / var(--preview-zoom, 1));
   padding: 0 calc(14px / var(--preview-zoom, 1));
-  border: 1px dashed #a8a29e;
-  border-radius: calc(8px / var(--preview-zoom, 1));
-  background: #fff;
-  font: 500 calc(14px / var(--preview-zoom, 1)) / 1 system-ui, sans-serif;
-  color: #44403c;
+  border: 1px dashed var(--color-line);
+  border-radius: 0;
+  background: var(--color-surface);
+  font: 500 calc(14px / var(--preview-zoom, 1)) / 1 var(--font-sans);
+  color: var(--color-ink);
   cursor: pointer;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out);
 }
 
 .add-entry:hover {
-  border-color: #57534e;
-  background: #faf9f6;
+  border-color: var(--color-ink);
+  background: var(--color-fill-hover);
 }
 
 .add-entry:focus-visible {
-  outline: calc(2px / var(--preview-zoom, 1)) solid #171717;
+  outline: calc(2px / var(--preview-zoom, 1)) solid var(--color-accent-strong);
   outline-offset: calc(2px / var(--preview-zoom, 1));
 }
 
+/* Icon + text; in Edit mode the section's Add action follows as the action. */
 .section-empty {
-  font-style: italic;
-  color: #78716c;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--color-muted);
 }
 
 @media print {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte'
+  import Icon from '../shell/Icon.svelte'
   import { t, type UiStringKey } from '$lib/i18n/ui'
   import type { ListSectionKind } from '$lib/sections/kinds'
   import { getSectionModule } from '$lib/sections/registry'
@@ -83,7 +84,7 @@
         aria-label={t(prefs.uiLocale, 'sections.reorder', position(section.kind))}
         aria-describedby="{uid}-hint"
         onkeydown={(event) => onKeydown(event, section.kind)}
-      >⠿</span>
+      ><Icon name="grip" /></span>
 
       <label class="field-check" style="flex:1">
         <input
@@ -99,8 +100,8 @@
         <span class="setting-count">{resumeDoc.current.content[section.kind].length}</span>
       </label>
       <div class="repeat-actions">
-        <button type="button" class="repeat-btn" disabled={index === 0} aria-label={t(prefs.uiLocale, 'sections.moveUp', { section: label(section.kind) })} onclick={() => move(section.kind, -1)}>↑</button>
-        <button type="button" class="repeat-btn" disabled={index === sections.length - 1} aria-label={t(prefs.uiLocale, 'sections.moveDown', { section: label(section.kind) })} onclick={() => move(section.kind, 1)}>↓</button>
+        <button type="button" class="repeat-btn" disabled={index === 0} aria-label={t(prefs.uiLocale, 'sections.moveUp', { section: label(section.kind) })} onclick={() => move(section.kind, -1)}><Icon name="up" size={18} /></button>
+        <button type="button" class="repeat-btn" disabled={index === sections.length - 1} aria-label={t(prefs.uiLocale, 'sections.moveDown', { section: label(section.kind) })} onclick={() => move(section.kind, 1)}><Icon name="down" size={18} /></button>
       </div>
     </li>
   {/each}

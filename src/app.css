@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@import './styles/tokens.css';
+@import './styles/motion.css';
 @import './styles/print.css';
 @import './styles/paper.css';
 @import './components/ui/field.css';
@@ -7,7 +9,16 @@
 @import './components/editing/editing.css';
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* The paper sets its own font and line height in print.css. */
+body {
+  font-family: var(--font-sans);
+  line-height: var(--leading-body);
+  color: var(--color-ink);
+  background: var(--color-canvas);
 }
 
 /* Tailwind v4 has no print-color-adjust utility. */
