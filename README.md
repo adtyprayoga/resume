@@ -4,6 +4,10 @@ A bilingual (Indonesian / English) resume builder that runs entirely in the
 browser. No account, no server, no tracking: your resume lives in this browser's
 local storage and exports to PDF through the browser's own print dialog.
 
+The A4 preview fits the available screen width, while editor controls stay full
+size. Browser pinch zoom remains available; screen scaling does not change the
+exported PDF's dimensions or typography.
+
 Built with Svelte 5, Vite and Tailwind v4.
 
 ## Why it works the way it does
@@ -91,6 +95,18 @@ Your resume is held in this browser's local storage, which means clearing site
 data will erase it. **Export JSON** regularly; **Import JSON** restores from a
 file, a pasted payload or an `https` URL.
 
+Every import is validated and reviewed before it replaces your resume. The
+review shows the imported name and section counts; **Replace resume** applies
+it to both languages. **Back** returns to the source inputs, and **Cancel** or
+Escape leaves your current resume unchanged. Export your current JSON first if
+you want to keep a copy.
+
+The interface language and resume language are independent. Changing the
+interface language translates controls and messages without changing your
+resume content or discarding an unfinished field draft. In **Sections**, use
+the move buttons, drag a section, or focus its handle and press the arrow keys
+to change the order.
+
 There is no server, so a photo cannot be uploaded anywhere. Choosing one resizes
 it to 320px and embeds it in the document itself, which means it survives an
 export and travels with the JSON — and is why it is resized rather than stored
@@ -125,8 +141,52 @@ Adding a section means adding a folder under `src/lib/sections/` and one entry t
 
 ## Deployment
 
-Any static host works. `vercel.json` is included for Vercel, with the SPA
-rewrite and `bun` as the build toolchain:
+The Dockerfile builds the app with Node 22 and Bun, then copies only `dist/`
+into an Nginx runtime serving port `80`. Base-image versions are pinned in the
+Dockerfile. Installation uses the committed `bun.lock` with
+`bun install --frozen-lockfile`, including the development dependencies needed
+for type checking and compilation.
+
+Build and run locally:
+
+```bash
+docker build -t resume .
+docker run --rm -p 8080:80 resume
+```
+
+Open `http://localhost:8080`. The image includes a health check at `/healthz`,
+SPA fallback for client-side paths, revalidated HTML, and immutable caching for
+generated assets. Missing files under `/assets/` return `404`.
+
+### Coolify via Git
+
+Commit and push the source, Dockerfile, `.dockerignore`, and `nginx.conf` to the
+branch you want to deploy. In Coolify, connect the repository through a GitHub
+App, deploy key, or public repository URL, then use these settings:
+
+| Setting | Value |
+| --- | --- |
+| Build Pack / Build Strategy | Dockerfile |
+| Branch | The branch containing these files |
+| Base Directory / Build Context | `/` |
+| Dockerfile Location | `/Dockerfile` |
+| Ports Exposes | `80` |
+| Health-check path, if enabled in Coolify | `/healthz` |
+
+The Dockerfile owns dependency installation, the build command, and the runtime
+command. Clear any previous Nixpacks install/build/start overrides and remove
+`NIXPACKS_*` variables. No publish-directory setting, application environment
+variables, database, or persistent volume is required.
+
+Set your domain and point its DNS at the Coolify server, then deploy. Enable
+deployment on push for the connected Git integration if you want subsequent
+pushes to the configured branch to deploy automatically. See
+[Coolify's Dockerfile guide](https://coolify.io/docs/applications/builds/dockerfile).
+
+### Other static hosts
+
+Any static host can serve the build output. `vercel.json` is also included for
+Vercel, with the SPA rewrite and `bun` as the build toolchain:
 
 ```bash
 bun run build
