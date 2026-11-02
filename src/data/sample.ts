@@ -187,3 +187,8 @@ export const sampleDocument = (): ResumeDocument => ({
     ],
   },
 })
+
+const SAMPLE_JSON = JSON.stringify(sampleDocument())
+
+/** True only for the bundled sample, untouched; a returning user's resume never matches. */
+export const isSampleDocument = (doc: ResumeDocument): boolean => JSON.stringify(doc) === SAMPLE_JSON

@@ -18,6 +18,7 @@ interface PersistablePreferences {
   documentLocale: Locale
   themeKey: string
   fontScale: FontScaleKey
+  introDismissed: boolean
 }
 
 class PreferencesStore {
@@ -28,6 +29,8 @@ class PreferencesStore {
   fontScale = $state<FontScaleKey>('standard')
 
   showPageBreaks = $state(true)
+  /** The first-run introduction was closed; it never returns. */
+  introDismissed = $state(false)
 
   /** Surfaced in the UI; a silent autosave failure would be the worst bug here. */
   saveStatus = $state<SaveStatus>({ kind: 'idle' })
@@ -48,6 +51,7 @@ class PreferencesStore {
     this.uiLocale = asLocale(stored.uiLocale, this.uiLocale)
     this.documentLocale = asLocale(stored.documentLocale, this.documentLocale)
     this.fontScale = asFontScale(stored.fontScale)
+    this.introDismissed = stored.introDismissed === true
     this.themeKey = getTheme(
       typeof stored.themeKey === 'string' ? stored.themeKey : null,
     ).key
@@ -59,6 +63,7 @@ class PreferencesStore {
       documentLocale: this.documentLocale,
       themeKey: this.themeKey,
       fontScale: this.fontScale,
+      introDismissed: this.introDismissed,
     }
   }
 }
