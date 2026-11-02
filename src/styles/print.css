@@ -1,28 +1,16 @@
 /*
- * Everything that governs how the resume prints. Kept in one file on purpose:
- * printing is the feature most easily broken by an unrelated style change.
+ * How the resume prints. One file, because printing is the feature most easily
+ * broken by an unrelated style change. Three rules are load-bearing:
  *
- * Constraints baked in here, each one load-bearing:
- *   - A4 at zero page margin; the margin lives inside the DOM as paper padding,
- *     so the same box is used on screen and on paper.
- *   - `min-height`, never `height`. A fixed height forces a single page and
- *     silently clips anything past 297mm.
- *   - The paper subtree is block flow. Fragmentation inside flex and grid
- *     containers is poorly specified and inconsistently implemented, and `gap`
- *     does not collapse at a page break, so spacing uses margins.
- *   - No background fills. The browser's "Background graphics" checkbox is the
- *     user's to set and cannot be overridden, so the design must not depend on
- *     one. Structure comes from rules and whitespace.
- */
-
-/*
- * The margin lives on `@page`, not on the element, so EVERY page gets it.
- * An element's padding applies once at the top of the first page and once at
- * the bottom of the last, which leaves interior pages flush against the paper
- * edge — measured at 1.8pt from the top before this was fixed.
+ *   - `min-height`, never `height`: a fixed height clips everything past 297mm.
+ *   - Block flow, not flex: fragmentation inside flex and grid is poorly
+ *     specified, and `gap` does not collapse at a page break.
+ *   - No background fills: "Background graphics" is the reader's setting.
  *
- * The literal is a fallback for engines that ignore `var()` inside `@page`;
- * where it is supported the second declaration wins and the theme drives it.
+ * The margin is on `@page`, not the element. An element's padding applies once
+ * at the top and once at the very bottom, leaving interior pages flush against
+ * the paper edge. The literal is a fallback for engines that ignore `var()`
+ * here; where it works the second declaration wins and the theme drives it.
  */
 @page {
   size: A4;
@@ -31,7 +19,6 @@
 }
 
 .resume-paper {
-  /* On screen the element mimics a sheet, padding included. */
   width: 210mm;
   min-height: 297mm;
   box-sizing: border-box;
@@ -44,7 +31,7 @@
   line-height: var(--paper-line-height, 1.45);
 }
 
-/* Block flow throughout: margins, not flex gap. */
+/* Margins, not flex gap. */
 .resume-paper :where(section, article, ul, ol, p, h1, h2, h3) {
   margin: 0;
 }
@@ -61,16 +48,12 @@
   padding-bottom: 1.2mm;
   border-bottom: 0.4mm solid var(--paper-rule, #1a1a1a);
   margin-bottom: 3mm;
-  /* A heading must never be the last thing on a page. */
+  /* Never the last thing on a page. */
   break-after: avoid;
   page-break-after: avoid;
 }
 
-/*
- * Every element carrying this attribute is an atom the printer should not split.
- * The pagination simulation reads the same attribute, so the predicted break and
- * the real one are driven by a single contract.
- */
+/* The pagination simulation reads the same attribute, so prediction and print agree. */
 .resume-paper [data-break-atom] {
   break-inside: avoid;
   page-break-inside: avoid;
@@ -87,13 +70,13 @@
 
 .resume-paper p,
 .resume-paper li {
-  /* Chrome ignores these for block boxes, Firefox honours them. Free either way. */
+  /* Chrome ignores these for block boxes; Firefox honours them. */
   orphans: 2;
   widows: 2;
 }
 
 @media print {
-  /* Chrome is not fully reliable about honouring body-level zoom when printing. */
+  /* Chrome is unreliable about body-level zoom when printing. */
   .resume-paper-frame {
     width: auto !important;
     max-width: none !important;
@@ -108,18 +91,15 @@
   }
 
   .resume-paper {
-    /*
-     * In print the page box already supplies the margin, so the element drops
-     * its padding and narrows to the printable width. The content box is
-     * 174mm either way, so the layout is identical on screen and on paper.
-     */
+    /* The page box supplies the margin, so the element narrows to the
+       printable width. The content box is 174mm either way. */
     width: calc(210mm - 2 * var(--page-margin-x, 18mm)) !important;
     min-height: 0 !important;
     padding: 0 !important;
     border: 0 !important;
   }
 
-  /* Anything that is app furniture rather than resume content. */
+  /* App furniture, not resume content. */
   [data-print-hide] {
     display: none !important;
   }
@@ -132,10 +112,27 @@
   }
 }
 
-/* ---- Item typography. Block flow only; spacing via margins. ---- */
+/* ---- Item typography ---- */
 
 .resume-header {
+  /* Flex is safe: the header is one break atom. */
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6mm;
   margin-bottom: var(--section-gap, 6mm);
+}
+
+.resume-header-text {
+  min-width: 0;
+}
+
+.resume-avatar {
+  flex: none;
+  width: calc(22mm * var(--avatar-scale, 1));
+  height: calc(22mm * var(--avatar-scale, 1));
+  object-fit: cover;
+  border-radius: var(--avatar-radius, 1.5mm);
 }
 
 .resume-name {
@@ -151,9 +148,13 @@
   margin-top: 1mm;
 }
 
-.resume-contact,
-.resume-summary {
+.resume-contact {
   margin-top: 2mm;
+}
+
+.resume-summary {
+  margin-top: calc(-1 * var(--section-gap, 6mm) + 2mm);
+  margin-bottom: var(--section-gap, 6mm);
 }
 
 .resume-contact {
@@ -162,7 +163,7 @@
 }
 
 .item-head {
-  /* Flex is fine here: a single text line that cannot fragment. */
+  /* Flex is fine: a single line that cannot fragment. */
   display: flex;
   align-items: baseline;
   justify-content: space-between;

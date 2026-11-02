@@ -1,11 +1,6 @@
 <script lang="ts">
-  /**
-   * Applies the theme's custom properties to the document root.
-   *
-   * They cannot live on the preview element: `@page` resolves against the page
-   * context, which inherits from the root, so a margin set further down the
-   * tree would be invisible to the print rules.
-   */
+  // On the root, not the preview element: `@page` resolves against the page
+  // context, so a margin set lower in the tree is invisible to the print rules.
   import { prefs } from '$lib/state/preferences.svelte'
   import { buildThemeStyleVars } from '$lib/themes/index'
 

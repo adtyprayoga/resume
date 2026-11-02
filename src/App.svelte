@@ -16,10 +16,8 @@
   import { FONT_SCALES } from '$lib/themes/index'
   import type { FontScaleKey } from '$lib/themes/types'
 
-  /*
-   * Hydrate before PersistenceHost mounts, so its autosave effect never writes
-   * an empty document over stored work on first paint.
-   */
+  // Before PersistenceHost mounts, so autosave cannot write a fresh sample over
+  // stored work on first paint.
   prefs.hydrate()
   resumeDoc.replace(loadDocument() ?? sampleDocument())
 

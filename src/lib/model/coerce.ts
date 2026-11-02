@@ -1,12 +1,6 @@
 import { LOCALES, type DateRange, type Locale } from './types'
 
-/**
- * Leaf coercion for imported data.
- *
- * Containers are validated strictly (a non-object item is rejected outright),
- * but leaves are coerced to a safe default. A slightly stale export should still
- * import; garbage should never reach application state.
- */
+/** Containers are checked strictly; leaves coerce to a default so stale exports still import. */
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -27,7 +21,7 @@ export const dateRange = (value: unknown): DateRange => {
 
 let idCounter = 0
 
-/** Stable within a session; only needs to be unique inside one document. */
+/** Only needs to be unique within one document. */
 export const createId = (prefix: string): string => {
   idCounter += 1
   return `${prefix}_${Date.now().toString(36)}${idCounter.toString(36)}`
@@ -36,11 +30,7 @@ export const createId = (prefix: string): string => {
 export const idOf = (value: Record<string, unknown>, prefix: string): string =>
   typeof value.id === 'string' && value.id ? value.id : createId(prefix)
 
-/**
- * Builds a complete per-locale text node, so downstream code can index any
- * locale without a guard. Missing locales become blank and `resolve()` fills
- * them from the other locale.
- */
+/** Always complete, so callers can index any locale without a guard. */
 export const textNode = <T>(value: unknown, coerceText: (raw: unknown) => T): Record<Locale, T> => {
   const raw = isRecord(value) ? value : {}
   const out = {} as Record<Locale, T>

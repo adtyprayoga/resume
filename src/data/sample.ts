@@ -1,10 +1,7 @@
 import { emptyDocument } from '$lib/model/document'
 import type { ResumeDocument } from '$lib/model/types'
 
-/**
- * Demo content for a first-run document and as a test fixture.
- * Entirely fictional — not a real person.
- */
+/** First-run content and test fixture. Entirely fictional. */
 export const sampleDocument = (): ResumeDocument => ({
   ...emptyDocument(),
   contact: {
@@ -13,7 +10,7 @@ export const sampleDocument = (): ResumeDocument => ({
     website: 'https://budisantoso.example.com',
     github: 'https://github.com/example',
     linkedin: 'https://linkedin.com/in/example',
-    avatar: '',
+    avatar: '/avatar-sample.svg',
   },
   profile: {
     text: {

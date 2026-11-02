@@ -2,12 +2,9 @@
   import FieldLabel from './FieldLabel.svelte'
 
   /**
-   * Edits a string array as one line per entry — the natural shape for resume
-   * bullets.
-   *
-   * The textarea keeps its own draft text so that typing is never fought by a
-   * re-render. That makes the draft stale if `value` changes from outside, so
-   * callers key this component on whatever can change it (the active locale).
+   * One line per entry. The textarea keeps its own draft so typing is never
+   * fought by a re-render, which makes the draft stale if `value` changes from
+   * outside — callers key this on the active locale.
    */
   let {
     value = $bindable<string[]>([]),

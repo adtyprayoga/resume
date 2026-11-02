@@ -18,14 +18,20 @@
 </script>
 
 <header class="resume-header" data-break-atom>
-  <h1 class="resume-name">{profile.name}</h1>
-  {#if profile.headline}
-    <p class="resume-headline">{profile.headline}</p>
-  {/if}
-  {#if details.length}
-    <p class="resume-contact">{details.join('  ·  ')}</p>
-  {/if}
-  {#if profile.summary}
-    <p class="resume-summary">{profile.summary}</p>
+  <div class="resume-header-text">
+    <h1 class="resume-name">{profile.name}</h1>
+    {#if profile.headline}
+      <p class="resume-headline">{profile.headline}</p>
+    {/if}
+    {#if details.length}
+      <p class="resume-contact">{details.join('  ·  ')}</p>
+    {/if}
+  </div>
+  {#if contact.avatar}
+    <img class="resume-avatar" src={contact.avatar} alt="" />
   {/if}
 </header>
+
+{#if profile.summary}
+  <p class="resume-summary" data-break-atom>{profile.summary}</p>
+{/if}

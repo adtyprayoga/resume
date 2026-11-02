@@ -1,14 +1,7 @@
 <script lang="ts">
-  /**
-   * Draws where the printer will start each new page.
-   *
-   * Rendered as a sibling of `.resume-paper` rather than inside it, so it is
-   * structurally incapable of reaching the printed output.
-   *
-   * Measurement is driven by DOM observers, not by document state: an effect
-   * that read the state and then measured would be measuring the layout it had
-   * just invalidated.
-   */
+  // A sibling of `.resume-paper`, so it cannot reach the printed output.
+  // Driven by DOM observers rather than state: an effect that read state and
+  // then measured would be measuring layout it had just invalidated.
   import { collectAtoms, measurePageMetrics } from '$lib/pagination/measure'
   import { paginate } from '$lib/pagination/paginate'
 
@@ -34,7 +27,7 @@
     const mutation = new MutationObserver(remeasure)
     mutation.observe(paper, { childList: true, subtree: true, characterData: true })
 
-    // Fonts change metrics, so a measurement taken before they load is wrong.
+    // Fonts change metrics.
     void document.fonts?.ready.then(remeasure).catch(() => {})
     remeasure()
 

@@ -1,9 +1,5 @@
 <script lang="ts">
-  /**
-   * `scope` tells the user whether a value is shared across both languages or
-   * belongs to the one being edited — which is what makes it predictable what
-   * will change when they switch locale.
-   */
+  /** `scope` shows whether a value is shared or belongs to the locale being edited. */
   const {
     label,
     scope = 'localized',

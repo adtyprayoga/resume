@@ -17,10 +17,7 @@
     children: Snippet<[T, number]>
   } = $props()
 
-  /**
-   * Deleting is destructive and autosave means there is no undo, so a
-   * second click is required. Arming is per-item and resets on any other action.
-   */
+  // Autosave means no undo, so delete needs a confirming second click.
   let armed = $state<string | null>(null)
 
   const remove = (id: string) => {

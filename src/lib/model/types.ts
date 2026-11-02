@@ -7,25 +7,23 @@ export const LOCALES = ['id', 'en'] as const satisfies readonly Locale[]
 export const SCHEMA_VERSION = 1
 
 /**
- * Attaches a per-locale text payload to a shared, locale-invariant core.
- *
- * Every leaf stays a plain `string`: the locale union sits on ONE `text` node
- * per item, never on individual fields. Consumers never unwrap it — they read
- * the flattened `Resolved` form produced by `resolve()`.
+ * Per-locale text on a shared core. The locale union sits on one `text` node per
+ * item, never on individual fields, so every leaf stays a plain `string` and
+ * consumers read the flattened `Resolved` form instead of unwrapping.
  */
 export type Localized<Shared, Text> = Shared & { text: Record<Locale, Text> }
 
-/** A `Localized` item flattened for one locale. What every preview component sees. */
+/** What every preview component sees. */
 export type Resolved<Shared, Text> = Shared & Text
 
-/** A start/end span. `end` is null while `current` is true. */
+/** `end` is null while `current` is true. */
 export interface DateRange {
   start: string
   end: string | null
   current?: boolean
 }
 
-/** Locale-invariant contact facts, shared by every language version. */
+/** Shared by every language version. */
 export interface ContactInfo {
   email: string
   phone: string
@@ -61,7 +59,7 @@ export type ResolvedEducationItem = Resolved<EducationCore, EducationText>
 interface ExperienceCore {
   id: string
   dates: DateRange
-  /** Proper noun, not translated. */
+  /** Proper noun; not translated. */
   company: string
 }
 export interface ExperienceText {
@@ -110,7 +108,7 @@ export interface AwardText {
 export type AwardItem = Localized<AwardCore, AwardText>
 export type ResolvedAwardItem = Resolved<AwardCore, AwardText>
 
-/** A section's placement and visibility in a document. */
+
 export interface SectionState {
   kind: ListSectionKind
   enabled: boolean
@@ -124,10 +122,7 @@ export interface ResumeSections {
   awards: AwardItem[]
 }
 
-/**
- * The persisted document. One structure shared across locales, so adding an
- * item adds it for every language and the two versions cannot drift in shape.
- */
+/** One structure shared across locales, so the language versions cannot drift in shape. */
 export interface ResumeDocument {
   schemaVersion: typeof SCHEMA_VERSION
   contact: ContactInfo
@@ -136,7 +131,7 @@ export interface ResumeDocument {
   content: ResumeSections
 }
 
-/** A document flattened to one locale. The only shape the preview/print path sees. */
+/** Flattened to one locale; the only shape the preview and print paths see. */
 export interface ResolvedResume {
   contact: ContactInfo
   profile: ResolvedProfile

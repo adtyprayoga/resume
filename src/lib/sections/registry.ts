@@ -6,7 +6,7 @@ const modules = import.meta.glob<AnySectionModule>('./*/index.ts', {
   import: 'default',
 })
 
-/** Every list section, in default document order. */
+
 export const sectionModules: AnySectionModule[] = Object.values(modules).sort(
   (left, right) => left.order - right.order,
 )
@@ -25,7 +25,7 @@ export const getSectionModule = (kind: ListSectionKind): AnySectionModule => {
   return module
 }
 
-/** The registry's own view of which kinds exist, for the drift test. */
+/** For the drift test. */
 export const registeredKinds = (): string[] => sectionModules.map((module) => module.kind).sort()
 
 export const expectedKinds = (): string[] => [...LIST_SECTION_KINDS].sort()

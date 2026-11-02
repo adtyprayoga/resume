@@ -11,10 +11,7 @@ export type SaveStatus =
   | { kind: 'saved'; at: number }
   | { kind: 'error'; message: string }
 
-/**
- * Reading `globalThis.localStorage` can itself throw when storage is blocked by
- * the browser's privacy settings, so access is guarded rather than assumed.
- */
+/** Reading localStorage can itself throw when storage is blocked. */
 const defaultStorage = (): Storage | null => {
   try {
     return globalThis.localStorage ?? null
@@ -23,15 +20,11 @@ const defaultStorage = (): Storage | null => {
   }
 }
 
-/**
- * `undefined` means "use this browser's storage"; `null` means "there is none".
- * A default parameter value cannot express that, because it also fires on an
- * explicitly passed `undefined`.
- */
+/** `undefined` means this browser's storage, `null` means none. A default param cannot express that. */
 const resolveStorage = (storage: Storage | null | undefined): Storage | null =>
   storage === undefined ? defaultStorage() : storage
 
-/** A quota failure must be visible: a silent one loses the user's work. */
+/** Quota failures must be visible; a silent one loses the user's work. */
 const isQuotaError = (cause: unknown): boolean =>
   cause instanceof DOMException &&
   (cause.name === 'QuotaExceededError' || cause.name === 'NS_ERROR_DOM_QUOTA_REACHED')
@@ -58,7 +51,7 @@ export const saveDocument = (
   }
 }
 
-/** Returns null for absent or unusable stored data rather than throwing. */
+/** Null for absent or unusable data; never throws. */
 export const loadDocument = (storage?: Storage | null): ResumeDocument | null => {
   const target = resolveStorage(storage)
   if (!target) return null
@@ -89,7 +82,7 @@ export const clearDocument = (storage?: Storage | null): void => {
   try {
     resolveStorage(storage)?.removeItem(DOCUMENT_KEY)
   } catch {
-    // Nothing useful to do if removal fails.
+    // Nothing useful to do.
   }
 }
 
@@ -97,7 +90,7 @@ export const savePreferences = <T>(prefs: T, storage?: Storage | null): void => 
   try {
     resolveStorage(storage)?.setItem(PREFERENCES_KEY, JSON.stringify(prefs))
   } catch {
-    // Preferences are cosmetic; losing them is not worth surfacing.
+    // Cosmetic; not worth surfacing.
   }
 }
 

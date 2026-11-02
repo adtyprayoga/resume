@@ -1,7 +1,7 @@
 <script lang="ts">
   import FieldLabel from './FieldLabel.svelte'
 
-  /** Comma-separated editing for short lists such as a tech stack. */
+  /** Comma-separated, for short lists such as a tech stack. */
   let {
     value = $bindable<string[]>([]),
     label,

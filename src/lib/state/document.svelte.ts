@@ -4,31 +4,23 @@ import { LOCALES, type Locale, type ResolvedResume, type ResumeDocument } from '
 import type { ListSectionKind } from '$lib/sections/kinds'
 import { getSectionModule } from '$lib/sections/registry'
 
-/** Minimum shape every section item shares, enough to find one by id. */
 interface Identified {
   id: string
 }
 
 /**
- * Holds the live document.
- *
- * Exported as a `const` class instance, not an exported `$state` binding: the
- * compiler forbids reassigning an exported `$state` variable, and rune
- * references are rewritten one file at a time, so an importing module would
- * receive the raw proxy object rather than the unwrapped value.
+ * A `const` instance, not an exported `$state` binding: the compiler forbids
+ * reassigning an exported `$state`, and rune references are rewritten per file,
+ * so importers would get the raw proxy rather than the value.
  */
 class ResumeDocumentStore {
   current = $state<ResumeDocument>(emptyDocument())
 
-  /** Replaces the whole document (load from storage, import, reset to sample). */
   replace(doc: ResumeDocument): void {
     this.current = doc
   }
 
-  /**
-   * A plain, unproxied copy. Everything leaving the store for serialisation,
-   * structural cloning or deep comparison must go through this.
-   */
+  /** Unproxied copy. Everything leaving the store for serialisation goes through this. */
   snapshot(): ResumeDocument {
     return $state.snapshot(this.current) as ResumeDocument
   }
@@ -53,12 +45,7 @@ class ResumeDocumentStore {
     if (index >= 0) items.splice(index, 1)
   }
 
-  /**
-   * Moves an item by `delta` positions, clamped at the ends.
-   *
-   * Resumes are reverse-chronological and people add roles out of order, so
-   * reordering within a section is not optional.
-   */
+  /** Clamped at the ends. */
   moveItem(kind: ListSectionKind, id: string, delta: number): void {
     const items = this.list(kind)
     const from = items.findIndex((item) => item.id === id)
@@ -76,6 +63,19 @@ class ResumeDocumentStore {
     if (section) section.enabled = enabled
   }
 
+  /** Absolute reposition, for a drag landing on a specific row. */
+  moveSectionTo(kind: ListSectionKind, toIndex: number): void {
+    const sections = this.current.sections
+    const from = sections.findIndex((entry) => entry.kind === kind)
+    if (from < 0) return
+
+    const to = Math.min(sections.length - 1, Math.max(0, toIndex))
+    if (to === from) return
+
+    const [moved] = sections.splice(from, 1)
+    if (moved) sections.splice(to, 0, moved)
+  }
+
   moveSection(kind: ListSectionKind, delta: number): void {
     const sections = this.current.sections
     const from = sections.findIndex((entry) => entry.kind === kind)
@@ -88,12 +88,7 @@ class ResumeDocumentStore {
     if (moved) sections.splice(to, 0, moved)
   }
 
-  /**
-   * Copies every text field from one locale over the other, so starting the
-   * second language is a bootstrap rather than re-entry. Because the structure
-   * is shared, this only ever touches text — the two versions cannot differ in
-   * shape, so there is nothing to merge.
-   */
+/** Only touches text: the structure is shared, so there is nothing to merge. */
   copyLocale(from: Locale, to: Locale): void {
     if (from === to) return
 
@@ -109,7 +104,7 @@ class ResumeDocumentStore {
     }
   }
 
-  /** Field paths left blank in `locale` but filled in the other one. */
+  /** Fields blank in `locale` but filled in the other. */
   untranslatedCount(locale: Locale): number {
     const other = LOCALES.find((candidate) => candidate !== locale)
     if (!other) return 0

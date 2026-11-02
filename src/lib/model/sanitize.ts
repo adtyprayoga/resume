@@ -1,16 +1,15 @@
 /**
- * URL allowlisting for the two places imported strings reach the DOM as a URL:
- * `<a href>` and `<img src>`. Svelte escapes `{text}`, so plain text is safe —
- * these two are not.
+ * Svelte escapes `{text}`, so plain strings are safe. These two sinks are not:
+ * `<a href>` and `<img src>`.
  */
 
-/** Strips the characters browsers tolerate inside a scheme but humans don't see. */
+/** Strips characters browsers tolerate inside a scheme but humans cannot see. */
 const normalizeScheme = (value: string): string =>
   value.replace(/[\u0000- ]/g, '').toLowerCase()
 
 const LINK_SCHEMES = ['http:', 'https:', 'mailto:']
 
-/** Raster only. `data:image/svg+xml` can carry script, so it is not allowed. */
+/** Raster only: `data:image/svg+xml` can carry script. */
 const IMAGE_DATA_PREFIXES = [
   'data:image/png',
   'data:image/jpeg',
@@ -24,16 +23,23 @@ const schemeOf = (value: string): string | null => {
   return match?.[1] ? `${match[1]}:` : null
 }
 
-/** Returns the URL unchanged if its scheme is allowed for a link, else `''`. */
+/**
+ * A relative URL cannot change origin, so it is safe. The exception is the
+ * protocol-relative `//host` form, which can.
+ */
+const isSafeRelative = (value: string): boolean =>
+  schemeOf(value) === null && !normalizeScheme(value).startsWith('//')
+
+/** The URL, or `''` if its scheme is not allowed. */
 export const safeHref = (value: string): string => {
   const trimmed = value.trim()
   if (!trimmed) return ''
   const scheme = schemeOf(trimmed)
-  if (!scheme) return ''
+  if (!scheme) return isSafeRelative(trimmed) ? trimmed : ''
   return LINK_SCHEMES.includes(scheme) ? trimmed : ''
 }
 
-/** Returns the URL unchanged if it is usable as an image source, else `''`. */
+/** The URL, or `''` if it is not usable as an image source. */
 export const safeImageSrc = (value: string): string => {
   const trimmed = value.trim()
   if (!trimmed) return ''
@@ -42,5 +48,6 @@ export const safeImageSrc = (value: string): string => {
     return IMAGE_DATA_PREFIXES.some((prefix) => normalized.startsWith(prefix)) ? trimmed : ''
   }
   const scheme = schemeOf(trimmed)
+  if (!scheme) return isSafeRelative(trimmed) ? trimmed : ''
   return scheme === 'http:' || scheme === 'https:' ? trimmed : ''
 }

@@ -1,10 +1,6 @@
 import type { Locale } from '$lib/model/types'
 
-/**
- * UI chrome strings only — never resume content, which lives in the document's
- * per-locale text nodes. The two are independent: a user may well want an
- * Indonesian interface while editing an English resume.
- */
+/** Chrome only. Resume content lives in the document's per-locale text nodes. */
 const strings = {
   en: {
     'section.experience': 'Experience',

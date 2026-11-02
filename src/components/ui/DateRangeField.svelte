@@ -11,7 +11,7 @@
   const startId = `${uid}-start`
   const endId = `${uid}-end`
 
-  /** Clearing `end` when a role becomes current keeps the two consistent. */
+  // Clearing `end` keeps the pair consistent.
   const toggleCurrent = (event: Event) => {
     const current = (event.currentTarget as HTMLInputElement).checked
     value = current ? { start: value.start, end: null, current: true } : { start: value.start, end: '' }

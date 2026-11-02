@@ -1,53 +1,83 @@
 <script lang="ts">
   import { t, type UiStringKey } from '$lib/i18n/ui'
+  import type { ListSectionKind } from '$lib/sections/kinds'
   import { getSectionModule } from '$lib/sections/registry'
   import { resumeDoc } from '$lib/state/document.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
 
   const sections = $derived(resumeDoc.current.sections)
 
-  const label = (kind: (typeof sections)[number]['kind']) =>
+  let dragging = $state<ListSectionKind | null>(null)
+  let over = $state<ListSectionKind | null>(null)
+
+  const label = (kind: ListSectionKind) =>
     t(prefs.uiLocale, getSectionModule(kind).labelKey as UiStringKey)
 
-  const count = (kind: (typeof sections)[number]['kind']) =>
-    resumeDoc.current.content[kind].length
+  const drop = (target: ListSectionKind) => {
+    if (dragging && dragging !== target) {
+      resumeDoc.moveSectionTo(dragging, sections.findIndex((s) => s.kind === target))
+    }
+    dragging = null
+    over = null
+  }
+
+  // Dragging is unusable without a pointer, so the handle also reorders by key.
+  const onKeydown = (event: KeyboardEvent, kind: ListSectionKind) => {
+    const delta = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0
+    if (!delta) return
+    event.preventDefault()
+    resumeDoc.moveSection(kind, delta)
+  }
 </script>
 
 <p class="field-hint" style="margin-bottom:0.625rem">
-  Order and visibility of each section. A section with no entries is hidden
-  automatically, so no empty headings reach the page.
+  Drag to reorder, or focus a handle and use the arrow keys. A section with no
+  entries is hidden automatically, so no empty headings reach the page.
 </p>
 
-{#each sections as section, index (section.kind)}
-  <div class="setting-row">
-    <label class="field-check" style="flex:1">
-      <input
-        type="checkbox"
-        checked={section.enabled}
-        onchange={(e) =>
-          resumeDoc.setSectionEnabled(
-            section.kind,
-            (e.currentTarget as HTMLInputElement).checked,
-          )}
-      />
-      <span>{label(section.kind)}</span>
-      <span class="setting-count">{count(section.kind)}</span>
-    </label>
-    <div class="repeat-actions">
-      <button
-        type="button"
-        class="repeat-btn"
-        disabled={index === 0}
-        aria-label="Move section up"
-        onclick={() => resumeDoc.moveSection(section.kind, -1)}>↑</button
-      >
-      <button
-        type="button"
-        class="repeat-btn"
-        disabled={index === sections.length - 1}
-        aria-label="Move section down"
-        onclick={() => resumeDoc.moveSection(section.kind, 1)}>↓</button
-      >
-    </div>
-  </div>
-{/each}
+<ul class="section-list">
+  {#each sections as section, index (section.kind)}
+    <li
+      class="setting-row"
+      class:dragging={dragging === section.kind}
+      class:drop-target={over === section.kind && dragging !== section.kind}
+      draggable="true"
+      ondragstart={() => (dragging = section.kind)}
+      ondragover={(event) => {
+        event.preventDefault()
+        over = section.kind
+      }}
+      ondragleave={() => over === section.kind && (over = null)}
+      ondrop={(event) => {
+        event.preventDefault()
+        drop(section.kind)
+      }}
+      ondragend={() => {
+        dragging = null
+        over = null
+      }}
+    >
+      <span
+        class="drag-handle"
+        role="button"
+        tabindex="0"
+        aria-label="Reorder {label(section.kind)}, position {index + 1} of {sections.length}"
+        onkeydown={(event) => onKeydown(event, section.kind)}
+      >⠿</span>
+
+      <label class="field-check" style="flex:1">
+        <input
+          type="checkbox"
+          checked={section.enabled}
+          onchange={(event) =>
+            resumeDoc.setSectionEnabled(
+              section.kind,
+              (event.currentTarget as HTMLInputElement).checked,
+            )}
+        />
+        <span>{label(section.kind)}</span>
+        <span class="setting-count">{resumeDoc.current.content[section.kind].length}</span>
+      </label>
+    </li>
+  {/each}
+</ul>

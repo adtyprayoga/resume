@@ -43,12 +43,7 @@ const profileOf = (raw: unknown): Profile => {
   return { text: textNode(value.text, profileText) }
 }
 
-/**
- * Reconciles a stored section list against the registry: unknown kinds and
- * duplicates are dropped, and any kind the registry knows but the list omits is
- * appended in default order. A document can therefore never be missing a
- * section, and a section removed from the code can never resurrect.
- */
+/** Drops unknown kinds and duplicates, appends anything missing. */
 export const normalizeSections = (raw: unknown): SectionState[] => {
   const entries = Array.isArray(raw) ? raw : []
   const seen = new Set<ListSectionKind>()
@@ -86,11 +81,7 @@ export const emptyDocument = (): ResumeDocument => ({
   content: contentOf(undefined),
 })
 
-/**
- * Turns unknown input into a document that is safe to put into application
- * state. Containers are checked strictly; leaves are coerced to defaults, so a
- * slightly stale export still imports while garbage never reaches state.
- */
+/** Containers checked strictly, leaves coerced, so garbage never reaches state. */
 export const validateDocument = (raw: unknown): Result<ResumeDocument> => {
   if (!isRecord(raw)) return err('This file does not look like a resume.')
 

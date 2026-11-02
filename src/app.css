@@ -8,10 +8,7 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-/*
- * Tailwind v4 has no print-color-adjust utility (only forced-color-adjust).
- * Needed only where a tinted surface must survive; the v1 theme avoids those.
- */
+/* Tailwind v4 has no print-color-adjust utility. */
 @utility print-exact {
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;

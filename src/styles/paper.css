@@ -1,19 +1,14 @@
 /*
- * Screen-only preview chrome. Hand-written rather than Tailwind utilities
- * because Tailwind v4 ships a `print:` variant but no `screen:` variant, so
- * there is no way to scope a utility to screen only.
+ * Screen-only preview chrome, hand-written because Tailwind v4 has a `print:`
+ * variant but no `screen:` variant.
  *
- * Scaling uses `zoom`, not `transform: scale`. A transform leaves the layout box
- * at full size, so the surrounding pane needs negative-margin or calc() hacks to
- * compensate; `zoom` affects used layout values, so the surrounding layout is
- * correct for free. It is also the property the print-scaling bug reports point
- * at as the fix.
+ * Scaling uses `zoom`, not `transform: scale`: a transform leaves the layout box
+ * at full size, so the surrounding pane would need calc() hacks to compensate.
  */
 
 .resume-paper-frame {
   zoom: var(--preview-zoom, 1);
-  /* Sized to the sheet so the paper centres and the page-break rule, which
-     spans the frame, cannot overhang the paper's edge. */
+  /* Sized to the sheet so the page-break rule cannot overhang the paper. */
   width: 210mm;
   max-width: 100%;
   margin-inline: auto;
@@ -24,10 +19,7 @@
   position: relative;
 }
 
-/*
- * A sibling of the paper, never a child: it is then structurally impossible for
- * it to print, with no reliance on a print rule being correct.
- */
+/* A sibling of the paper, never a child, so it cannot print. */
 .page-break {
   position: absolute;
   left: 0;

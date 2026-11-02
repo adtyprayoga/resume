@@ -4,11 +4,8 @@ import { saveDocument, type SaveStatus } from '$lib/storage/persist'
 export const AUTOSAVE_DELAY_MS = 600
 
 /**
- * Debounced writer, kept as a plain function rather than an effect.
- *
- * `$effect` cannot be called at the top level of a `.svelte.ts` module — it must
- * run while a parent effect is active — so the effect that drives this lives in
- * `PersistenceHost.svelte` and the logic stays here, pure and testable.
+ * `$effect` cannot run at the top level of a `.svelte.ts` module, so the effect
+ * driving this lives in `PersistenceHost.svelte` and the logic stays here.
  */
 export class Autosaver {
   private timer: ReturnType<typeof setTimeout> | undefined
@@ -18,7 +15,7 @@ export class Autosaver {
     this.onStatus = onStatus
   }
 
-  /** Coalesces rapid edits into a single write. */
+
   schedule(doc: ResumeDocument, delay = AUTOSAVE_DELAY_MS): void {
     this.cancel()
     this.timer = setTimeout(() => {
@@ -27,7 +24,7 @@ export class Autosaver {
     }, delay)
   }
 
-  /** Writes immediately, for page unload. */
+  /** For page unload. */
   flush(doc: ResumeDocument): void {
     this.cancel()
     this.onStatus(saveDocument(doc))

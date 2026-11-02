@@ -123,3 +123,30 @@ describe('untranslatedCount', () => {
     expect(resumeDoc.untranslatedCount('id')).toBe(0)
   })
 })
+
+describe('moveSectionTo', () => {
+  it('moves a section to an absolute index', () => {
+    const order = resumeDoc.current.sections.map((s) => s.kind)
+    resumeDoc.moveSectionTo(order[0]!, 2)
+    expect(resumeDoc.current.sections.map((s) => s.kind)).toEqual([
+      order[1], order[2], order[0], ...order.slice(3),
+    ])
+  })
+
+  it('clamps an out-of-range index', () => {
+    const order = resumeDoc.current.sections.map((s) => s.kind)
+    resumeDoc.moveSectionTo(order[0]!, 99)
+    expect(resumeDoc.current.sections.at(-1)?.kind).toBe(order[0])
+    resumeDoc.moveSectionTo(order[0]!, -99)
+    expect(resumeDoc.current.sections[0]?.kind).toBe(order[0])
+  })
+
+  it('is a no-op for the same index or an unknown kind', () => {
+    const before = resumeDoc.current.sections.map((s) => s.kind)
+    resumeDoc.moveSectionTo(before[1]!, 1)
+    expect(resumeDoc.current.sections.map((s) => s.kind)).toEqual(before)
+    // @ts-expect-error probing the runtime guard
+    resumeDoc.moveSectionTo('nope', 0)
+    expect(resumeDoc.current.sections.map((s) => s.kind)).toEqual(before)
+  })
+})

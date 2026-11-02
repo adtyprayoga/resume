@@ -1,22 +1,13 @@
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-/**
- * Traps Tab inside `node` and restores focus to wherever it was on teardown.
- *
- * Written as a Svelte action so the lifecycle is tied to the element rather than
- * to an effect — the dialog cannot leave focus stranded on a hidden element.
- */
+/** Traps Tab inside `node` and restores focus on teardown. */
 export const focusTrap = (node: HTMLElement) => {
   const previous = document.activeElement as HTMLElement | null
 
-  /**
-   * Visibility is judged without touching layout. `offsetParent` would be the
-   * obvious check but it is null for `position: fixed` elements — which this
-   * dialog is — and is always null under a test DOM that has no layout engine.
-   */
+  // Not offsetParent: it is null for position:fixed elements, which this is.
   const isHidden = (element: HTMLElement): boolean =>
-    // `hidden` is typed `string | boolean` because it also accepts "until-found".
+    // `hidden` is `string | boolean` because it also accepts "until-found".
     Boolean(element.hidden) ||
     element.closest('[hidden]') !== null ||
     element.closest('[aria-hidden="true"]') !== null

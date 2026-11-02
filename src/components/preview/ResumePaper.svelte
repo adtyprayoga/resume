@@ -21,10 +21,7 @@
     element?: HTMLElement | undefined
   } = $props()
 
-  /**
-   * A section renders only when it is enabled AND has content, so an empty
-   * Awards list leaves no stray heading on the page.
-   */
+  // Enabled and non-empty, so an empty list leaves no stray heading.
   const visible = $derived(
     resume.sections
       .filter((section) => section.enabled && resume[section.kind].length > 0)

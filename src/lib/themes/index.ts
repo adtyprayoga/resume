@@ -16,7 +16,7 @@ export const defaultTheme: ResumeThemeConfig = first
 export const getTheme = (key: string | null | undefined): ResumeThemeConfig =>
   resumeThemes.find((theme) => theme.key === key) ?? defaultTheme
 
-/** Multiplies every type size. Lets the user fit content without a layout algorithm. */
+/** Lets the user fit content without an auto-shrink algorithm. */
 export const FONT_SCALES: Record<FontScaleKey, number> = {
   xsmall: 0.86,
   small: 0.93,
@@ -26,11 +26,7 @@ export const FONT_SCALES: Record<FontScaleKey, number> = {
 
 const pt = (size: number, scale: number): string => `${Number((size * scale).toFixed(2))}pt`
 
-/**
- * Maps a typed theme into the CSS custom properties `styles/print.css` reads.
- * The stylesheet declares a fallback for each, so the paper still renders if a
- * variable is ever missing.
- */
+/** print.css declares a fallback for each, so a missing variable still renders. */
 export const buildThemeStyleVars = (
   theme: ResumeThemeConfig,
   fontScale: FontScaleKey = 'standard',
@@ -54,7 +50,7 @@ export const buildThemeStyleVars = (
   }
 }
 
-/** Serialises the vars for a `style` attribute. */
+
 export const themeStyleAttr = (
   theme: ResumeThemeConfig,
   fontScale: FontScaleKey = 'standard',

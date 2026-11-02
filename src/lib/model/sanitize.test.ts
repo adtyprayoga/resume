@@ -25,6 +25,11 @@ describe('safeHref', () => {
     expect(safeHref('')).toBe('')
     expect(safeHref('//evil.com')).toBe('')
   })
+
+  it('allows same-origin relative links', () => {
+    expect(safeHref('/about')).toBe('/about')
+    expect(safeHref('./cv.pdf')).toBe('./cv.pdf')
+  })
 })
 
 describe('safeImageSrc', () => {
@@ -42,5 +47,11 @@ describe('safeImageSrc', () => {
   it('rejects javascript: and mailto:', () => {
     expect(safeImageSrc('javascript:alert(1)')).toBe('')
     expect(safeImageSrc('mailto:a@b.c')).toBe('')
+  })
+
+  it('allows a self-hosted relative image but not a protocol-relative one', () => {
+    expect(safeImageSrc('/images/me.png')).toBe('/images/me.png')
+    expect(safeImageSrc('avatar.jpg')).toBe('avatar.jpg')
+    expect(safeImageSrc('//evil.com/x.png')).toBe('')
   })
 })

@@ -13,13 +13,10 @@ const asLocale = (value: unknown, fallback: Locale): Locale =>
 const asFontScale = (value: unknown): FontScaleKey =>
   typeof value === 'string' && value in FONT_SCALES ? (value as FontScaleKey) : 'standard'
 
-/**
- * Drawer tabs are the resume sections plus a settings pane, which is UI state
- * rather than a section of the document.
- */
+/** Sections plus a settings pane, which is UI state rather than document content. */
 export type DrawerTab = SectionKind | 'settings'
 
-/** Persisted settings, kept apart from document content. */
+
 interface PersistablePreferences {
   uiLocale: Locale
   documentLocale: Locale
@@ -28,13 +25,8 @@ interface PersistablePreferences {
 }
 
 class PreferencesStore {
-  /** Language of the interface. */
   uiLocale = $state<Locale>('en')
-  /**
-   * Language of the resume being edited. Independent of `uiLocale` on purpose:
-   * editing an English resume through an Indonesian interface is reasonable, and
-   * splitting these later would need a migration.
-   */
+  /** Independent of `uiLocale`: an Indonesian interface editing an English resume is reasonable. */
   documentLocale = $state<Locale>('en')
   themeKey = $state<string>(defaultTheme.key)
   fontScale = $state<FontScaleKey>('standard')
@@ -43,14 +35,14 @@ class PreferencesStore {
   drawerSection = $state<DrawerTab>('profile')
   showPageBreaks = $state(true)
 
-  /** Surfaced in the UI so a failed autosave is never silent. */
+  /** Surfaced in the UI; a silent autosave failure would be the worst bug here. */
   saveStatus = $state<SaveStatus>({ kind: 'idle' })
 
   get theme() {
     return getTheme(this.themeKey)
   }
 
-  /** Reads stored settings, ignoring anything that is no longer a valid value. */
+  /** Ignores values that are no longer valid. */
   hydrate(storage?: Storage | null): void {
     const stored = loadPreferences(storage)
     if (!stored) return

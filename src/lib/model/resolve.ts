@@ -8,17 +8,14 @@ import type {
 
 const otherLocale = (locale: Locale): Locale => (locale === 'id' ? 'en' : 'id')
 
-/** Treats blank strings and empty arrays as "not translated yet". */
+/** Blank strings and empty arrays mean "not translated yet". */
 const isBlank = (value: unknown): boolean =>
   value === '' ||
   value === undefined ||
   value === null ||
   (Array.isArray(value) && value.length === 0)
 
-/**
- * Field-level fallback: a field left blank in the active locale borrows the
- * other locale's value, so a half-translated resume still renders completely.
- */
+/** A blank field borrows the other locale, so a half-translated resume still renders. */
 const mergeText = <T extends object>(primary: T, fallback: T): T => {
   const merged: Record<string, unknown> = { ...(primary as Record<string, unknown>) }
   for (const [key, value] of Object.entries(merged)) {
@@ -30,7 +27,7 @@ const mergeText = <T extends object>(primary: T, fallback: T): T => {
   return merged as T
 }
 
-/** Drops the `text` node and splices the chosen locale's fields onto the core. */
+/** Drops `text` and splices the chosen locale onto the core. */
 const flatten = <S extends object, T extends object>(
   item: Localized<S, T>,
   locale: Locale,
@@ -39,11 +36,7 @@ const flatten = <S extends object, T extends object>(
   return { ...core, ...mergeText(text[locale], text[otherLocale(locale)]) } as Resolved<S, T>
 }
 
-/**
- * The single locale seam. Everything downstream — preview components, the theme
- * layer, pagination and the print path — consumes `ResolvedResume` and is
- * entirely locale-ignorant.
- */
+/** The one locale seam: everything downstream consumes `ResolvedResume` and ignores locales. */
 export const resolve = (doc: ResumeDocument, locale: Locale): ResolvedResume => ({
   contact: doc.contact,
   profile: flatten(doc.profile, locale),

@@ -49,11 +49,33 @@ describe('EditorDrawer', () => {
     expect(prefs.drawerOpen).toBe(true)
   })
 
-  it('shows the section settings pane with per-section entry counts', async () => {
+  it('shows the section settings pane with a reorder handle per section', async () => {
     render(EditorDrawer)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Sections' }))
     expect(screen.getByRole('checkbox', { name: /Experience/ })).toBeChecked()
-    expect(screen.getAllByRole('button', { name: 'Move section up' })).toHaveLength(5)
+    expect(screen.getAllByRole('button', { name: /^Reorder / })).toHaveLength(5)
+  })
+
+  it('reorders a section from the keyboard, since dragging needs a pointer', async () => {
+    render(EditorDrawer)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Sections' }))
+
+    const before = resumeDoc.current.sections.map((s) => s.kind)
+    screen.getByRole('button', { name: /^Reorder Experience/ }).focus()
+    await user.keyboard('{ArrowDown}')
+
+    expect(resumeDoc.current.sections.map((s) => s.kind)).toEqual([
+      before[1], before[0], ...before.slice(2),
+    ])
+  })
+
+  it('announces each handle position for screen readers', async () => {
+    render(EditorDrawer)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Sections' }))
+    expect(
+      screen.getByRole('button', { name: 'Reorder Experience, position 1 of 5' }),
+    ).toBeInTheDocument()
   })
 
   it('toggling a section off updates the document', async () => {
