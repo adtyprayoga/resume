@@ -57,6 +57,13 @@ describe('toolbar actions', () => {
     expect(within(toolbar()).getByRole('button', { name: 'Settings' }).querySelector('.icon-btn-text')).toBeNull()
   })
 
+  it('explains how to edit in Edit mode', async () => {
+    render(App)
+    expect(screen.queryByText(/Click or tap any outlined text/)).toBeNull()
+    await userEvent.setup().click(within(toolbar()).getByRole('button', { name: 'Edit' }))
+    expect(screen.getByText(/Click or tap any outlined text/).closest('[data-print-hide]')).not.toBeNull()
+  })
+
   it('shows a tooltip naming each action', () => {
     render(App)
     const settings = within(toolbar()).getByRole('button', { name: 'Settings' })

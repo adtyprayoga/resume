@@ -331,6 +331,13 @@
     grid-row: 1;
   }
 
+  /* The layout group sits at the right edge here; a left-anchored tip, even
+     hidden, would widen the page. */
+  .layout-tip {
+    left: auto;
+    right: 0;
+  }
+
   .app-actions {
     grid-column: 1 / -1;
     grid-row: 2;

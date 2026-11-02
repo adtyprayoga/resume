@@ -195,6 +195,7 @@
 
   {#if editing.mode === 'edit'}
     <div class="edit-bar" data-print-hide>
+      <p class="edit-hint">{t(prefs.uiLocale, 'edit.hint')}</p>
       <button
         type="button"
         class="tool-btn"

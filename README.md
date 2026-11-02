@@ -123,7 +123,15 @@ and four actions. **Edit / Done** is a labelled primary button; **Export** and
 
 ### Editing
 
-The app starts in **Preview**. Press **Edit** to reveal what can be changed:
+On a first visit the page shows a fictional sample resume with a short
+introduction above it, offering **Edit this resume**, **Start blank** or
+**Import JSON**. The introduction disappears once the sample is changed or the
+introduction is dismissed. **Start blank** is also in Settings → Data, where it
+asks for confirmation.
+
+The app starts in **Preview**. Press **Edit** to reveal what can be changed;
+editable text gets a dashed outline and a hint above the page explains the
+keys:
 
 - **Click any text** on the page. Single-line text opens a native input over it:
   **Enter** or clicking away applies, **Escape** cancels. Multi-line text keeps

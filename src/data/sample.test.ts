@@ -47,4 +47,9 @@ describe('isSampleDocument', () => {
     expect(isSampleDocument(changed)).toBe(false)
     expect(isSampleDocument(emptyDocument())).toBe(false)
   })
+
+  it('still recognises the sample after a save and reload round trip', () => {
+    const reloaded = validateDocument(JSON.parse(JSON.stringify(sampleDocument())))
+    expect(reloaded.ok && isSampleDocument(reloaded.value)).toBe(true)
+  })
 })
