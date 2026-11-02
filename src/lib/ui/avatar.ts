@@ -1,3 +1,4 @@
+import type { UiMessage } from '$lib/i18n/ui'
 /** Downscaled hard: the result is embedded in the document and stored in localStorage. */
 export const AVATAR_PIXELS = 320
 export const MAX_SOURCE_BYTES = 8_000_000
@@ -5,7 +6,7 @@ export const MAX_RESULT_BYTES = 120_000
 
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 
-export type AvatarResult = { ok: true; dataUrl: string } | { ok: false; error: string }
+export type AvatarResult = { ok: true; dataUrl: string } | ({ ok: false; error: string } & Partial<UiMessage>)
 
 export const checkSource = (file: { type: string; size: number }): string | null => {
   if (!ACCEPTED.includes(file.type)) return 'Choose a PNG, JPEG, WebP or GIF image.'
@@ -37,13 +38,13 @@ export const dataUrlBytes = (dataUrl: string): number => {
  */
 export const fileToAvatar = async (file: File): Promise<AvatarResult> => {
   const problem = checkSource(file)
-  if (problem) return { ok: false, error: problem }
+  if (problem) return { ok: false, error: problem, messageKey: ACCEPTED.includes(file.type) ? 'error.avatarSourceLarge' : 'error.avatarType' }
 
   let bitmap: ImageBitmap
   try {
     bitmap = await createImageBitmap(file)
   } catch {
-    return { ok: false, error: 'That image could not be read.' }
+    return { ok: false, error: 'That image could not be read.', messageKey: 'error.avatarRead' }
   }
 
   const { width, height } = fitWithin(bitmap.width, bitmap.height, AVATAR_PIXELS)
@@ -52,7 +53,7 @@ export const fileToAvatar = async (file: File): Promise<AvatarResult> => {
   canvas.height = height
 
   const context = canvas.getContext('2d')
-  if (!context) return { ok: false, error: 'This browser cannot resize images.' }
+  if (!context) return { ok: false, error: 'This browser cannot resize images.', messageKey: 'error.avatarResize' }
 
   context.drawImage(bitmap, 0, 0, width, height)
   bitmap.close()
@@ -60,7 +61,7 @@ export const fileToAvatar = async (file: File): Promise<AvatarResult> => {
   const dataUrl = canvas.toDataURL('image/jpeg', 0.82)
 
   if (dataUrlBytes(dataUrl) > MAX_RESULT_BYTES) {
-    return { ok: false, error: 'That image is still too large after resizing.' }
+    return { ok: false, error: 'That image is still too large after resizing.', messageKey: 'error.avatarResultLarge' }
   }
 
   return { ok: true, dataUrl }

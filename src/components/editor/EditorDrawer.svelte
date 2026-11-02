@@ -13,12 +13,12 @@
 
   /** Profile first, then every registered section in document order, then settings. */
   const tabs = $derived([
-    { key: 'profile' as const, label: 'Profile' },
+    { key: 'profile' as const, label: t(prefs.uiLocale, 'editor.profile') },
     ...sectionModules.map((module) => ({
       key: module.kind,
       label: t(prefs.uiLocale, module.labelKey as UiStringKey),
     })),
-    { key: 'settings' as const, label: 'Sections' },
+    { key: 'settings' as const, label: t(prefs.uiLocale, 'editor.sections') },
   ])
 
   const onKeydown = (event: KeyboardEvent) => {
@@ -39,7 +39,7 @@
     class="drawer"
     role="dialog"
     aria-modal="true"
-    aria-label="Edit resume"
+    aria-label={t(prefs.uiLocale, 'editor.title')}
     use:focusTrap
   >
     <header class="drawer-head">
@@ -55,7 +55,7 @@
           </button>
         {/each}
       </nav>
-      <button type="button" class="repeat-btn" onclick={() => prefs.closeDrawer()}>Close</button>
+      <button type="button" class="repeat-btn" onclick={() => prefs.closeDrawer()}>{t(prefs.uiLocale, 'action.close')}</button>
     </header>
 
     <div class="drawer-body">

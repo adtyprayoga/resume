@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AvatarImage from '../ui/AvatarImage.svelte'
   import type { ContactInfo, ResolvedProfile } from '$lib/model/types'
 
   const { profile, contact }: { profile: ResolvedProfile; contact: ContactInfo } = $props()
@@ -28,7 +29,7 @@
     {/if}
   </div>
   {#if contact.avatar}
-    <img class="resume-avatar" src={contact.avatar} alt="" />
+    <AvatarImage class="resume-avatar" src={contact.avatar} />
   {/if}
 </header>
 

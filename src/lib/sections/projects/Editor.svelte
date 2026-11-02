@@ -19,29 +19,29 @@
 
 <RepeatableList
   {items}
-  addLabel="+ Add project"
+  addLabel={t(prefs.uiLocale, 'add.projects')}
   onAdd={() => resumeDoc.addItem('projects')}
   onRemove={(id) => resumeDoc.removeItem('projects', id)}
   onMove={(id, delta) => resumeDoc.moveItem('projects', id, delta)}
 >
   {#snippet children(item)}
       <TextField
-        label="Link"
+        label={t(prefs.uiLocale, 'field.link')}
         scope="shared"
         type="url"
-        placeholder="github.com/you/project"
+        placeholder={t(prefs.uiLocale, 'placeholder.project')}
         normalize={normalizeUrl}
         bind:value={item.link}
       />
-    <TagsField label="Tech stack" scope="shared" bind:value={item.techStack} />
+    <TagsField label={t(prefs.uiLocale, 'field.techStack')} scope="shared" bind:value={item.techStack} />
     <DateRangeField bind:value={item.dates} presentLabel={t(prefs.uiLocale, 'date.present')} />
     {#key locale}
       <div class="field-row">
-        <TextField label="Name" bind:value={item.text[locale].name} />
-        <TextField label="Role" bind:value={item.text[locale].role} />
+        <TextField label={t(prefs.uiLocale, 'field.name')} bind:value={item.text[locale].name} />
+        <TextField label={t(prefs.uiLocale, 'field.role')} bind:value={item.text[locale].role} />
       </div>
-      <TextArea label="Description" bind:value={item.text[locale].description} />
-      <LinesField label="Highlights" bind:value={item.text[locale].bullets} />
+      <TextArea label={t(prefs.uiLocale, 'field.description')} bind:value={item.text[locale].description} />
+      <LinesField label={t(prefs.uiLocale, 'field.highlights')} bind:value={item.text[locale].bullets} />
     {/key}
   {/snippet}
 </RepeatableList>

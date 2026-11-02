@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/ui'
+  import { prefs } from '$lib/state/preferences.svelte'
   import { getPaneScope } from '$lib/ui/scope'
   import type { DateRange } from '$lib/model/types'
 
@@ -21,23 +23,23 @@
 
 <div class="field">
   <span class="field-label">
-    Dates
-    {#if showScope}<span class="field-scope shared">both languages</span>{/if}
+    {t(prefs.uiLocale, 'field.dates')}
+    {#if showScope}<span class="field-scope shared">{t(prefs.uiLocale, 'scope.shared')}</span>{/if}
   </span>
   <div class="date-row">
     <input
       id="{uid}-start"
       class="field-input"
-      placeholder="2024-03"
-      aria-label="From"
+      placeholder={t(prefs.uiLocale, 'placeholder.startDate')}
+      aria-label={t(prefs.uiLocale, 'field.from')}
       bind:value={value.start}
     />
     <span class="date-sep">–</span>
     <input
       id="{uid}-end"
       class="field-input"
-      placeholder="2025-06"
-      aria-label="To"
+      placeholder={t(prefs.uiLocale, 'placeholder.endDate')}
+      aria-label={t(prefs.uiLocale, 'field.to')}
       disabled={value.current === true}
       value={value.end ?? ''}
       oninput={(event) => (value.end = (event.currentTarget as HTMLInputElement).value)}

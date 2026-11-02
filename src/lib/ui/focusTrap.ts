@@ -14,7 +14,7 @@ export const focusTrap = (node: HTMLElement) => {
 
   const focusable = () =>
     [...node.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-      (element) => !isHidden(element),
+      (element) => !isHidden(element) && !element.matches(':disabled'),
     )
 
   const onKeydown = (event: KeyboardEvent) => {

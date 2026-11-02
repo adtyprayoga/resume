@@ -16,21 +16,21 @@
 
 <RepeatableList
   {items}
-  addLabel="+ Add education"
+  addLabel={t(prefs.uiLocale, 'add.education')}
   onAdd={() => resumeDoc.addItem('education')}
   onRemove={(id) => resumeDoc.removeItem('education', id)}
   onMove={(id, delta) => resumeDoc.moveItem('education', id, delta)}
 >
   {#snippet children(item)}
-    <TextField label="GPA" scope="shared" bind:value={item.gpa} />
+    <TextField label={t(prefs.uiLocale, 'field.gpa')} scope="shared" bind:value={item.gpa} />
     <DateRangeField bind:value={item.dates} presentLabel={t(prefs.uiLocale, 'date.present')} />
     {#key locale}
-      <TextField label="School" bind:value={item.text[locale].school} />
+      <TextField label={t(prefs.uiLocale, 'field.school')} bind:value={item.text[locale].school} />
       <div class="field-row">
-        <TextField label="Degree" bind:value={item.text[locale].degree} />
-        <TextField label="Field" bind:value={item.text[locale].field} />
+        <TextField label={t(prefs.uiLocale, 'field.degree')} bind:value={item.text[locale].degree} />
+        <TextField label={t(prefs.uiLocale, 'field.field')} bind:value={item.text[locale].field} />
       </div>
-      <TextArea label="Notes" bind:value={item.text[locale].description} />
+      <TextArea label={t(prefs.uiLocale, 'field.notes')} bind:value={item.text[locale].description} />
     {/key}
   {/snippet}
 </RepeatableList>

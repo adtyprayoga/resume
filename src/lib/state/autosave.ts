@@ -10,24 +10,26 @@ export const AUTOSAVE_DELAY_MS = 600
 export class Autosaver {
   private timer: ReturnType<typeof setTimeout> | undefined
   private onStatus: (status: SaveStatus) => void
+  private canSave: () => boolean
 
-  constructor(onStatus: (status: SaveStatus) => void) {
+  /** `canSave` is checked when a write would happen, so a timer that elapses after a block never writes. */
+  constructor(onStatus: (status: SaveStatus) => void, canSave: () => boolean = () => true) {
     this.onStatus = onStatus
+    this.canSave = canSave
   }
-
 
   schedule(doc: ResumeDocument, delay = AUTOSAVE_DELAY_MS): void {
     this.cancel()
     this.timer = setTimeout(() => {
       this.timer = undefined
-      this.onStatus(saveDocument(doc))
+      if (this.canSave()) this.onStatus(saveDocument(doc))
     }, delay)
   }
 
   /** For page unload. */
   flush(doc: ResumeDocument): void {
     this.cancel()
-    this.onStatus(saveDocument(doc))
+    if (this.canSave()) this.onStatus(saveDocument(doc))
   }
 
   cancel(): void {

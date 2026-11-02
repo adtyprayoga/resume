@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/ui'
   import RepeatableList from '$components/ui/RepeatableList.svelte'
   import TextArea from '$components/ui/TextArea.svelte'
   import TextField from '$components/ui/TextField.svelte'
@@ -14,17 +15,17 @@
 
 <RepeatableList
   {items}
-  addLabel="+ Add award"
+  addLabel={t(prefs.uiLocale, 'add.awards')}
   onAdd={() => resumeDoc.addItem('awards')}
   onRemove={(id) => resumeDoc.removeItem('awards', id)}
   onMove={(id, delta) => resumeDoc.moveItem('awards', id, delta)}
 >
   {#snippet children(item)}
-    <TextField label="Date" scope="shared" bind:value={item.date} placeholder="2024-05" />
+    <TextField label={t(prefs.uiLocale, 'field.date')} scope="shared" bind:value={item.date} placeholder={t(prefs.uiLocale, 'placeholder.awardDate')} />
     {#key locale}
-      <TextField label="Title" bind:value={item.text[locale].title} />
-      <TextField label="Issuer" bind:value={item.text[locale].issuer} />
-      <TextArea label="Notes" bind:value={item.text[locale].description} rows={2} />
+      <TextField label={t(prefs.uiLocale, 'field.title')} bind:value={item.text[locale].title} />
+      <TextField label={t(prefs.uiLocale, 'field.issuer')} bind:value={item.text[locale].issuer} />
+      <TextArea label={t(prefs.uiLocale, 'field.notes')} bind:value={item.text[locale].description} rows={2} />
     {/key}
   {/snippet}
 </RepeatableList>
