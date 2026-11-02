@@ -1,20 +1,34 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, relative, sep } from 'node:path'
+
 /**
  * Enforces design.md's rules on chrome stylesheets. Regex-level parsing is
  * enough: the audited files are hand-written CSS with one declaration per line.
  */
 
-/** Repo-relative paths of stylesheets (or Svelte files with <style>) migrated to the tokens. */
-export const CHROME_SOURCES: string[] = [
-  'src/components/ui/field.css',
-  'src/components/editor/drawer.css',
-  'src/components/ImportDialog.svelte',
-  'src/components/RecoveryScreen.svelte',
-  'src/components/shell/shell.css',
-  'src/components/editing/editing.css',
-  'src/styles/paper.css',
-  'src/components/ui/AvatarImage.svelte',
-  'src/styles/motion.css',
-]
+const EXCLUDED = new Set(['src/styles/tokens.css', 'src/styles/print.css'])
+
+const walk = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)],
+  )
+
+/**
+ * Repo-relative paths the contract audits: every chrome stylesheet and every
+ * component with a <style> block. tokens.css owns the literals; print.css
+ * belongs to the paper and its themes.
+ */
+export const chromeSources = (root: string): string[] => {
+  const files = ['src/components', 'src/styles', 'src/lib/sections'].flatMap((dir) => walk(join(root, dir)))
+  return files
+    .map((file) => relative(root, file).split(sep).join('/'))
+    .filter((path) => !EXCLUDED.has(path))
+    .filter((path) =>
+      path.endsWith('.css') ||
+      (path.endsWith('.svelte') && /<style[\s>]/.test(readFileSync(join(root, path), 'utf8'))),
+    )
+    .sort()
+}
 
 const TRANSITIONABLE = new Set([
   'opacity',

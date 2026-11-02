@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { auditCss, CHROME_SOURCES, contrast, readTokens, styleBlocks } from './designContract'
+import { auditCss, chromeSources, contrast, readTokens, styleBlocks } from './designContract'
 
 // Read from disk: Vitest does not process CSS, so a ?raw import comes back empty.
 const read = (path: string) => readFileSync(resolve(__dirname, '../..', path), 'utf8')
@@ -119,8 +119,25 @@ describe('tokens', () => {
 })
 
 describe('chrome sources', () => {
-  it.each(CHROME_SOURCES.length ? CHROME_SOURCES : ['(none yet)'])('%s obeys the contract', (path) => {
-    if (path === '(none yet)') return
+  const sources = chromeSources(resolve(__dirname, '../..'))
+
+  it('audits at least the migrated files', () => {
+    expect(sources).toEqual(expect.arrayContaining([
+      'src/components/ui/field.css',
+      'src/components/editor/drawer.css',
+      'src/components/ImportDialog.svelte',
+      'src/components/RecoveryScreen.svelte',
+      'src/components/shell/shell.css',
+      'src/components/editing/editing.css',
+      'src/styles/paper.css',
+      'src/components/ui/AvatarImage.svelte',
+      'src/styles/motion.css',
+    ]))
+    expect(sources).not.toContain('src/styles/tokens.css')
+    expect(sources).not.toContain('src/styles/print.css')
+  })
+
+  it.each(sources)('%s obeys the contract', (path) => {
     const raw = read(path)
     expect(auditCss(path.endsWith('.svelte') ? styleBlocks(raw) : raw, path)).toEqual([])
   })
