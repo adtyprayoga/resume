@@ -47,9 +47,9 @@ describe('ATS profile block', () => {
       profile.location,
       doc.contact.email,
       doc.contact.phone,
-      doc.contact.website,
-      doc.contact.github,
       doc.contact.linkedin,
+      doc.contact.github,
+      doc.contact.website,
       'Summary',
       profile.summary.slice(0, 40),
     ])
@@ -57,41 +57,39 @@ describe('ATS profile block', () => {
     expect(paper.querySelector('.resume-avatar')).toBeNull()
   })
 
-  it('puts each contact field on its own plain line with the full URL visible', () => {
+  it('labels contacts in a pipe-separated wrapping line and keeps location separate', () => {
     const doc = sampleDocument()
     const { container } = mount(doc)
-    const lines = [...container.querySelectorAll('.ats-contact > *')].map((line) => line.textContent)
-    expect(lines).toEqual([
-      doc.profile.text.en.location,
-      doc.contact.email,
-      doc.contact.phone,
-      doc.contact.website,
-      doc.contact.github,
-      doc.contact.linkedin,
-    ])
+    expect(container.querySelector('.ats-location')!.textContent).toBe(doc.profile.text.en.location)
+    expect(container.querySelector('.ats-contact')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(
+      `Email: ${doc.contact.email} | Phone: ${doc.contact.phone} | LinkedIn: ${doc.contact.linkedin} | GitHub: ${doc.contact.github} | Portfolio: ${doc.contact.website}`,
+    )
     expect(container.querySelector('.ats-contact a')).toBeNull()
   })
 
-  it('omits empty contact lines and the summary heading for an empty summary', () => {
+  it('omits empty contacts, separators and summary without losing other fields', () => {
     const doc = sampleDocument()
     doc.contact.phone = ''
     doc.contact.github = ''
-    // Blank in both: a blank field borrows the other language by design.
     for (const text of Object.values(doc.profile.text)) {
       text.headline = ''
+      text.location = ''
       text.summary = ''
     }
     const { container } = mount(doc)
-    const lines = [...container.querySelectorAll('.ats-contact > *')].map((line) => line.textContent)
-    expect(lines).toEqual([
-      doc.profile.text.en.location,
-      doc.contact.email,
-      doc.contact.website,
-      doc.contact.linkedin,
-    ])
+    expect(container.querySelector('.ats-contact')!.textContent!.trim()).toBe(
+      `Email: ${doc.contact.email} | LinkedIn: ${doc.contact.linkedin} | Portfolio: ${doc.contact.website}`,
+    )
+    expect(container.querySelector('.ats-location')).toBeNull()
     expect(container.querySelector('.ats-summary')).toBeNull()
-    expect([...container.querySelectorAll('h2')].map((h) => h.textContent)).not.toContain('Summary')
     expect(container.querySelector('.resume-headline')).toBeNull()
+  })
+
+  it('omits the contact line when every contact is empty', () => {
+    const doc = sampleDocument()
+    for (const key of ['email', 'phone', 'linkedin', 'github', 'website'] as const) doc.contact[key] = ''
+    const { container } = mount(doc)
+    expect(container.querySelector('.ats-contact')).toBeNull()
   })
 
   it('uses the Indonesian summary heading for an Indonesian document', () => {
@@ -131,12 +129,13 @@ const sectionBlocks = (container: Element, heading: string) => {
 }
 
 describe('ATS section reading order', () => {
-  it('reads Work Experience as role, company/team/location, dates, bullets', () => {
+  it('reads Work Experience as company, dates, role, team/location, bullets', () => {
     const { container } = mount(sampleDocument())
-    expect(sectionBlocks(container, 'Work Experience').slice(0, 6)).toEqual([
-      'Senior Software Engineer',
-      'PT Nusantara Digital, Payments Platform, Jakarta',
+    expect(sectionBlocks(container, 'Work Experience').slice(0, 7)).toEqual([
+      'PT Nusantara Digital',
       'Mar 2022 – Present',
+      'Senior Software Engineer',
+      'Payments Platform, Jakarta',
       'Led the migration of payment services to a queue-based architecture, cutting transaction failures by 38%.',
       'Redesigned the transaction database schema, reducing daily report query time from 40s to 3s.',
       'Mentored four junior engineers through weekly code reviews and design sessions.',
@@ -145,29 +144,29 @@ describe('ATS section reading order', () => {
 
   it('reads Pengalaman Kerja in Indonesian with the translated present label', () => {
     const { container } = mount(sampleDocument(), 'id')
-    expect(sectionBlocks(container, 'Pengalaman Kerja').slice(0, 3)).toEqual([
-      'Perekayasa Perangkat Lunak Senior',
-      'PT Nusantara Digital, Platform Pembayaran, Jakarta',
+    expect(sectionBlocks(container, 'Pengalaman Kerja').slice(0, 4)).toEqual([
+      'PT Nusantara Digital',
       'Mar 2022 – Sekarang',
+      'Perekayasa Perangkat Lunak Senior',
+      'Platform Pembayaran, Jakarta',
     ])
   })
 
-  it('reads Education as school, degree/field/GPA, dates, description', () => {
+  it('reads Education as school/degree/field, dates, GPA, description', () => {
     const { container } = mount(sampleDocument())
     expect(sectionBlocks(container, 'Education')).toEqual([
-      'Bandung Institute of Technology',
-      'Bachelor of Engineering, Informatics Engineering, GPA 3.72 / 4.00',
+      'Bandung Institute of Technology, Bachelor of Engineering, Informatics Engineering',
       'Aug 2015 – Jul 2019',
+      'GPA 3.72 / 4.00',
       'Final project on distributed task scheduling across heterogeneous clusters.',
     ])
   })
 
-  it('reads Projects as name/role, dates, technologies, description, bullets, URL', () => {
+  it('reads Projects as name/role/technologies, dates, description, bullets, URL', () => {
     const { container } = mount(sampleDocument())
     expect(sectionBlocks(container, 'Projects')).toEqual([
-      'Antrean — Author',
+      'Antrean — Author (TypeScript, PostgreSQL, Redis)',
       'Feb 2023 – Nov 2023',
-      'TypeScript, PostgreSQL, Redis',
       'A lightweight job queue library for Node.js with exactly-once delivery guarantees.',
       'Reached 1,200 GitHub stars and production use at three companies.',
       'Wrote bilingual documentation and a test suite at 94% coverage.',
@@ -185,14 +184,14 @@ describe('ATS section reading order', () => {
     expect(container.querySelector('.skill-row')).toBeNull()
   })
 
-  it('reads Awards as title, issuer, date, description', () => {
+  it('reads Awards as title, date, issuer, description', () => {
     const doc = sampleDocument()
     const award = doc.content.awards[0]!
     const { container } = mount(doc)
     expect(sectionBlocks(container, 'Awards').slice(0, 4)).toEqual([
       award.text.en.title,
-      award.text.en.issuer,
       'May 2024',
+      award.text.en.issuer,
       award.text.en.description,
     ].filter(Boolean))
   })

@@ -1,10 +1,6 @@
 import type { ResumeThemeConfig } from '../types'
 
-/**
- * Single column in plain reading order, no photo, common system fonts. Parsers
- * read text in content order, so every entry is laid out top to bottom with no
- * right-aligned dates or grid columns that could interleave when extracted.
- */
+/** Serif, single-column adaptation of the LaTeX reference. */
 const ats: ResumeThemeConfig = {
   key: 'ats',
   presentation: 'ats',
@@ -18,17 +14,17 @@ const ats: ResumeThemeConfig = {
   },
   layout: {
     pageMarginY: '16mm',
-    pageMarginX: '18mm',
+    pageMarginX: '16mm',
     sectionGap: '5mm',
-    itemGap: '3.5mm',
+    itemGap: '3pt',
   },
   type: {
-    fontFamily: "Arial, Helvetica, 'Liberation Sans', sans-serif",
+    fontFamily: "'Latin Modern Roman', 'Computer Modern', 'Times New Roman', 'Liberation Serif', serif",
     baseSize: 11,
-    nameSize: 20,
+    nameSize: 14.4,
     titleSize: 12,
     itemTitleSize: 11,
-    lineHeight: 1.45,
+    lineHeight: 1.2,
   },
 }
 

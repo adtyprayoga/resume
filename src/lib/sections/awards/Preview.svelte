@@ -22,9 +22,11 @@
   {#each items as item (item.id)}
     {@const date = formatMonth(item.date, locale)}
     <EntryShell section="awards" id={item.id} class="ats-entry">
-      <h3 class="item-title"><Editable ref={R(item.id, 'title')} value={item.title} /></h3>
+      <div class="ats-entry-head">
+        <h3 class="item-title"><Editable ref={R(item.id, 'title')} value={item.title} /></h3>
+        {#if date}<p class="item-dates"><Editable ref={R(item.id, 'date')} value={date} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'date')} value="" /></p>{/if}
+      </div>
       {#if item.issuer}<p class="item-meta"><Editable ref={R(item.id, 'issuer')} value={item.issuer} /></p>{:else if editMode}<p class="item-meta" data-print-hide><Editable ref={R(item.id, 'issuer')} value="" /></p>{/if}
-      {#if date}<p class="item-dates"><Editable ref={R(item.id, 'date')} value={date} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'date')} value="" /></p>{/if}
       {#if item.description}<p class="item-desc"><Editable ref={R(item.id, 'description')} value={item.description} /></p>{:else if editMode}<p class="item-desc" data-print-hide><Editable ref={R(item.id, 'description')} value="" /></p>{/if}
     </EntryShell>
   {/each}

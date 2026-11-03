@@ -233,42 +233,44 @@
 }
 
 /* ---- ATS presentation ----
- *
- * Plain reading order for applicant tracking systems. Everything is block
- * flow at body size: no right-aligned dates, grids or columns that a text
- * extractor could interleave. Type sizes and spacing come from the ats preset
- * through the same variables, so the manual font-size control still applies.
+ * Only entry headings wrap in flex rows; section bodies stay in block flow.
+ * A heading takes its natural width (up to the full line), so a date moves as
+ * a unit to the next row instead of interleaving with a wrapped title.
  */
-
 .resume-paper[data-presentation='ats'] {
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .resume-paper[data-presentation='ats'] .ats-header {
   display: block;
+  text-align: center;
   margin-bottom: var(--section-gap, 5mm);
 }
 
 .resume-paper[data-presentation='ats'] .resume-name {
   font-weight: 700;
   letter-spacing: normal;
+  text-transform: uppercase;
 }
 
 .resume-paper[data-presentation='ats'] .resume-headline {
-  font-weight: 400;
+  font-size: inherit;
+  font-weight: 700;
 }
 
+.resume-paper[data-presentation='ats'] .resume-headline,
+.resume-paper[data-presentation='ats'] .ats-location,
 .resume-paper[data-presentation='ats'] .ats-contact {
-  margin-top: 2mm;
+  margin-top: 4pt;
 }
 
 .resume-paper[data-presentation='ats'] .resume-section-title {
   font-weight: 700;
   letter-spacing: normal;
   text-transform: none;
-  padding-bottom: 0.8mm;
-  border-bottom-width: 0.3mm;
-  margin-bottom: 2.5mm;
+  padding-bottom: 2pt;
+  border-bottom-width: 0.4pt;
+  margin-bottom: 4pt;
 }
 
 .resume-paper[data-presentation='ats'] .resume-summary {
@@ -277,26 +279,72 @@
 
 .resume-paper[data-presentation='ats'] .item-title {
   font-weight: 700;
+  max-width: 100%;
+  min-width: 0;
 }
 
-.resume-paper[data-presentation='ats'] .item-meta,
-.resume-paper[data-presentation='ats'] .item-link {
-  font-size: inherit;
-  color: var(--paper-muted, #333333);
+.resume-paper[data-presentation='ats'] .ats-composite-title {
+  font-weight: 400;
+}
+
+.resume-paper[data-presentation='ats'] .ats-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 1em;
 }
 
 .resume-paper[data-presentation='ats'] .item-dates {
-  display: block;
-  margin-top: 0.4mm;
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
   font-size: inherit;
   font-variant-numeric: normal;
-  color: var(--paper-muted, #333333);
+  color: inherit;
+}
+
+.resume-paper[data-presentation='ats'] .ats-role {
+  font-style: italic;
+}
+
+.resume-paper[data-presentation='ats'] .ats-role,
+.resume-paper[data-presentation='ats'] .item-meta,
+.resume-paper[data-presentation='ats'] .item-desc,
+.resume-paper[data-presentation='ats'] .item-link,
+.resume-paper[data-presentation='ats'] .item-bullets {
+  margin-top: 4pt;
+  font-size: inherit;
+  color: inherit;
+}
+
+.resume-paper[data-presentation='ats'] .ats-project-head .item-dates {
+  font-style: italic;
+}
+
+.resume-paper[data-presentation='ats'] .item-bullets {
+  padding-left: 0.9em;
+  list-style-position: inside;
+}
+
+/* Keep the marker inside the printable box even with the narrow bullet indent. */
+.resume-paper[data-presentation='ats'] .item-bullets li {
+  text-indent: -0.9em;
+}
+
+.resume-paper[data-presentation='ats'] .item-bullets li + li {
+  margin-top: 2pt;
 }
 
 .resume-paper[data-presentation='ats'] .ats-skill + .ats-skill {
-  margin-top: 1.2mm;
+  margin-top: var(--item-gap, 3pt);
 }
 
 .resume-paper[data-presentation='ats'] .ats-skill strong {
   font-weight: 700;
+}
+
+.resume-paper[data-presentation='ats'] .ats-contact > span {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
 }

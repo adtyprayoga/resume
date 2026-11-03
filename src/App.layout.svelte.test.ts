@@ -11,6 +11,11 @@ import { defaultTheme, getTheme } from '$lib/themes/index'
 
 const paper = () => document.querySelector<HTMLElement>('.resume-paper')!
 
+const openLayout = async () => {
+  await fireEvent.click(screen.getByRole('button', { name: prefs.uiLocale === 'id' ? 'Lainnya' : 'More' }))
+  await fireEvent.click(screen.getByRole('menuitem', { name: prefs.uiLocale === 'id' ? 'Pengaturan' : 'Settings' }))
+}
+
 beforeEach(() => {
   localStorage.clear()
   vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -34,25 +39,28 @@ describe('theme registry', () => {
 })
 
 describe('resume layout selection', () => {
-  it('starts in Classic when no preference is stored', () => {
+  it('starts in Classic when no preference is stored', async () => {
     render(App)
+    await openLayout()
     expect(paper()).toHaveAttribute('data-presentation', 'classic')
     const group = screen.getByRole('group', { name: 'Resume layout' })
     expect(within(group).getByRole('button', { name: 'Resume layout: Classic' })).toHaveAttribute('aria-pressed', 'true')
     expect(within(group).getByRole('button', { name: 'Resume layout: ATS' })).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('captions the layout toggle and explains ATS', () => {
+  it('captions the layout toggle and explains ATS', async () => {
     render(App)
-    expect(screen.getByText('Layout')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Resume layout: ATS' })).toHaveAccessibleDescription(
+    await openLayout()
+    expect(screen.getByText('Resume layout')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Resume layout' })).toHaveAccessibleDescription(
       'Plain single column that job portals read reliably',
     )
   })
 
-  it('restores an explicit ATS selection', () => {
+  it('restores an explicit ATS selection', async () => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'en', documentLocale: 'en', themeKey: 'ats', fontScale: 'standard' }))
     render(App)
+    await openLayout()
     expect(paper()).toHaveAttribute('data-presentation', 'ats')
     expect(screen.getByRole('button', { name: 'Resume layout: ATS' })).toHaveAttribute('aria-pressed', 'true')
   })
@@ -65,6 +73,7 @@ describe('resume layout selection', () => {
 
   it('persists the selection so it survives a reload', async () => {
     render(App)
+    await openLayout()
     await fireEvent.click(screen.getByRole('button', { name: 'Resume layout: ATS' }))
     vi.advanceTimersByTime(AUTOSAVE_DELAY_MS * 3)
     expect(JSON.parse(localStorage.getItem(PREFERENCES_KEY)!).themeKey).toBe('ats')
@@ -73,6 +82,7 @@ describe('resume layout selection', () => {
   it('switches presentation without changing the document or languages', async () => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'id', documentLocale: 'en' }))
     render(App)
+    await openLayout()
     const before = JSON.stringify(resumeDoc.snapshot())
     const article = paper()
 
@@ -91,6 +101,7 @@ describe('resume layout selection', () => {
 
   it('applies and closes an unfinished edit before switching layout', async () => {
     render(App)
+    await openLayout()
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     editing.setDraft('profile.name', 'half-typed')
@@ -100,8 +111,9 @@ describe('resume layout selection', () => {
     expect(paper()).toHaveAttribute('data-presentation', 'ats')
   })
 
-  it('hides the layout controls when printing', () => {
+  it('hides the layout controls when printing', async () => {
     render(App)
+    await openLayout()
     const group = screen.getByRole('group', { name: 'Resume layout' })
     expect(group.closest('[data-print-hide]')).not.toBeNull()
   })
@@ -123,6 +135,7 @@ describe('page guides follow the layout', () => {
     try {
       prefs.showPageBreaks = true
       render(App)
+    await openLayout()
       await run()
       await run()
       expect(frames.size).toBe(0)

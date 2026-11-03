@@ -3,7 +3,7 @@
   import PersistenceHost from './components/PersistenceHost.svelte'
   import RecoveryScreen from './components/RecoveryScreen.svelte'
   import ThemeHost from './components/ThemeHost.svelte'
-  import ExportMenu from './components/shell/ExportMenu.svelte'
+  import MoreMenu from './components/shell/MoreMenu.svelte'
   import FirstRunIntro from './components/shell/FirstRunIntro.svelte'
   import IconButton from './components/shell/IconButton.svelte'
   import Icon from './components/shell/Icon.svelte'
@@ -11,7 +11,7 @@
   import SettingsPanel from './components/shell/SettingsPanel.svelte'
   import PageBreakOverlay from './components/preview/PageBreakOverlay.svelte'
   import ResumePaper from './components/preview/ResumePaper.svelte'
-  import { flushSync, untrack } from 'svelte'
+  import { flushSync, tick, untrack } from 'svelte'
   import { resumeFileName, serializeResume } from '$lib/io/exportJson'
   import { t, translatedMessage } from '$lib/i18n/ui'
   import { printResume } from '$lib/print/print'
@@ -19,20 +19,18 @@
   import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
   import { recovery } from '$lib/state/recovery.svelte'
-  import { resumeThemes } from '$lib/themes/index'
 
   // Before PersistenceHost mounts, so autosave cannot write a fresh sample over
   // stored work on first paint. Unreadable data blocks the app behind recovery.
   prefs.hydrate()
   recovery.open()
 
-  const uid = $props.id()
-
   let paperElement = $state<HTMLElement | undefined>()
   let previewContainer = $state<HTMLDivElement | undefined>()
   let previewZoom = $state(1)
   let importing = $state(false)
   let settingsOpen = $state(false)
+  let moreButton = $state<HTMLButtonElement | undefined>()
 
   $effect(() => { document.documentElement.lang = prefs.uiLocale })
 
@@ -124,6 +122,7 @@
   const closeSettings = () => {
     settingsOpen = false
     editing.resume()
+    void tick().then(() => moreButton?.focus())
   }
 
   const openImport = () => {
@@ -134,6 +133,7 @@
   const closeImport = () => {
     importing = false
     editing.resume()
+    void tick().then(() => moreButton?.focus())
   }
 </script>
 
@@ -155,36 +155,15 @@
         </p>
       </div>
 
-      <div class="app-layout">
-        <span class="app-layout-label" aria-hidden="true">{t(prefs.uiLocale, 'app.layoutLabel')}</span>
-        <div class="toggle-group layout-select" role="group" aria-label={t(prefs.uiLocale, 'app.layout')}>
-          {#each resumeThemes as theme (theme.key)}
-            <button
-              type="button"
-              data-layout={theme.presentation}
-              aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
-              aria-describedby={theme.presentation === 'ats' ? `${uid}-ats-tip` : undefined}
-              aria-pressed={prefs.themeKey === theme.key}
-              onclick={() => editing.setLayout(theme.key)}
-            >
-              {t(prefs.uiLocale, `layout.${theme.presentation}`)}
-            </button>
-          {/each}
-        </div>
-        <span id="{uid}-ats-tip" role="tooltip" class="icon-tip layout-tip">{t(prefs.uiLocale, 'layout.atsHint')}</span>
-      </div>
-
       <div class="app-actions" role="toolbar" aria-label={t(prefs.uiLocale, 'app.actions')}>
-        <ExportMenu onPdf={exportPdf} onJson={exportJson} showLabel="wide" />
-        <IconButton icon="import" label={t(prefs.uiLocale, 'action.import')} haspopup="dialog" onclick={openImport} showLabel="wide" />
         <IconButton
           icon={editing.mode === 'edit' ? 'done' : 'edit'}
           label={t(prefs.uiLocale, editing.mode === 'edit' ? 'action.done' : 'action.edit')}
           onclick={toggleEdit}
-          showLabel="always"
           variant="primary"
         />
-        <IconButton icon="settings" label={t(prefs.uiLocale, 'action.settings')} haspopup="dialog" onclick={openSettings} />
+        <IconButton icon="pdf" label={t(prefs.uiLocale, 'action.print')} onclick={exportPdf} />
+        <MoreMenu onImport={openImport} onJson={exportJson} onSettings={openSettings} bind:button={moreButton} />
       </div>
     </div>
 
@@ -208,7 +187,7 @@
     </div>
   {/if}
 
-  <FirstRunIntro onImport={openImport} />
+  <FirstRunIntro />
 
   <div class="preview-container" bind:this={previewContainer}>
     <div class="resume-paper-frame" style={`--preview-zoom: ${previewZoom}`}>

@@ -7,7 +7,6 @@
   import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
 
-  const { onImport }: { onImport: () => void } = $props()
   const uid = $props.id()
 
   /** Only for the untouched sample: a returning user's own resume never gets this. */
@@ -36,13 +35,8 @@
         </button>
       </div>
       <p class="intro-text">{t(prefs.uiLocale, 'intro.body')}</p>
-      <p class="intro-text">{t(prefs.uiLocale, 'intro.layouts')}</p>
       <div class="intro-actions">
-        <button type="button" class="tool-btn primary" onclick={() => editing.enter()}>
-          <Icon name="edit" size={18} />{t(prefs.uiLocale, 'intro.edit')}
-        </button>
         <button type="button" class="tool-btn" onclick={blank}>{t(prefs.uiLocale, 'action.startBlank')}</button>
-        <button type="button" class="tool-btn" onclick={onImport}>{t(prefs.uiLocale, 'action.importJson')}</button>
       </div>
     </div>
   </section>
