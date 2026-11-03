@@ -37,6 +37,12 @@ describe('revealSection', () => {
     expect(scroll).toHaveBeenCalledTimes(1)
   })
 
+  it('treats a heading within a pixel of the edge as visible, so a repeat click does not creep', () => {
+    const scroll = mount(window.innerHeight - 29.6)
+    expect(revealSection('awards')).toBe(false)
+    expect(scroll).not.toHaveBeenCalled()
+  })
+
   it('ignores a section that is not rendered', () => {
     expect(revealSection('awards')).toBe(false)
   })
