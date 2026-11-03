@@ -5,9 +5,20 @@
   import type { ListSectionKind } from '$lib/sections/kinds'
   import { getSectionModule } from '$lib/sections/registry'
   import { resumeDoc } from '$lib/state/document.svelte'
+  import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
+  import type { NavTarget } from '$lib/ui/revealSection'
+
+  /** When given, each row gets a Go to button and a fixed Profile row leads the list. */
+  const { onNavigate }: { onNavigate?: (target: NavTarget) => void } = $props()
 
   const sections = $derived(resumeDoc.current.sections)
+
+  /** Why a section has nothing on the paper to go to, or null when it does. */
+  const unavailable = (kind: ListSectionKind, enabled: boolean): 'sections.hiddenNote' | 'sections.emptyNote' | null =>
+    !enabled ? 'sections.hiddenNote'
+      : resumeDoc.current.content[kind].length === 0 && editing.mode !== 'edit' ? 'sections.emptyNote'
+        : null
 
   const uid = $props.id()
   let list = $state<HTMLUListElement>()
@@ -22,6 +33,7 @@
   }
 
   const move = (kind: ListSectionKind, delta: number) => {
+    editing.dismiss()
     resumeDoc.moveSection(kind, delta)
     void focusMoved(kind)
   }
@@ -34,6 +46,7 @@
 
   const drop = (target: ListSectionKind) => {
     if (dragging && dragging !== target) {
+      editing.dismiss()
       resumeDoc.moveSectionTo(dragging, sections.findIndex((s) => s.kind === target))
       void focusMoved(dragging)
     }
@@ -53,6 +66,18 @@
   {t(prefs.uiLocale, 'sections.hint')}
 </p>
 <p role="status" aria-live="polite" aria-atomic="true" class="sr-only">{announcement}</p>
+
+{#if onNavigate}
+  <div class="setting-row setting-row-fixed" data-section="profile">
+    <span class="setting-name">{t(prefs.uiLocale, 'sections.profile')}</span>
+    <button
+      type="button"
+      class="repeat-btn section-goto"
+      aria-label={t(prefs.uiLocale, 'sections.goTo', { section: t(prefs.uiLocale, 'sections.profile') })}
+      onclick={() => onNavigate('profile')}
+    ><Icon name="goto" size={18} /></button>
+  </div>
+{/if}
 
 <ul class="section-list" bind:this={list}>
   {#each sections as section, index (section.kind)}
@@ -90,16 +115,30 @@
         <input
           type="checkbox"
           checked={section.enabled}
-          onchange={(event) =>
-            resumeDoc.setSectionEnabled(
-              section.kind,
-              (event.currentTarget as HTMLInputElement).checked,
-            )}
+          onchange={(event) => {
+            editing.dismiss()
+            resumeDoc.setSectionEnabled(section.kind, (event.currentTarget as HTMLInputElement).checked)
+          }}
         />
         <span>{label(section.kind)}</span>
         <span class="setting-count">{resumeDoc.current.content[section.kind].length}</span>
       </label>
+      {#if onNavigate}
+        {@const reason = unavailable(section.kind, section.enabled)}
+        {#if reason}<span id="{uid}-{section.kind}-why" class="setting-note">{t(prefs.uiLocale, reason)}</span>{/if}
+      {/if}
       <div class="repeat-actions">
+        {#if onNavigate}
+          {@const reason = unavailable(section.kind, section.enabled)}
+          <button
+            type="button"
+            class="repeat-btn section-goto"
+            disabled={reason !== null}
+            aria-label={t(prefs.uiLocale, 'sections.goTo', { section: label(section.kind) })}
+            aria-describedby={reason ? `${uid}-${section.kind}-why` : undefined}
+            onclick={() => onNavigate(section.kind)}
+          ><Icon name="goto" size={18} /></button>
+        {/if}
         <button type="button" class="repeat-btn" disabled={index === 0} aria-label={t(prefs.uiLocale, 'sections.moveUp', { section: label(section.kind) })} onclick={() => move(section.kind, -1)}><Icon name="up" size={18} /></button>
         <button type="button" class="repeat-btn" disabled={index === sections.length - 1} aria-label={t(prefs.uiLocale, 'sections.moveDown', { section: label(section.kind) })} onclick={() => move(section.kind, 1)}><Icon name="down" size={18} /></button>
       </div>

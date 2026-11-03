@@ -343,7 +343,7 @@ const checkGeometry = (label: string, pdf: PdfReport, ats = true) => {
 }
 
 const LEAKS = [
-  'Save as PDF', 'Simpan sebagai PDF', 'Export JSON', 'Resume layout', 'Tata letak', 'fictional example',
+  'Save as PDF', 'Simpan sebagai PDF', 'Export JSON', 'Resume layout', 'Tata letak', 'fictional example', 'Disclaimer:', 'Penafian:',
   'Load photo', 'Muat foto', 'hosted elsewhere', 'Page breaks',
 ]
 
@@ -520,12 +520,17 @@ const main = async () => {
     writeFileSync(join(work, `${name}.png`), Buffer.from(data, 'base64'))
   }
   const presentation = () => evaluate(`document.querySelector('.resume-paper')?.dataset.presentation`)
-  /** Document and app settings live in the Settings panel. */
+  /** Document and app settings live in the nonmodal Settings panel, toggled from the toolbar. */
   const inSettings = async (label: string) => {
-    await click('More')
-    await clickSelector('[role="menuitem"]:nth-child(3)')
+    await click('Settings')
     await click(label)
-    await key('Escape')
+    await click('Settings')
+  }
+  /** Menu items are chosen by their accessible name, never by position. */
+  const clickMenuItem = async (name: string) => {
+    const found = await evaluate(`(() => { const e = [...document.querySelectorAll('[role="menuitem"]')].find((i) => i.textContent.trim() === ${JSON.stringify(name)}); if (!e) return false; e.click(); return true })()`)
+    if (!found) throw new Error(`no menu item named "${name}"`)
+    await settle()
   }
   const clickSelector = async (selector: string) => {
     const found = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return false; e.click(); return true })()`)
@@ -749,8 +754,8 @@ const main = async () => {
     await typeText('json.export.ctmail@example.com')
     await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: work, eventsEnabled: true }, '')
     const downloaded = cdp.once('Browser.downloadProgress', (params) => params.state !== 'inProgress')
-    await click('More')
-    await clickSelector('[role="menuitem"]:nth-child(2)')
+    await click('Export')
+    await clickMenuItem('Export JSON')
     const progress = await Promise.race([downloaded, Bun.sleep(10_000).then(() => ({ state: 'timeout' }))])
     check(progress.state === 'completed', `JSON export downloads (${progress.state})`)
     const exported = JSON.parse(await Bun.file(join(work, (await Array.fromAsync(new Bun.Glob('*.json').scan(work)))[0]!)).text())
@@ -790,6 +795,90 @@ const main = async () => {
     check(sheetScroll <= sheetClient + 1, `no overflow with the sheet open (${sheetScroll} <= ${sheetClient} + 1)`)
     await key('Escape')
     await viewport(1440, 900)
+
+    console.log('\nSide panels')
+    const panelState = () => evaluate(`({ sections: !!document.getElementById('sections-panel'), settings: !!document.getElementById('settings-panel') })`)
+    const overflow = async () => {
+      const [scroll, client] = await evaluate(`[document.documentElement.scrollWidth, document.documentElement.clientWidth]`)
+      return { ok: scroll <= client + 1, scroll, client }
+    }
+    const smallPanelTargets = () => evaluate(`[...document.querySelectorAll('.app-actions button, .side-panel button, .side-panel .drag-handle')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && (r.width < 43.5 || r.height < 43.5) }).map((b) => b.getAttribute('aria-label') || b.textContent.trim())`)
+    for (const [width, height] of [[320, 640], [375, 812], [768, 1024], [1024, 768], [1440, 900]] as const) {
+      await seed(fixture, prefs)
+      await viewport(width, height)
+      check(JSON.stringify(await panelState()) === '{"sections":false,"settings":false}', `${width}px: both panels start closed`)
+      await click('Sections')
+      check(await evaluate(`document.activeElement?.id === 'sections-panel-title'`), `${width}px: opening Sections focuses its heading`)
+      await click('Settings')
+      const both = await panelState()
+      const wide = width >= 1024
+      check(both.settings && both.sections === wide, `${width}px: ${wide ? 'both panels open side by side' : 'Settings replaces Sections'} (${JSON.stringify(both)})`)
+      if (wide) {
+        const columns = await evaluate(`(() => { const s = document.getElementById('sections-panel').getBoundingClientRect(), p = document.querySelector('.resume-paper').getBoundingClientRect(), g = document.getElementById('settings-panel').getBoundingClientRect(); return s.right <= p.left + 1 && p.right <= g.left + 1 })()`)
+        check(columns, `${width}px: Sections, CV and Settings sit in three columns`)
+      } else {
+        const above = await evaluate(`document.getElementById('settings-panel').getBoundingClientRect().bottom <= document.querySelector('.resume-paper').getBoundingClientRect().top + 1`)
+        check(above, `${width}px: the panel sits above the CV`)
+      }
+      const flow = await overflow()
+      check(flow.ok, `${width}px panels open: scrollWidth ${flow.scroll} <= clientWidth ${flow.client} + 1`)
+      const small = await smallPanelTargets()
+      check(small.length === 0, `${width}px: every toolbar and panel target is at least 44px${small.length ? ` (${small.join(', ')})` : ''}`)
+      await key('Escape')
+      check(!(await panelState()).settings && (await evaluate(`document.activeElement?.getAttribute('aria-label') === 'Settings'`)), `${width}px: Escape closes the focused panel and returns focus to its toggle`)
+    }
+
+    console.log('\nSide panels across the breakpoint')
+    await seed(fixture, prefs)
+    await viewport(1440, 900)
+    await click('Settings')
+    await click('Sections')
+    await viewport(768, 1024)
+    check(JSON.stringify(await panelState()) === '{"sections":true,"settings":false}', 'narrowing keeps the most recently opened panel')
+    await viewport(1440, 900)
+
+    console.log('\nSection navigation')
+    const scrollY = () => evaluate(`Math.round(window.scrollY)`)
+    const short = structuredClone(fixture)
+    short.content.experience = short.content.experience.slice(0, 1)
+    for (const kind of ['education', 'projects', 'skills', 'awards'] as const) (short.content as Record<string, unknown[]>)[kind] = []
+    await seed(short, prefs)
+    await click('Sections')
+    await evaluate(`window.scrollTo(0, 0)`)
+    await click('Go to Experience')
+    check((await scrollY()) === 0, 'short CV: a visible heading does not move the page')
+    check(await evaluate(`document.querySelector('[aria-label="Go to Awards"]')?.disabled === true`), 'short CV: an empty section is not navigable in Preview')
+    await seed(fixture, prefs)
+    await click('Sections')
+    await evaluate(`window.scrollTo(0, 0)`)
+    // A real click focuses the button; element.click() alone would not.
+    await evaluate(`document.querySelector('[aria-label="Go to Awards"]').focus()`)
+    await click('Go to Awards')
+    const reached = await evaluate(`(() => { const r = document.querySelector('[data-cv-section="awards"] h2').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight })()`)
+    check(reached && (await scrollY()) > 0, `long CV: navigation brings a later heading into view (scrollY ${await scrollY()})`)
+    check(await evaluate(`document.activeElement?.getAttribute('aria-label') === 'Go to Awards'`), 'navigation keeps focus on its button')
+    // scrollY can read a pixel off after an instant scroll with no further scrolling, so count real scrolls.
+    await evaluate(`(() => { window.__moves = 0; const o = Element.prototype.scrollIntoView; Element.prototype.scrollIntoView = function (...a) { window.__moves++; return o.apply(this, a) }; addEventListener('scroll', () => window.__moves++) })()`)
+    await click('Go to Awards')
+    check((await evaluate(`window.__moves`)) === 0, 'navigating again to a visible heading does not move the page')
+
+    console.log('\nPanels never reach the PDF')
+    await viewport(1440, 900)
+    for (const themeKey of ['minimal', 'ats']) {
+      for (const documentLocale of ['en', 'id']) {
+        for (const mode of ['preview', 'edit']) {
+          await seed(fixture, { ...prefs, themeKey, documentLocale })
+          if (mode === 'edit') await click('Edit')
+          const closed = await print(`${themeKey}-${documentLocale}-${mode}-panels-closed`)
+          await click('Sections')
+          await click('Settings')
+          const open = await print(`${themeKey}-${documentLocale}-${mode}-panels-open`)
+          check(samePdf(closed, open), `${themeKey} ${documentLocale} ${mode}: panels open print identical text, order, pages and word positions (${open.pages} pages)`)
+          checkClean(`${themeKey} ${documentLocale} ${mode} panels open`, open)
+          check(!/Go to |Hidden from the resume|Disembunyikan dari resume/.test(open.normal), `${themeKey} ${documentLocale} ${mode}: no panel text in the PDF`)
+        }
+      }
+    }
 
     console.log('\nNo horizontal overflow')
     for (const themeKey of ['minimal', 'ats']) {

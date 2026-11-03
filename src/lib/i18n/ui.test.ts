@@ -6,7 +6,7 @@ import { sectionModules } from '$lib/sections/registry'
 describe('ui strings', () => {
   it('resolves a key in every locale', () => {
     for (const locale of LOCALES) {
-      expect(t(locale, 'action.print')).not.toBe('')
+      expect(t(locale, 'action.exportPdf')).not.toBe('')
     }
   })
 

@@ -50,7 +50,7 @@
 
 {#if presentation === 'ats'}
   <!-- The photo is deliberately absent here, not deleted: it stays in the document for Classic. -->
-  <header class="resume-header ats-header" data-break-atom>
+  <header class="resume-header ats-header" data-cv-section="profile" data-break-atom>
     <h1 class="resume-name"><Editable ref={P('name')} value={profile.name} /></h1>
     {#if profile.headline}
       <p class="resume-headline"><Editable ref={P('headline')} value={profile.headline} /></p>
@@ -81,7 +81,7 @@
     </section>
   {/if}
 {:else}
-  <header class="resume-header" data-break-atom>
+  <header class="resume-header" data-cv-section="profile" data-break-atom>
     <div class="resume-header-text">
       <h1 class="resume-name"><Editable ref={P('name')} value={profile.name} /></h1>
       {#if profile.headline}

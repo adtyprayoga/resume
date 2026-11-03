@@ -102,22 +102,43 @@ inline edits; adds an entry; checks that printing and JSON export include an
 open draft; confirms no idle animation frames and no listeners left behind once
 editors close; reloads to confirm persistence; and checks the phone sheet with a
 shortened (keyboard-open) viewport plus 44px targets and no horizontal overflow
-at 320, 375, 768 and 1440px and phone landscape. Needs `chromium` and
-`poppler-utils`.
+at 320, 375, 768 and 1440px and phone landscape. It opens the Sections and
+Settings panels at 320, 375, 768, 1024 and 1440px, checking placement, heading
+focus, Escape, 44px targets and overflow, and that narrowing the window keeps
+the panel opened last. It checks that section navigation leaves a visible
+heading in place and reaches a later one in a long resume, and requires
+identical PDFs with the panels open and closed for both layouts, both
+languages, and Preview and Edit. Needs `chromium` and `poppler-utils`.
 
 ## Workspace
 
-Above the resume, three icon buttons have tooltips and accessible names.
-**Edit** opens the editor and **Save as PDF** prints the
-current resume. **More** contains Import JSON, Export JSON, and Settings.
-Settings includes the Classic / ATS layout selector, languages, font size,
-section controls, and data actions. The status shows whether work is saved in
-this browser or needs attention.
+Above the resume, five icon buttons have tooltips and accessible names:
+**Sections**, **Edit**, **Import JSON**, **Export** and **Settings**. **Edit**
+opens the editor. **Import JSON** opens the import review. **Export** offers
+**Export PDF**, which prints the current resume, and **Export JSON**.
+**Sections** and **Settings** open and close side panels. The status shows
+whether work is saved in this browser or needs attention.
+
+The side panels are not dialogs. Nothing dims the page, and clicking the resume
+leaves them open, so you can keep editing beside them. At 1024px and wider,
+Sections sits left of the resume and Settings right of it, and both can stay
+open. On narrower screens one panel opens above the resume, and opening the
+other replaces it. Escape closes the panel that has focus. Both panels start
+closed on every visit and never print.
+
+**Sections** lists Profile first, then each section with its entry count, a
+visibility checkbox, reorder controls and a **Go to** button. Go to scrolls only
+when the section heading is off screen. It is unavailable for a hidden section,
+and for an empty one outside Edit mode, and the row says why. **Settings** holds
+the Classic / ATS layout selector, languages, font size, page guides, data
+actions and help.
 
 ### Editing
 
-On a first visit the page shows a fictional sample resume with a short
-introduction above it, offering **Start blank**. Use **Edit** or **More** to
+On a first visit the page shows a fictional sample resume. A disclaimer below
+the toolbar appears only while the sample is unchanged; it is separate from
+the save status and excluded from print. A short introduction above the resume
+offers **Start blank**. Use **Edit** or **Import JSON** to
 edit or import. The introduction disappears once the sample is changed or
 the introduction is dismissed. **Start blank** is also in Settings → Data, where it
 asks for confirmation.
@@ -146,7 +167,9 @@ keys:
 
 Nothing reaches your resume until an edit is applied, and applied edits are
 saved automatically. Changing the resume language or layout applies the open
-edit first; opening Settings or Import sets it aside and brings it back after.
+edit first. Opening or closing a panel, going to a section, and reordering or
+hiding one also apply it first, and drop a new entry you never typed in.
+Opening Import sets the edit aside and brings it back after.
 Changing the interface language translates labels without touching what you
 have typed. Importing a replacement or resetting discards any edit of the old
 document.
@@ -217,7 +240,7 @@ you want to keep a copy.
 The interface language and resume language are independent; both are in
 Settings. Changing the interface language translates controls and messages
 without changing your resume content or discarding an unfinished draft. In the
-**Sections** part of Settings, use the move buttons, drag a section, or focus
+**Sections** panel, use the move buttons, drag a section, or focus
 its handle and press the arrow keys to change the order.
 
 There is no server, so a photo cannot be uploaded anywhere. Choosing one resizes
@@ -245,7 +268,7 @@ src/
 │  ├─ themes/       typed theme presets to CSS custom properties
 │  └─ i18n/         interface strings only, never resume content
 ├─ components/
-│  ├─ shell/        toolbar, More menu, Settings, inline SVG icons
+│  ├─ shell/        toolbar, Export menu, side panels, inline SVG icons
 │  ├─ editing/      in-page targets, inline editor, contextual forms, phone sheet
 │  └─ preview/      the resume paper, plus the two side-effect hosts beside it
 └─ styles/

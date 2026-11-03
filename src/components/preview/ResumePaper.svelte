@@ -53,7 +53,7 @@
   <ProfileHeader profile={resume.profile} contact={resume.contact} {locale} {presentation} />
 
   {#each visible as section (section.kind)}
-    <SectionShell title={section.title} printHide={section.empty}>
+    <SectionShell kind={section.kind} title={section.title} printHide={section.empty}>
       {#if section.empty}
         <p class="section-empty"><Icon name="empty" size={18} /><span>{t(prefs.uiLocale, 'section.empty')}</span></p>
       {:else if section.kind === 'experience'}

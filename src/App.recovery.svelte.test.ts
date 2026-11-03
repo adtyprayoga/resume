@@ -68,7 +68,7 @@ describe('saved-data recovery', () => {
     await recoveryHeading()
     localStorage.setItem(DOCUMENT_KEY, serializeResume(imported()))
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
-    expect(await screen.findByRole('heading', { level: 1, name: /Person|Budi/ })).toHaveTextContent('Imported Person')
+    expect(await screen.findByRole('heading', { level: 1, name: /Person|Aditya/ })).toHaveTextContent('Imported Person')
   })
 
   it('Reset to sample needs explicit confirmation before writing', async () => {
@@ -78,7 +78,7 @@ describe('saved-data recovery', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reset to sample' }))
     expect(localStorage.getItem(DOCUMENT_KEY)).toBe(NEWER)
     await userEvent.click(screen.getByRole('button', { name: /Confirm reset/ }))
-    expect(await screen.findByRole('heading', { level: 1, name: /Person|Budi/ })).toHaveTextContent('Aditya Prayoga')
+    expect(await screen.findByRole('heading', { level: 1, name: /Person|Aditya/ })).toHaveTextContent('Aditya Prayoga')
     expect(JSON.parse(localStorage.getItem(DOCUMENT_KEY)!).profile.text.en.name).toBe('Aditya Prayoga')
   })
 
@@ -136,7 +136,7 @@ describe('saved-data recovery', () => {
     await recoveryHeading()
     const user = await reviewImport()
     await user.click(screen.getByRole('button', { name: 'Replace resume' }))
-    expect(await screen.findByRole('heading', { level: 1, name: /Person|Budi/ })).toHaveTextContent('Imported Person')
+    expect(await screen.findByRole('heading', { level: 1, name: /Person|Aditya/ })).toHaveTextContent('Imported Person')
     expect(JSON.parse(localStorage.getItem(DOCUMENT_KEY)!).profile.text.en.name).toBe('Imported Person')
   })
 

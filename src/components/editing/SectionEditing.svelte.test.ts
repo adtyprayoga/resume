@@ -41,24 +41,24 @@ describe('combined lines', () => {
   it('render exactly as before in Preview', () => {
     render(App)
     const metas = [...sectionOf('Experience').querySelectorAll('.item-meta')].map((node) => node.textContent)
-    expect(metas[0]).toBe('PT Nusantara Digital · Payments Platform · Jakarta')
+    expect(metas[0]).toBe('PT Arkasa Melanglang Buana · Payments Platform · Jakarta')
   })
 
   it('split into separately editable fields in Edit mode with the same text', async () => {
     const user = await startEditing()
     const meta = sectionOf('Experience').querySelector('.item-meta')!
-    expect(meta.textContent).toBe('PT Nusantara Digital · Payments Platform · Jakarta')
+    expect(meta.textContent).toBe('PT Arkasa Melanglang Buana · Payments Platform · Jakarta')
     await user.click(within(paper()).getByRole('button', { name: 'Edit Team: Payments Platform' }))
     const input = screen.getByRole('textbox', { name: 'Team · this language' })
     await user.clear(input)
     await user.type(input, 'Core Payments{Enter}')
     expect(resumeDoc.current.content.experience[0]!.text.en.team).toBe('Core Payments')
-    expect(resumeDoc.current.content.experience[0]!.text.id.team).toBe('Platform Pembayaran')
+    expect(resumeDoc.current.content.experience[0]!.text.id.team).toBe('Fitur Pembayaran')
   })
 
   it('write a shared field once for both languages', async () => {
     const user = await startEditing()
-    await user.click(within(paper()).getByRole('button', { name: 'Edit Company: Tokobangun' }))
+    await user.click(within(paper()).getByRole('button', { name: 'Edit Company: Tokobangun Tidur Lagi' }))
     const input = screen.getByRole('textbox', { name: 'Company · both languages' })
     await user.clear(input)
     await user.type(input, 'Toko Baru{Enter}')

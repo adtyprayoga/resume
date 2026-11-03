@@ -1,7 +1,8 @@
 <script lang="ts" module>
   /** Bundled 24px stroke icons; no icon library. */
   const PATHS = {
-    more: 'M5 12h.01M12 12h.01M19 12h.01',
+    goto: 'M4 12h12m0 0-5-5m5 5-5 5M20 5v14',
+    sections: 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01',
     export: 'M12 3v12m0 0-4-4m4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2',
     import: 'M12 15V3m0 0L8 7m4-4 4 4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2',
     edit: 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Zm9.5-13.5 4 4',

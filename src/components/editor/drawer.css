@@ -117,6 +117,23 @@
   cursor: grabbing;
 }
 
+.setting-row-fixed {
+  padding-left: calc(0.5rem + 44px + 0.5rem);
+}
+
+.setting-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Why a section cannot be navigated to; disabled buttons cannot carry a tooltip. */
+.setting-note {
+  flex-basis: 100%;
+  order: 3;
+  font-size: var(--text-caps);
+  color: var(--color-muted);
+}
+
 .setting-count {
   padding: 0 0.375rem;
   border: 1px solid var(--color-hairline);
