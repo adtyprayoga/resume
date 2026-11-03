@@ -568,6 +568,60 @@ const main = async () => {
     const prefs = { uiLocale: 'en', documentLocale: 'en', themeKey: 'minimal', fontScale: 'standard' }
     await viewport(1440, 900)
     await load()
+
+    console.log('\nResponsive header')
+    for (const uiLocale of ['en', 'id'] as const) {
+      await seed(fixture, { ...prefs, uiLocale })
+      // Use the actual sample and state stores so notices and labels follow App's rendering.
+      await evaluate(`Promise.all([import('/src/lib/state/document.svelte.ts'), import('/src/data/sample.ts')]).then(([{ resumeDoc }, { sampleDocument }]) => resumeDoc.replace(sampleDocument()))`)
+      await Bun.sleep(1000)
+      for (const mode of ['preview', 'edit'] as const) {
+        await evaluate(`import('/src/lib/state/editing.svelte.ts').then(({ editing }) => editing.${mode === 'edit' ? 'enter' : 'finish'}())`)
+        for (const error of [false, true]) {
+          await evaluate(`import('/src/lib/state/preferences.svelte.ts').then(({ prefs }) => { prefs.saveStatus = ${error ? "{ kind: 'error', message: 'Out of browser storage', messageKey: 'error.storageQuota' }" : "{ kind: 'saved', at: Date.now() }"} })`)
+          for (const [width, height, doubled] of [[320, 640], [375, 812], [639, 812], [640, 812], [768, 1024], [1024, 900], [1440, 900], [375, 420], [812, 375], [320, 812, true]] as const) {
+            await evaluate(`document.documentElement.style.fontSize = ${JSON.stringify(doubled ? '200%' : '')}; window.scrollTo(0, 0)`)
+            await viewport(width, height)
+            const label = `${uiLocale} ${mode} ${error ? 'error' : 'saved'} ${width}x${height}${doubled ? ' doubled text' : ''}`
+            const header = await evaluate(`(() => {
+              const h = document.querySelector('.app-header'), r = h.getBoundingClientRect();
+              const inside = (e, outer = r) => { const b = e.getBoundingClientRect(); return b.left >= outer.left - 1 && b.right <= outer.right + 1 && b.top >= outer.top - 1 && b.bottom <= outer.bottom + 1 };
+              const nodes = [...h.querySelectorAll('.app-title, .app-status, .app-actions > *, .app-demo-notice, .save-status.error')];
+              const textRect = (e) => { const range = document.createRange(); range.selectNodeContents(e); return range.getBoundingClientRect() };
+              const textFits = [...h.querySelectorAll('.app-title, .app-status')].every((e) => { const t = textRect(e), b = e.getBoundingClientRect(); return t.left >= b.left - 1 && t.right <= b.right + 1 && t.top >= b.top - 1 && t.bottom <= b.bottom + 1 });
+              const collisions = nodes.flatMap((a, i) => nodes.slice(i + 1).filter((b) => { const x = a.getBoundingClientRect(), y = b.getBoundingClientRect(); return Math.min(x.right, y.right) - Math.max(x.left, y.left) > 1 && Math.min(x.bottom, y.bottom) - Math.max(x.top, y.top) > 1 }).map((b) => a.className + '/' + b.className));
+              const brand = h.querySelector('.app-brand').getBoundingClientRect(), actions = h.querySelector('.app-actions').getBoundingClientRect();
+              const buttons = [...h.querySelectorAll('.app-actions button')];
+              const tooSmall = buttons.filter((b) => { const q = b.getBoundingClientRect(); return q.width < 43.5 || q.height < 43.5 });
+              const gap = getComputedStyle(h.querySelector('.app-actions')).gap;
+              return { textFits, outside: nodes.filter((n) => !inside(n)).map((n) => n.className), collisions, phoneRows: innerWidth >= 640 || brand.bottom <= actions.top + 1, flow: h.nextElementSibling.getBoundingClientRect().top >= r.bottom - 1, overflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1, targets: tooSmall.length === 0, gap, status: !!h.querySelector('.app-status').textContent.trim(), demo: !!h.querySelector('.app-demo-notice'), error: !!h.querySelector('.save-status.error') };
+            })()`)
+            check(header.textFits && header.outside.length === 0 && header.collisions.length === 0 && header.phoneRows && header.flow, `${label}: header contains separate groups and next region starts below it (${JSON.stringify(header)})`)
+            check(header.overflow && header.targets && header.gap === '8px' && header.status && header.demo && header.error === error, `${label}: no overflow, 44px targets, 8px gaps, and real status/notices`)
+            if (width < 640) {
+              const tips = await evaluate(`(() => {
+                const toolbar = document.querySelector('.app-actions').getBoundingClientRect();
+                return [...document.querySelectorAll('.app-actions .icon-tip')].every((tip) => { const r = tip.getBoundingClientRect(); return r.left >= 15 && r.right <= innerWidth - 15 && r.top >= -1 && r.bottom <= toolbar.top + 1 });
+              })()`)
+              check(tips, `${label}: phone tooltips fit above toolbar within viewport margins`)
+              await clickSelector('.app-actions button[aria-haspopup="menu"]')
+              const menu = await evaluate(`(() => { const m = document.querySelector('.menu'), r = m.getBoundingClientRect(), b = document.querySelector('.app-actions button[aria-haspopup="menu"]').getBoundingClientRect(); return r.left >= 15 && r.right <= innerWidth - 15 && r.top >= b.bottom && r.bottom <= innerHeight - 15 && m.scrollHeight >= m.clientHeight })()`)
+              check(menu, `${label}: Export menu fits below trigger inside viewport`)
+              await key('Escape')
+            }
+          }
+        }
+      }
+    }
+    await evaluate(`document.documentElement.style.fontSize = ''`)
+    if (process.env.VERIFY_HEADER_ONLY) {
+      if (failures) throw new Error(`Responsive header: ${failures} check(s) failed`)
+      pass('Responsive header checks passed')
+      if (process.env.KEEP_ATS_ARTIFACTS) console.log(`Artifacts kept in ${work}`)
+      else rmSync(work, { recursive: true, force: true })
+      return
+    }
+    await viewport(1440, 900)
     await seed(fixture, prefs)
     check((await presentation()) === 'classic', 'starts in Classic')
     // After the first autosave, storage holds the app's normalized form of the fixture.
@@ -802,12 +856,33 @@ const main = async () => {
       const [scroll, client] = await evaluate(`[document.documentElement.scrollWidth, document.documentElement.clientWidth]`)
       return { ok: scroll <= client + 1, scroll, client }
     }
+    const panelSettled = () => evaluate(`Promise.all([...document.querySelectorAll('.side-panel')].flatMap((p) => p.getAnimations()).map((a) => a.finished.catch(() => {})))`)
+    const paperPosition = () => evaluate(`(() => { const p = document.querySelector('.resume-paper').getBoundingClientRect(); return { top: p.top, left: p.left, width: p.width, zoom: getComputedStyle(document.querySelector('.resume-paper-frame')).zoom, scroll: window.scrollY } })()`)
+    const phonePanelGeometry = () => evaluate(`(() => {
+      const p = document.querySelector('.side-panel'), r = p.getBoundingClientRect(), h = document.querySelector('.app-header').getBoundingClientRect();
+      const v = window.visualViewport, top = v?.offsetTop ?? 0, height = v?.height ?? innerHeight;
+      const safeTop = Math.max(top + 16, h.bottom + 16), safeBottom = top + height - 16;
+      const style = getComputedStyle(p);
+      return { bounds: r.left >= 15 && r.right <= innerWidth - 15 && r.top >= safeTop - 1 && r.bottom <= safeBottom + 1,
+        centered: Math.abs((r.top + r.bottom) / 2 - (safeTop + safeBottom) / 2) <= 1 && Math.abs((r.left + r.right) / 2 - innerWidth / 2) <= 1,
+        height: r.height <= height * 0.6 + 1, rounded: ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius', 'borderBottomRightRadius'].every((key) => style[key] === '16px'),
+        fixed: style.position === 'fixed', nonmodal: p.getAttribute('aria-modal') !== 'true' && !document.querySelector('.drawer-overlay'),
+        toolbar: [...document.querySelectorAll('.app-actions button')].every((b) => { const q = b.getBoundingClientRect(); return b.contains(document.elementFromPoint((q.left + q.right) / 2, (q.top + q.bottom) / 2)) }) };
+    })()`)
     const smallPanelTargets = () => evaluate(`[...document.querySelectorAll('.app-actions button, .side-panel button, .side-panel .drag-handle')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && (r.width < 43.5 || r.height < 43.5) }).map((b) => b.getAttribute('aria-label') || b.textContent.trim())`)
-    for (const [width, height] of [[320, 640], [375, 812], [768, 1024], [1024, 768], [1440, 900]] as const) {
+    for (const [width, height] of [[320, 640], [375, 812], [639, 812], [640, 812], [768, 1024], [1024, 768], [1440, 900], [375, 420], [812, 375]] as const) {
       await seed(fixture, prefs)
       await viewport(width, height)
       check(JSON.stringify(await panelState()) === '{"sections":false,"settings":false}', `${width}px: both panels start closed`)
+      const beforePanel = await paperPosition()
       await click('Sections')
+      await panelSettled()
+      if (width < 640) {
+        const after = await paperPosition()
+        check(Math.abs(beforePanel.top - after.top) <= 1 && Math.abs(beforePanel.left - after.left) <= 1 && beforePanel.width === after.width && beforePanel.zoom === after.zoom && beforePanel.scroll === after.scroll, `${width}px: opening a popup keeps paper position, zoom and scroll unchanged (${JSON.stringify(beforePanel)} -> ${JSON.stringify(after)})`)
+        const geometry = await phonePanelGeometry()
+        check(Object.values(geometry).every(Boolean), `${width}px Sections: safe centered rounded nonmodal popup (${JSON.stringify(geometry)})`)
+      }
       check(await evaluate(`document.activeElement?.id === 'sections-panel-title'`), `${width}px: opening Sections focuses its heading`)
       const moves = await evaluate(`document.querySelectorAll('#sections-panel [aria-label^="Move "]').length`)
       check(width < 640 ? moves === 10 : moves === 0, `${width}px: ${width < 640 ? 'phones get move buttons' : 'no move buttons beside drag and drop'} (${moves})`)
@@ -818,6 +893,7 @@ const main = async () => {
         if (width === 320) await screenshot('sections-320')
       }
       await click('Settings')
+      await panelSettled()
       const both = await panelState()
       const wide = width >= 1024
       check(both.settings && both.sections === wide, `${width}px: ${wide ? 'both panels open side by side' : 'Settings replaces Sections'} (${JSON.stringify(both)})`)
@@ -839,6 +915,30 @@ const main = async () => {
         // Reopen Settings last so focus is back inside it for the Escape check.
         await click('Settings')
         await click('Settings')
+      } else if (width < 640) {
+        const geometry = await phonePanelGeometry()
+        check(Object.values(geometry).every(Boolean), `${width}px Settings: safe centered rounded nonmodal popup (${JSON.stringify(geometry)})`)
+        const scroll = await evaluate(`(() => {
+          const p = document.querySelector('.side-panel'), body = p.querySelector('.side-panel-body'), header = p.querySelector('.side-panel-head');
+          const controls = [...body.querySelectorAll('button, input, a[href]')], last = controls.at(-1), before = header.getBoundingClientRect().top, page = window.scrollY;
+          body.scrollTop += Math.max(0, last.getBoundingClientRect().bottom - body.getBoundingClientRect().bottom);
+          const r = last.getBoundingClientRect(), b = body.getBoundingClientRect();
+          return { scrollable: body.scrollHeight > body.clientHeight, lastVisible: r.top >= b.top - 1 && r.bottom <= b.bottom + 1, fixedHeader: header.getBoundingClientRect().top === before, pageStill: window.scrollY === page };
+        })()`)
+        check(Object.values(scroll).every(Boolean), `${width}px Settings: internal scrolling reaches final control with fixed header (${JSON.stringify(scroll)})`)
+        if (width === 375 && height === 420) {
+          await screenshot('settings-phone-short')
+          await click('Export')
+          const menuReachable = await evaluate(`(() => {
+            return [...document.querySelectorAll('.menu-item')].every((item) => {
+              const r = item.getBoundingClientRect();
+              return item.contains(document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2));
+            });
+          })()`)
+          check(menuReachable, 'short phone: Export menu items remain pointer accessible above the popup')
+          await key('Escape')
+          await evaluate(`document.getElementById('settings-panel-title').focus({ preventScroll: true })`)
+        }
       } else {
         const above = await evaluate(`document.getElementById('settings-panel').getBoundingClientRect().bottom <= document.querySelector('.resume-paper').getBoundingClientRect().top + 1`)
         check(above, `${width}px: the panel sits above the CV`)
@@ -850,6 +950,55 @@ const main = async () => {
       await key('Escape')
       check(!(await panelState()).settings && (await evaluate(`document.activeElement?.getAttribute('aria-label') === 'Settings'`)), `${width}px: Escape closes the focused panel and returns focus to its toggle`)
     }
+
+    console.log('\nPhone popup interaction, appearance and cleanup')
+    for (const uiLocale of ['en', 'id']) {
+      for (const dark of [false, true]) {
+        await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }, { name: 'prefers-reduced-motion', value: 'reduce' }] })
+        await viewport(375, 812)
+        await seed(fixture, { ...prefs, uiLocale })
+        const before = await evaluate('window.__activeListeners()')
+        await clickSelector('.app-actions button[aria-controls], .app-actions button')
+        check(await evaluate(`getComputedStyle(document.querySelector('.side-panel')).animationName === 'none'`), `${uiLocale} ${dark ? 'dark' : 'light'}: reduced motion skips popup animation`)
+        const contrast = await evaluate(`(() => { const p = getComputedStyle(document.querySelector('.side-panel')); return p.backgroundColor !== p.color && getComputedStyle(document.querySelector('.resume-paper-frame')).colorScheme === 'light' })()`)
+        check(contrast, `${uiLocale} ${dark ? 'dark' : 'light'}: popup follows scheme while paper stays light`)
+        await evaluate('window.scrollTo(0, 100)')
+        await settle()
+        const geometry = await phonePanelGeometry()
+        check(await evaluate('window.scrollY > 0') && geometry.bounds && geometry.centered, `${uiLocale} ${dark ? 'dark' : 'light'}: background scroll works and popup follows visible header clearance`)
+        await key('Escape')
+        check(await evaluate('window.__activeListeners()') === before, `${uiLocale} ${dark ? 'dark' : 'light'}: closing popup releases viewport listeners`)
+      }
+    }
+    await cdp.send('Emulation.setEmulatedMedia', { features: [] })
+    await viewport(375, 812)
+    await seed(fixture, prefs)
+    await click('Edit')
+    await click('Settings')
+    await panelSettled()
+    // Find an exposed edit button by hit testing, then dispatch real pointer input.
+    const exposed = await evaluate(`(() => {
+      for (const b of document.querySelectorAll('.resume-paper [role="button"].editable')) {
+        const r = b.getBoundingClientRect(), x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2;
+        if (y > 0 && y < innerHeight && b.contains(document.elementFromPoint(x, y))) return { x, y };
+      }
+      return null;
+    })()`)
+    check(!!exposed, 'phone: an exposed CV field remains pointer accessible with Settings open')
+    if (exposed) {
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...exposed })
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...exposed })
+      await settle()
+      check(await evaluate(`!!document.querySelector('.edit-sheet') && !!document.getElementById('settings-panel')`), 'phone: exposed CV tap opens edit sheet above the retained popup')
+      await key('Escape')
+    }
+    await seed(fixture, prefs)
+    await click('Sections')
+    await panelSettled()
+    await click('Go to Awards')
+    check(!(await panelState()).sections && await evaluate(`document.activeElement === document.querySelector('[data-cv-section="awards"] h2')`), 'phone navigation closes popup and focuses destination heading')
+    check(await evaluate(`(() => { const r = document.activeElement.getBoundingClientRect(); return r.top >= -1 && r.bottom <= innerHeight + 1 })()`), 'phone navigation reveals a later section')
+    await viewport(1440, 900)
 
     console.log('\nSide panels across the breakpoint')
     await seed(fixture, prefs)
@@ -877,7 +1026,7 @@ const main = async () => {
     // A real click focuses the button; element.click() alone would not.
     await evaluate(`document.querySelector('[aria-label="Go to Awards"]').focus()`)
     await click('Go to Awards')
-    const reached = await evaluate(`(() => { const r = document.querySelector('[data-cv-section="awards"] h2').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight })()`)
+    const reached = await evaluate(`(() => { const r = document.querySelector('[data-cv-section="awards"] h2').getBoundingClientRect(); return r.top >= -1 && r.bottom <= innerHeight + 1 })()`)
     check(reached && (await scrollY()) > 0, `long CV: navigation brings a later heading into view (scrollY ${await scrollY()})`)
     check(await evaluate(`document.activeElement?.getAttribute('aria-label') === 'Go to Awards'`), 'navigation keeps focus on its button')
     // scrollY can read a pixel off after an instant scroll with no further scrolling, so count real scrolls.
@@ -887,18 +1036,22 @@ const main = async () => {
 
     console.log('\nPanels never reach the PDF')
     await viewport(1440, 900)
-    for (const themeKey of ['minimal', 'ats']) {
-      for (const documentLocale of ['en', 'id']) {
-        for (const mode of ['preview', 'edit']) {
-          await seed(fixture, { ...prefs, themeKey, documentLocale })
-          if (mode === 'edit') await click('Edit')
-          const closed = await print(`${themeKey}-${documentLocale}-${mode}-panels-closed`)
-          await click('Sections')
-          await click('Settings')
-          const open = await print(`${themeKey}-${documentLocale}-${mode}-panels-open`)
-          check(samePdf(closed, open), `${themeKey} ${documentLocale} ${mode}: panels open print identical text, order, pages and word positions (${open.pages} pages)`)
-          checkClean(`${themeKey} ${documentLocale} ${mode} panels open`, open)
-          check(!/Go to |Hidden from the resume|Disembunyikan dari resume/.test(open.normal), `${themeKey} ${documentLocale} ${mode}: no panel text in the PDF`)
+    for (const width of [375, 1440]) {
+      await viewport(width, 900)
+      for (const themeKey of ['minimal', 'ats']) {
+        for (const documentLocale of ['en', 'id']) {
+          for (const mode of ['preview', 'edit']) {
+            await seed(fixture, { ...prefs, themeKey, documentLocale })
+            if (mode === 'edit') await click('Edit')
+            const label = `${themeKey}-${documentLocale}-${mode}-${width}px`
+            const closed = await print(`${label}-panels-closed`)
+            await click('Sections')
+            await click('Settings')
+            const open = await print(`${label}-panels-open`)
+            check(samePdf(closed, open), `${label}: panels open print identical text, order, pages and word positions (${open.pages} pages)`)
+            checkClean(`${label} panels open`, open)
+            check(!/Go to |Hidden from the resume|Disembunyikan dari resume/.test(open.normal), `${label}: no panel text in the PDF`)
+          }
         }
       }
     }

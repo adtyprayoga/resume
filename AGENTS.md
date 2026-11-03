@@ -52,7 +52,7 @@ jsdom has no layout engine (`offsetHeight` is 0, rects are zeros) and Vitest doe
 
 `design.md` is the target visual system (Minimalism & Swiss Style). It is being applied to the **app chrome only**; the printed resume (`print.css`, theme presets) must not change. The implementation plan, including how the spec's internal contradictions were resolved and the exact token values, is `docs/superpowers/plans/2026-11-02-swiss-design-system.md`. Key rules once implemented:
 - All chrome colours, type sizes, shadows, z-indices and motion values come from `src/styles/tokens.css`. Use the off-black `#111111` ink, never pure black; secondary text is `#4d4d4d` (`#808080` is for borders only). Text contrast must be ≥7:1 (WCAG AAA).
-- Square corners (radius 0). Z-index only via `--z-base|sticky|overlay|modal|toast` (0/100/200/300/500).
+- Square corners (radius 0), except the outer Sections/Settings popup below 640px: `--radius-mobile-panel` (16px), confined to the mobile `.side-panel` rule in `shell.css`. Its controls and all tablet/desktop panels stay square. Z-index only via `--z-base|sticky|overlay|modal|toast` (0/100/200/300/500).
 - Animate only opacity/transform; hover transitions are 200ms and may change colour/shadow; respect `prefers-reduced-motion`.
 - No emoji or symbol glyphs as icons, no cliché copy ("Elevate", "Seamless", "Unleash", "Next-Gen"), no `100vh` (use `100dvh`).
 - The paper and everything inside it stay light in dark mode.

@@ -15,21 +15,23 @@
   padding: 1rem 16px 0.75rem;
 }
 
-/* 12-column grid, aligned to the paper below it. */
+/* Text takes the remaining space beside the toolbar, aligned to the paper. */
 .app-header-row {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.5rem;
 }
 
 .app-brand {
-  grid-column: 1 / 4;
+  grid-column: 1;
   min-width: 0;
+  max-width: 100%;
 }
 
 .app-title {
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: var(--text-md);
   font-weight: 700;
   letter-spacing: var(--tracking-tight);
@@ -37,7 +39,7 @@
 }
 
 .app-status {
-  min-height: 1.2em;
+  min-height: 1lh;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -52,6 +54,7 @@
 }
 
 .app-demo-notice {
+  overflow-wrap: anywhere;
   margin: 0.5rem 0 0;
   font-size: var(--text-sm);
   line-height: var(--leading-body);
@@ -59,15 +62,18 @@
 }
 
 .app-actions {
-  grid-column: 4 / 13;
+  grid-column: 2;
+  min-width: 0;
+  max-width: 100%;
   justify-self: end;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .app-header .save-status.error {
   margin-top: 0.5rem;
+  overflow-wrap: anywhere;
 }
 
 /* ---- Icon actions ---- */
@@ -76,6 +82,7 @@
 .menu-anchor {
   position: relative;
   display: inline-flex;
+  flex-shrink: 0;
 }
 
 .icon-btn {
@@ -344,10 +351,57 @@
   margin-top: 0.5rem;
 }
 
-@media (max-width: 767px) {
-  .app-header-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .app-brand { grid-column: 1; }
-  .app-actions { grid-column: 2; justify-self: end; }
+@media screen and (max-width: 639px) {
+  .app-header-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .app-brand,
+  .app-actions {
+    grid-column: 1;
+  }
+
+  .app-actions {
+    position: relative;
+    justify-self: start;
+  }
+
+  .app-status {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Share a toolbar-sized anchor so every label and menu fits the phone. */
+  .app-actions .icon-action,
+  .app-actions .menu-anchor {
+    position: static;
+  }
+
+  .app-actions .icon-tip,
+  .app-actions > :last-child .icon-tip {
+    box-sizing: border-box;
+    top: auto;
+    bottom: calc(100% + 6px);
+    left: 0;
+    right: auto;
+    translate: none;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .app-actions .menu {
+    z-index: var(--z-modal);
+    box-sizing: border-box;
+    min-width: 0;
+    width: min(20rem, 100%);
+    max-height: min(20rem, calc(100dvh - 12rem));
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
 }
 
 /* ---- First-run introduction ---- */
@@ -399,4 +453,45 @@
 
 .intro-actions .tool-btn {
   gap: 0.5rem;
+}
+
+@keyframes mobile-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, var(--panel-viewport-height));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media screen and (max-width: 639px) {
+  .side-panel {
+    position: fixed;
+    z-index: var(--z-overlay);
+    top: calc(var(--panel-safe-top) + var(--panel-safe-height) / 2);
+    left: 50%;
+    width: min(24rem, calc(100% - 32px));
+    max-height: min(calc(var(--panel-viewport-height) * 0.6), var(--panel-safe-height));
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius-mobile-panel);
+    box-shadow: var(--shadow-pop);
+    transform: translate(-50%, -50%);
+    animation: mobile-panel-enter var(--dur-enter) var(--ease-out);
+  }
+
+  .side-panel-head {
+    flex: none;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .side-panel-body {
+    min-height: 0;
+    overscroll-behavior-y: contain;
+  }
 }

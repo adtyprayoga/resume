@@ -103,10 +103,12 @@ open draft; confirms no idle animation frames and no listeners left behind once
 editors close; reloads to confirm persistence; and checks the phone sheet with a
 shortened (keyboard-open) viewport plus 44px targets and no horizontal overflow
 at 320, 375, 768 and 1440px and phone landscape. It opens the Sections and
-Settings panels at 320, 375, 768, 1024 and 1440px, checking placement, heading
-focus, Escape, 44px targets and overflow, and that narrowing the window keeps
-the panel opened last. It checks that section navigation leaves a visible
-heading in place and reaches a later one in a long resume, and requires
+Settings panels across the phone, tablet and desktop breakpoints, checking
+header reflow, popup clearance, internal scrolling, heading focus, Escape,
+44px targets and overflow, and that narrowing the window keeps the panel
+opened last. It checks that phone section navigation closes the popup and
+focuses its destination, leaves a visible heading in place, reaches a later
+one in a long resume, and requires
 identical PDFs with the panels open and closed for both layouts, both
 languages, and Preview and Edit. Needs `chromium` and `poppler-utils`.
 
@@ -118,18 +120,24 @@ opens the editor. **Import JSON** opens the import review. **Export** offers
 **Export PDF**, which prints the current resume, and **Export JSON**.
 **Sections** and **Settings** open and close side panels. The status shows
 whether work is saved in this browser or needs attention.
+On phones, the title and status sit above the action buttons. Text and controls
+wrap to fit without overlapping.
 
 The side panels are not dialogs. Nothing dims the page, and clicking the resume
 leaves them open, so you can keep editing beside them. At 1024px and wider,
 Sections sits left of the resume and Settings right of it, and both can stay
-open. On narrower screens one panel opens above the resume, and opening the
-other replaces it. Escape closes the panel that has focus. Both panels start
-closed on every visit and never print.
+open. At 640–1023px, one panel opens above the resume. Below 640px, it rises
+from the bottom into a rounded popup centered in the space below the visible
+header. It uses at most 60% of the viewport height, with a scrolling body so
+the exposed resume stays usable. Opening the other panel replaces it.
+Escape closes the panel that has focus. Both panels start closed on every
+visit and never print. Reduced motion skips the popup animation.
 
 **Sections** lists Profile first, then one row per section: a drag handle, the
 section name with its entry count, and a checkbox that shows or hides the
 section. Select a name to go to that section; the page scrolls only when its
-heading is off screen. A hidden section, or an empty one outside Edit mode,
+heading is off screen. On phones, selecting a name also closes the popup and
+focuses that section's heading. A hidden section, or an empty one outside Edit mode,
 cannot be selected, and the row says why. **Settings** holds
 the Classic / ATS layout selector, languages, font size, page guides, data
 actions and help.

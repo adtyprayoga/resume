@@ -20,6 +20,7 @@ beforeEach(() => {
 
 afterEach(() => {
   editing.reset()
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
 
@@ -43,6 +44,99 @@ const stubNarrow = (initial: boolean) => {
     await tick()
   }
 }
+
+const stubPhone = () => {
+  let phone = true
+  const listeners = new Set<(event: { matches: boolean }) => void>()
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    get matches() { return query.includes('639px') ? phone : query.includes('1023px') },
+    media: query,
+    addEventListener: (_: string, listener: (event: { matches: boolean }) => void) => {
+      if (query.includes('639px')) listeners.add(listener)
+    },
+    removeEventListener: (_: string, listener: (event: { matches: boolean }) => void) => listeners.delete(listener),
+  }))
+  return async (next: boolean) => {
+    phone = next
+    for (const listener of listeners) listener({ matches: next })
+    await tick()
+  }
+}
+
+describe('phone panels', () => {
+  it.each(['profile', 'awards'])('closes Sections and focuses the %s heading after navigation', async (target) => {
+    stubPhone()
+    render(App)
+    const user = userEvent.setup()
+    await user.click(toggle('Sections'))
+    const heading = document.querySelector<HTMLElement>(`[data-cv-section="${target}"] h1, [data-cv-section="${target}"] h2`)!
+    const scroll = vi.fn()
+    heading.scrollIntoView = scroll
+    await user.click(within(panel('Sections')!).getByRole('button', { name: target === 'profile' ? 'Go to Profile' : 'Go to Awards' }))
+    expect(panel('Sections')).toBeNull()
+    expect(heading).toHaveFocus()
+    expect(scroll).not.toHaveBeenCalled()
+    expect(toggle('Sections')).toHaveAttribute('aria-expanded', 'false')
+    toggle('Sections').focus()
+    expect(heading).not.toHaveAttribute('tabindex')
+  })
+
+  it('keeps viewport measurements active only while a phone panel is open', async () => {
+    const resizePhone = stubPhone()
+    const viewport = Object.assign(new EventTarget(), { height: 700, offsetTop: 20 })
+    vi.stubGlobal('visualViewport', viewport)
+    const removeViewport = vi.spyOn(viewport, 'removeEventListener')
+    const removeWindow = vi.spyOn(window, 'removeEventListener')
+    const frames = new Map<number, FrameRequestCallback>()
+    let next = 0
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.set(++next, callback); return next })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
+    const observers: { target: Element; resize: () => void; disconnect: ReturnType<typeof vi.fn> }[] = []
+    vi.stubGlobal('ResizeObserver', class {
+      disconnect = vi.fn()
+      constructor(private resize: () => void) {}
+      observe(target: Element) { observers.push({ target, resize: this.resize, disconnect: this.disconnect }) }
+    })
+    let headerBottom = 180
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return { bottom: this.classList.contains('app-header') ? headerBottom : 0 } as DOMRect
+    })
+    const { container, unmount } = render(App)
+    const workspace = container.querySelector<HTMLElement>('.workspace')!
+    const user = userEvent.setup()
+    await user.click(toggle('Settings'))
+    for (const callback of frames.values()) callback(0)
+    frames.clear()
+    await tick()
+    expect(workspace.style.getPropertyValue('--panel-safe-top')).toBe('196px')
+    expect(workspace.style.getPropertyValue('--panel-safe-height')).toBe('508px')
+    expect(workspace.style.getPropertyValue('--panel-viewport-height')).toBe('700px')
+    const observer = observers.find((entry) => entry.target.classList.contains('app-header'))!
+    headerBottom = 120
+    window.dispatchEvent(new Event('scroll'))
+    viewport.dispatchEvent(new Event('resize'))
+    observer.resize()
+    expect(frames.size).toBe(1)
+    for (const callback of frames.values()) callback(0)
+    frames.clear()
+    await tick()
+    expect(workspace.style.getPropertyValue('--panel-safe-top')).toBe('136px')
+    expect(workspace.style.getPropertyValue('--panel-safe-height')).toBe('568px')
+    window.dispatchEvent(new Event('scroll'))
+    await resizePhone(false)
+    expect(observer.disconnect).toHaveBeenCalledOnce()
+    expect(frames.size).toBe(0)
+    expect(removeViewport).toHaveBeenCalledWith('resize', expect.any(Function))
+    expect(removeViewport).toHaveBeenCalledWith('scroll', expect.any(Function))
+    expect(removeWindow).toHaveBeenCalledWith('scroll', expect.any(Function))
+    await resizePhone(true)
+    await user.click(within(panel('Settings')!).getByRole('button', { name: 'Close' }))
+    expect(observers.filter((entry) => entry.target.classList.contains('app-header')).every((entry) => entry.disconnect.mock.calls.length === 1)).toBe(true)
+    await user.click(toggle('Settings'))
+    await unmount()
+    expect(observers.filter((entry) => entry.target.classList.contains('app-header')).every((entry) => entry.disconnect.mock.calls.length === 1)).toBe(true)
+  })
+})
 
 describe('side panels', () => {
   it('start closed', () => {

@@ -43,6 +43,7 @@
   --shadow-card: 0 2px 12px rgb(0 0 0 / 0.06);
   --shadow-lift: 0 4px 12px rgb(0 0 0 / 0.1);
   --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.12);
+  --radius-mobile-panel: 1rem;
   --backdrop: rgb(17 17 17 / 0.45);
 
   --z-base: 0;
