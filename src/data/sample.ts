@@ -8,9 +8,9 @@ import type { ResumeDocument } from '$lib/model/types'
 export const sampleDocument = (): ResumeDocument => ({
   ...emptyDocument(),
   contact: {
-    email: 'budi.santoso@example.com',
+    email: 'aditya.prayoga@example.com',
     phone: '+62 811 2345 678',
-    website: 'https://budisantoso.example.com',
+    website: 'https://adityapryg.dev',
     github: 'https://github.com/example',
     linkedin: 'https://linkedin.com/in/example',
     avatar: avatarSample,
@@ -18,14 +18,14 @@ export const sampleDocument = (): ResumeDocument => ({
   profile: {
     text: {
       id: {
-        name: 'Budi Santoso',
-        headline: 'Perekayasa Perangkat Lunak Senior',
+        name: 'Aditya Prayoga',
+        headline: 'Programmer Senior',
         location: 'Jakarta, Indonesia',
         summary:
           'Perekayasa perangkat lunak dengan tujuh tahun pengalaman membangun layanan backend dan antarmuka web berskala besar. Fokus pada keandalan sistem, kualitas data, dan pendampingan rekan tim.',
       },
       en: {
-        name: 'Budi Santoso',
+        name: 'Aditya Prayoga',
         headline: 'Senior Software Engineer',
         location: 'Jakarta, Indonesia',
         summary:

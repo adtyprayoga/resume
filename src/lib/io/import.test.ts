@@ -91,7 +91,7 @@ describe('fetchResumeJson', () => {
 
 describe('resumeFileName', () => {
   it('builds a slug from the resolved name and locale', () => {
-    expect(resumeFileName('Budi Santoso', 'en')).toBe('budi-santoso-resume-en')
+    expect(resumeFileName('Aditya Prayoga', 'en')).toBe('budi-santoso-resume-en')
   })
 
   it('falls back when the name is blank', () => {

@@ -78,8 +78,8 @@ describe('saved-data recovery', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reset to sample' }))
     expect(localStorage.getItem(DOCUMENT_KEY)).toBe(NEWER)
     await userEvent.click(screen.getByRole('button', { name: /Confirm reset/ }))
-    expect(await screen.findByRole('heading', { level: 1, name: /Person|Budi/ })).toHaveTextContent('Budi Santoso')
-    expect(JSON.parse(localStorage.getItem(DOCUMENT_KEY)!).profile.text.en.name).toBe('Budi Santoso')
+    expect(await screen.findByRole('heading', { level: 1, name: /Person|Budi/ })).toHaveTextContent('Aditya Prayoga')
+    expect(JSON.parse(localStorage.getItem(DOCUMENT_KEY)!).profile.text.en.name).toBe('Aditya Prayoga')
   })
 
   it('a failed reset write keeps the original data and shows an error', async () => {

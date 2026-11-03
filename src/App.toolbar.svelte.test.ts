@@ -237,14 +237,14 @@ describe('settings panel', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Reset to sample' }))
     expect(resumeDoc.current.profile.text.en.name).toBe('Mine')
     await user.click(within(dialog).getByRole('button', { name: 'Confirm reset' }))
-    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
   })
 
   it('asks for confirmation before starting blank', async () => {
     render(App)
     const { user, dialog } = await openSettings()
     await user.click(within(dialog).getByRole('button', { name: 'Start blank' }))
-    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
     await user.click(within(dialog).getByRole('button', { name: 'Confirm: erase and start blank' }))
     expect(resumeDoc.current.profile.text.en.name).toBe('')
     expect(resumeDoc.current.content.experience).toHaveLength(0)

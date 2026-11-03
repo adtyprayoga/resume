@@ -49,17 +49,17 @@ describe('preview mode', () => {
 describe('inline text editing', () => {
   it('opens a native input over the name, outside the paper', async () => {
     const user = await startEditing()
-    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Budi Santoso' }))
+    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Aditya Prayoga' }))
     const input = screen.getByRole('textbox', { name: /^Name/ })
     expect(input.tagName).toBe('INPUT')
-    expect(input).toHaveValue('Budi Santoso')
+    expect(input).toHaveValue('Aditya Prayoga')
     expect(input).toHaveFocus()
     expect(paper().contains(input)).toBe(false)
   })
 
   it('applies on Enter and returns focus to the edited text', async () => {
     const user = await startEditing()
-    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Budi Santoso' }))
+    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Aditya Prayoga' }))
     const input = screen.getByRole('textbox', { name: /^Name/ })
     await user.clear(input)
     await user.type(input, 'Siti Rahma{Enter}')
@@ -125,7 +125,7 @@ describe('inline text editing', () => {
 
   it('keeps the raw draft when the interface language changes', async () => {
     const user = await startEditing()
-    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Budi Santoso' }))
+    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Aditya Prayoga' }))
     const input = screen.getByRole('textbox', { name: /^Name/ })
     await user.clear(input)
     await user.type(input, 'half, typed ')
@@ -136,7 +136,7 @@ describe('inline text editing', () => {
 
   it('describes whether the field belongs to this language or both', async () => {
     const user = await startEditing()
-    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Budi Santoso' }))
+    await user.click(within(paper()).getByRole('button', { name: 'Edit Name: Aditya Prayoga' }))
     expect(screen.getByRole('textbox', { name: 'Name · this language' })).toBeInTheDocument()
   })
 })
@@ -145,11 +145,11 @@ describe('contact details', () => {
   it('opens a small labelled form holding the full stored URL', async () => {
     const user = await startEditing()
     // Classic shows the address without its scheme.
-    const target = within(paper()).getByRole('button', { name: 'Edit Website: budisantoso.example.com' })
+    const target = within(paper()).getByRole('button', { name: 'Edit Website: adityapryg.dev' })
     await user.click(target)
     const form = screen.getByRole('form', { name: 'Website' })
     expect(paper().contains(form)).toBe(false)
-    expect(within(form).getByLabelText(/^Website/)).toHaveValue('https://budisantoso.example.com')
+    expect(within(form).getByLabelText(/^Website/)).toHaveValue('https://adityapryg.dev')
     expect(within(form).getByText('both languages')).toBeInTheDocument()
   })
 
