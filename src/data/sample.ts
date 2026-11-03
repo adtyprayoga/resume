@@ -22,7 +22,7 @@ export const sampleDocument = (): ResumeDocument => ({
         headline: 'Programmer Senior',
         location: 'Jakarta, Indonesia',
         summary:
-          'Perekayasa perangkat lunak dengan tujuh tahun pengalaman membangun layanan backend dan antarmuka web berskala besar. Fokus pada keandalan sistem, kualitas data, dan pendampingan rekan tim.',
+          'Programmer dengan tujuh tahun pengalaman membangun layanan backend dan antarmuka web berskala besar. Fokus pada keandalan sistem, kualitas data, dan pendampingan rekan tim.',
       },
       en: {
         name: 'Aditya Prayoga',
@@ -37,12 +37,12 @@ export const sampleDocument = (): ResumeDocument => ({
     experience: [
       {
         id: 'exp_sample_1',
-        company: 'PT Nusantara Digital',
+        company: 'PT Arkasa Melanglang Buana',
         dates: { start: '2022-03', end: null, current: true },
         text: {
           id: {
-            role: 'Perekayasa Perangkat Lunak Senior',
-            team: 'Platform Pembayaran',
+            role: 'Programmer Senior',
+            team: 'Fitur Pembayaran',
             location: 'Jakarta',
             bullets: [
               'Memimpin migrasi layanan pembayaran ke arsitektur berbasis antrean, menurunkan kegagalan transaksi sebesar 38%.',
@@ -64,21 +64,21 @@ export const sampleDocument = (): ResumeDocument => ({
       },
       {
         id: 'exp_sample_2',
-        company: 'Tokobangun',
+        company: 'Tokobangun Tidur Lagi',
         dates: { start: '2019-08', end: '2022-02' },
         text: {
           id: {
-            role: 'Perekayasa Perangkat Lunak',
-            team: 'Pengalaman Penjual',
+            role: 'Programmer',
+            team: 'POS & Analitik Penjualan',
             location: 'Bandung',
             bullets: [
-              'Membangun dasbor analitik penjual yang digunakan oleh lebih dari 12.000 merchant aktif.',
+              'Membangun dasbor analitik penjualan yang digunakan oleh lebih dari 12.000 merchant aktif.',
               'Memangkas waktu muat halaman katalog sebesar 55% melalui pemecahan bundel dan caching sisi tepi.',
             ],
           },
           en: {
             role: 'Software Engineer',
-            team: 'Seller Experience',
+            team: 'POS & Seller Analytics',
             location: 'Bandung',
             bullets: [
               'Built the seller analytics dashboard used by over 12,000 active merchants.',
@@ -112,17 +112,17 @@ export const sampleDocument = (): ResumeDocument => ({
     projects: [
       {
         id: 'prj_sample_1',
-        link: 'https://github.com/example/antrean',
+        link: 'https://github.com/example/Ngantre',
         techStack: ['TypeScript', 'PostgreSQL', 'Redis'],
         dates: { start: '2023-02', end: '2023-11' },
         text: {
           id: {
-            name: 'Antrean',
-            role: 'Penulis',
+            name: 'Ngantre',
+            role: 'Pencipta',
             description:
-              'Pustaka antrean pekerjaan ringan untuk Node.js dengan jaminan pengiriman tepat sekali.',
+              'Libary antrean pekerjaan ringan untuk Node.js dengan jaminan pengiriman.',
             bullets: [
-              'Mencapai 1.200 bintang GitHub dan dipakai pada produksi oleh tiga perusahaan.',
+              'Mencapai 1.200 bintang di GitHub dan diadopsi oleh tiga perusahaan.',
               'Menulis dokumentasi dwibahasa serta rangkaian uji dengan cakupan 94%.',
             ],
           },
@@ -130,7 +130,7 @@ export const sampleDocument = (): ResumeDocument => ({
             name: 'Antrean',
             role: 'Author',
             description:
-              'A lightweight job queue library for Node.js with exactly-once delivery guarantees.',
+              'A lightweight job queue library for Node.js with delivery guarantees.',
             bullets: [
               'Reached 1,200 GitHub stars and production use at three companies.',
               'Wrote bilingual documentation and a test suite at 94% coverage.',
@@ -173,13 +173,13 @@ export const sampleDocument = (): ResumeDocument => ({
         date: '2024-05',
         text: {
           id: {
-            title: 'Penghargaan Perekayasa Tahun Ini',
-            issuer: 'PT Nusantara Digital',
+            title: 'Penghargaan Programmer Terbaik 2026',
+            issuer: 'PT Arkasa Melanglang Buana',
             description: 'Diberikan atas kepemimpinan teknis pada migrasi platform pembayaran.',
           },
           en: {
             title: 'Engineer of the Year',
-            issuer: 'PT Nusantara Digital',
+            issuer: 'PT Arkasa Melanglang Buana',
             description: 'Awarded for technical leadership on the payments platform migration.',
           },
         },
