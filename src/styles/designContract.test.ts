@@ -20,6 +20,24 @@ describe('auditCss', () => {
     expect(auditCss('.a { border-radius: 0 }', 'x')).toEqual([])
   })
 
+  it('allows rounded corners only on the phone panel in the shell stylesheet', () => {
+    const source = 'src/components/shell/shell.css'
+    const rounded = '.side-panel { border-radius: var(--radius-mobile-panel); }'
+    const mobile = `@media screen and (max-width: 639px) { ${rounded} }`
+    expect(auditCss(mobile, source)).toEqual([])
+    for (const css of [
+      rounded,
+      `@media screen and (min-width: 640px) { ${rounded} }`,
+      `@media print and (max-width: 639px) { ${rounded} }`,
+      mobile.replace('.side-panel', '.other'),
+      mobile.replace('.side-panel', '.side-panel, .other'),
+      mobile.replace('border-radius:', 'border-top-left-radius:'),
+      mobile.replace('var(--radius-mobile-panel)', '1rem'),
+      `${mobile} ${rounded}`,
+    ]) expect(auditCss(css, source)).toEqual([expect.stringContaining('radius')])
+    expect(auditCss(mobile, 'other.css')).toEqual([expect.stringContaining('radius')])
+  })
+
   it('flags raw z-index', () => {
     expect(auditCss('.a { z-index: 45 }', 'x')).toHaveLength(1)
     expect(auditCss('.a { z-index: var(--z-overlay) }', 'x')).toEqual([])

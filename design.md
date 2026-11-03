@@ -105,6 +105,12 @@ Subtle hover (200-250ms), smooth transitions, sharp shadows if any, clear type h
 
 Base corner radius: 0px. See rounded tokens in front matter for the full scale.
 
+Exception: below 640px, the outer Sections and Settings popup uses the
+`--radius-mobile-panel` token (16px) on all four corners. Its controls stay
+square. The popup centers below the visible app header and its height is
+capped at 60% of the visible viewport. This exception does not apply to the
+paper, tablet/desktop panels, or other chrome.
+
 
 ## Components
 

@@ -21,6 +21,7 @@
   import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
   import { recovery } from '$lib/state/recovery.svelte'
+  import { revealSection, type NavTarget } from '$lib/ui/revealSection'
 
   // Before PersistenceHost mounts, so autosave cannot write a fresh sample over
   // stored work on first paint. Unreadable data blocks the app behind recovery.
@@ -36,6 +37,50 @@
   let importButton = $state<HTMLButtonElement | undefined>()
   let settingsButton = $state<HTMLButtonElement | undefined>()
   let sectionsButton = $state<HTMLButtonElement | undefined>()
+  let headerElement = $state<HTMLElement | undefined>()
+  let phone = $state(false)
+  let panelBounds = $state({ top: 16, height: 0, viewport: 0 })
+
+  $effect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const query = window.matchMedia('(max-width: 639px)')
+    phone = query.matches
+    const update = (event: { matches: boolean }) => { phone = event.matches }
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  })
+
+  $effect(() => {
+    if (!phone || (!sectionsOpen && !settingsOpen) || !headerElement) return
+    const header = headerElement
+    const viewport = window.visualViewport
+    let frame = 0
+    const measure = () => {
+      const top = viewport?.offsetTop ?? 0
+      const height = viewport?.height ?? window.innerHeight
+      const safeTop = Math.max(top + 16, header.getBoundingClientRect().bottom + 16)
+      panelBounds = { top: safeTop, height: Math.max(0, top + height - 16 - safeTop), viewport: height }
+    }
+    const schedule = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => { frame = 0; measure() })
+    }
+    measure()
+    const observer = new ResizeObserver(schedule)
+    observer.observe(header)
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    viewport?.addEventListener('scroll', schedule)
+    viewport?.addEventListener('resize', schedule)
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      viewport?.removeEventListener('scroll', schedule)
+      viewport?.removeEventListener('resize', schedule)
+    }
+  })
 
   $effect(() => { document.documentElement.lang = prefs.uiLocale })
 
@@ -129,7 +174,7 @@
 
   type Panel = 'sections' | 'settings'
   const PANEL_ID: Record<Panel, string> = { sections: 'sections-panel', settings: 'settings-panel' }
-  /** Below this width only one panel fits, above the CV rather than beside it. */
+  /** Below this width only one panel fits; phones float it over the CV. */
   const NARROW_QUERY = '(max-width: 1023px)'
   const isNarrow = () => typeof window.matchMedia === 'function' && window.matchMedia(NARROW_QUERY).matches
   let lastOpened = $state<Panel | null>(null)
@@ -152,11 +197,29 @@
       if (isNarrow()) setOpen(panel === 'sections' ? 'settings' : 'sections', false)
     }
     await tick()
-    if (open) document.getElementById(`${PANEL_ID[panel]}-title`)?.focus()
+    if (open) document.getElementById(`${PANEL_ID[panel]}-title`)?.focus({ preventScroll: true })
     else (panel === 'sections' ? sectionsButton : settingsButton)?.focus()
   }
 
   const togglePanel = (panel: Panel) => void setPanel(panel, !isOpen(panel))
+
+  const navigateSection = async (target: NavTarget) => {
+    editing.dismiss()
+    if (phone) sectionsOpen = false
+    await tick()
+    revealSection(target)
+    if (!phone) return
+    const heading = document.querySelector<HTMLElement>(`[data-cv-section="${target}"] h1, [data-cv-section="${target}"] h2`)
+    if (!heading) {
+      sectionsButton?.focus({ preventScroll: true })
+      return
+    }
+    if (!heading.hasAttribute('tabindex')) {
+      heading.setAttribute('tabindex', '-1')
+      heading.addEventListener('blur', () => heading.removeAttribute('tabindex'), { once: true })
+    }
+    heading.focus({ preventScroll: true })
+  }
 
   // Narrowing the window with both open keeps the one opened last.
   $effect(() => {
@@ -192,7 +255,7 @@
 </div>
 {:else}
 <div class="app-shell">
-  <header class="app-header" data-print-hide data-keeps-draft>
+  <header class="app-header" bind:this={headerElement} data-print-hide data-keeps-draft>
     <div class="app-header-row">
       <div class="app-brand">
         <p class="app-title">{t(prefs.uiLocale, 'app.title')}</p>
@@ -253,9 +316,10 @@
     </div>
   {/if}
 
-  <div class="workspace" class:with-sections={sectionsOpen} class:with-settings={settingsOpen}>
+  <div class="workspace" class:with-sections={sectionsOpen} class:with-settings={settingsOpen}
+    style={`--panel-safe-top: ${panelBounds.top}px; --panel-safe-height: ${panelBounds.height}px; --panel-viewport-height: ${panelBounds.viewport}px`}>
     {#if sectionsOpen}
-      <SectionsPanel id={PANEL_ID.sections} onClose={() => void setPanel('sections', false)} />
+      <SectionsPanel id={PANEL_ID.sections} onClose={() => void setPanel('sections', false)} onNavigate={(target) => void navigateSection(target)} />
     {/if}
 
     <div class="workspace-main">

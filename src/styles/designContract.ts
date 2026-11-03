@@ -71,15 +71,33 @@ const splitKeyframes = (css: string): { rest: string; keyframes: string[] } => {
   return { rest, keyframes }
 }
 
-const declarations = (css: string): Array<[string, string]> => {
-  const result: Array<[string, string]> = []
-  for (const [, body] of css.matchAll(/\{([^{}]*)\}/g)) {
-    for (const raw of body!.split(';')) {
+const declarations = (css: string, context: string[] = []): Array<[string, string, string[]]> => {
+  const result: Array<[string, string, string[]]> = []
+  let cursor = 0
+  while (cursor < css.length) {
+    const open = css.indexOf('{', cursor)
+    if (open < 0) break
+    const rule = css.slice(cursor, open).trim()
+    let end = open + 1
+    let depth = 1
+    while (end < css.length && depth) {
+      if (css[end] === '{') depth += 1
+      if (css[end] === '}') depth -= 1
+      end += 1
+    }
+    const body = css.slice(open + 1, end - 1)
+    const parents = [...context, rule]
+    cursor = end
+    if (body.includes('{')) {
+      result.push(...declarations(body, parents))
+      continue
+    }
+    for (const raw of body.split(';')) {
       const colon = raw.indexOf(':')
       if (colon < 0) continue
       const prop = raw.slice(0, colon).trim().toLowerCase()
       const value = raw.slice(colon + 1).replace(/!important/g, '').trim()
-      if (prop && value) result.push([prop, value])
+      if (prop && value) result.push([prop, value, parents])
     }
   }
   return result
@@ -103,9 +121,12 @@ export const auditCss = (css: string, source: string): string[] => {
     }
   }
 
-  for (const [prop, value] of declarations(rest)) {
+  for (const [prop, value, context] of declarations(rest)) {
     if (/#[0-9a-f]{3,8}\b|\b(rgba?|hsla?)\(|\b(black|white)\b/i.test(value)) report('colour-literal', prop, value)
-    if (/^border(-[a-z]+)*-radius$/.test(prop) && value !== '0') report('radius', prop, value)
+    const mobilePanelRadius = source === 'src/components/shell/shell.css'
+      && prop === 'border-radius' && value === 'var(--radius-mobile-panel)'
+      && context.length === 2 && context[0] === '@media screen and (max-width: 639px)' && context[1] === '.side-panel'
+    if (/^border(-[a-z]+)*-radius$/.test(prop) && value !== '0' && !mobilePanelRadius) report('radius', prop, value)
     if (prop === 'z-index' && !Z_INDEX.test(value)) report('z-index', prop, value)
     if (prop === 'transition' || prop === 'transition-property') {
       const names = value.split(',').map((part) => part.trim().split(/\s+/)[0]!)
