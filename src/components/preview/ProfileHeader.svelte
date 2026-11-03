@@ -36,11 +36,13 @@
 
   // ATS keeps URLs exactly as typed so a parser sees a complete address.
   const atsLines = $derived([
-    { ref: P('location'), value: profile.location },
-    { ref: C('email'), value: contact.email },
-    { ref: C('phone'), value: contact.phone },
-    ...URL_KEYS.map((key) => ({ ref: C(key), value: contact[key] })),
+    { ref: C('email'), value: contact.email, label: t(locale, 'field.email') },
+    { ref: C('phone'), value: contact.phone, label: t(locale, 'field.phone') },
+    { ref: C('linkedin'), value: contact.linkedin, label: 'LinkedIn' },
+    { ref: C('github'), value: contact.github, label: 'GitHub' },
+    { ref: C('website'), value: contact.website, label: locale === 'id' ? 'Portofolio' : 'Portfolio' },
   ])
+  const atsFilled = $derived(atsLines.filter((line) => line.value))
 
   const editMode = $derived(editing.mode === 'edit')
   const anyDetail = $derived(details.some((part) => part.value))
@@ -55,16 +57,16 @@
     {:else if editMode}
       <p class="resume-headline" data-print-hide><Editable ref={P('headline')} value="" /></p>
     {/if}
-    {#if atsLines.some((line) => line.value) || editMode}
-      <div class="ats-contact" data-print-hide={atsLines.some((line) => line.value) ? undefined : true}>
-        {#each atsLines as line, index (index)}
-          {#if line.value}
-            <p><Editable ref={line.ref} value={line.value} /></p>
-          {:else if editMode}
-            <p data-print-hide><Editable ref={line.ref} value="" /></p>
-          {/if}
-        {/each}
-      </div>
+    {#if profile.location}
+      <p class="ats-location"><Editable ref={P('location')} value={profile.location} /></p>
+    {:else if editMode}
+      <p class="ats-location" data-print-hide><Editable ref={P('location')} value="" /></p>
+    {/if}
+    {#if atsFilled.length || editMode}
+      <p class="ats-contact" data-print-hide={atsFilled.length ? undefined : true}>
+        {#each atsFilled as line, index (line.ref.key)}{#if index > 0}{' | '}{/if}<span>{line.label}: <Editable ref={line.ref} value={line.value} /></span>{/each}
+        {#if editMode}{#each atsLines.filter((line) => !line.value) as line (line.ref.key)}<Editable ref={line.ref} value="" />{/each}{/if}
+      </p>
     {/if}
   </header>
 

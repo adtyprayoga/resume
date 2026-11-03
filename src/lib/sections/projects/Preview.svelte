@@ -1,7 +1,6 @@
 <script lang="ts">
   import Editable from '$components/editing/Editable.svelte'
   import EntryShell from '$components/editing/EntryShell.svelte'
-  import Joined from '$components/editing/Joined.svelte'
   import { formatRange } from '$lib/model/dates'
   import { t } from '$lib/i18n/ui'
   import type { FieldRef } from '$lib/editing/fields'
@@ -44,12 +43,12 @@
 {#if presentation === 'ats'}
   {#each items as item (item.id)}
     {@const dates = formatRange(item.dates, locale, t(locale, 'date.present'))}
-    {@const title = [{ ref: R(item.id, 'name'), value: item.name }, { ref: R(item.id, 'role'), value: item.role }]}
     {@const tech = item.techStack.join(', ')}
     <EntryShell section="projects" id={item.id} class="ats-entry">
-      <h3 class="item-title"><Joined parts={title} separator=" — " /></h3>
-      {#if dates}<p class="item-dates"><Editable ref={R(item.id, 'dates')} value={dates} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'dates')} value="" /></p>{/if}
-      {#if tech}<p class="item-meta"><Editable ref={R(item.id, 'techStack')} value={tech} /></p>{:else if editMode}<p class="item-meta" data-print-hide><Editable ref={R(item.id, 'techStack')} value="" /></p>{/if}
+      <div class="ats-entry-head ats-project-head">
+        <h3 class="item-title ats-composite-title"><strong><Editable ref={R(item.id, 'name')} value={item.name} /></strong>{#if item.role}{' — '}<em><Editable ref={R(item.id, 'role')} value={item.role} /></em>{:else if editMode}<Editable ref={R(item.id, 'role')} value="" />{/if}{#if tech}{' ('}<Editable ref={R(item.id, 'techStack')} value={tech} />{')'}{:else if editMode}<Editable ref={R(item.id, 'techStack')} value="" />{/if}</h3>
+        {#if dates}<p class="item-dates"><Editable ref={R(item.id, 'dates')} value={dates} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'dates')} value="" /></p>{/if}
+      </div>
       {@render tail(item)}
     </EntryShell>
   {/each}

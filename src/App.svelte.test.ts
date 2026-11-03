@@ -56,7 +56,7 @@ describe('App startup', () => {
       JSON.stringify({ uiLocale: 'id', documentLocale: 'id', themeKey: 'minimal', fontScale: 'standard' }),
     )
     render(App)
-    expect(screen.getByRole('button', { name: 'Ekspor' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Lainnya' })).toBeInTheDocument()
   })
 
   it('ignores an invalid stored locale rather than breaking', () => {
@@ -79,7 +79,8 @@ describe('independent interface and document languages', () => {
     render(App)
     expect(document.documentElement.lang).toBe('id')
     expect(document.querySelector('.resume-paper')).toHaveAttribute('lang', 'en')
-    await fireEvent.click(screen.getByRole('button', { name: 'Pengaturan' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Lainnya' }))
+    await fireEvent.click(screen.getByRole('menuitem', { name: 'Pengaturan' }))
     const ui = screen.getByRole('group', { name: 'Bahasa antarmuka' })
     expect(within(ui).getByRole('button', { name: 'Bahasa antarmuka: Indonesia' })).toHaveAttribute('aria-pressed', 'true')
     const resume = screen.getByRole('group', { name: 'Bahasa resume' })

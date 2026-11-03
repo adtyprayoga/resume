@@ -143,35 +143,36 @@ const atsSequence = (lang: Lang): string[] => {
   const en = lang === 'en'
   const present = en ? 'Present' : 'Sekarang'
   return [
-    t.profile.name,
+    t.profile.name.toUpperCase(),
     t.profile.headline,
     t.profile.location,
-    contact.email,
-    contact.phone,
-    contact.website,
-    contact.github,
-    contact.linkedin,
+    `Email: ${contact.email}`,
+    `${en ? 'Phone' : 'Telepon'}: ${contact.phone}`,
+    `LinkedIn: ${contact.linkedin}`,
+    `GitHub: ${contact.github}`,
+    `${en ? 'Portfolio' : 'Portofolio'}: ${contact.website}`,
     en ? 'Summary' : 'Ringkasan Profesional',
     t.profile.summary,
     en ? 'Work Experience' : 'Pengalaman Kerja',
     ...t.jobs.flatMap((job) => [
-      job.role,
-      [job.company, job.team, job.location].filter(Boolean).join(', '),
+      job.company,
       range(job.dates, present),
+      job.role,
+      [job.team, job.location].filter(Boolean).join(', '),
       ...job.bullets,
     ]),
     en ? 'Education' : 'Pendidikan',
     ...t.schools.flatMap((school) => [
       school.school,
-      [school.degree, school.field, school.gpa && `GPA ${school.gpa}`].filter(Boolean).join(', '),
+      [school.degree, school.field].filter(Boolean).join(', '),
       range(school.dates, present),
+      school.gpa && `GPA ${school.gpa}`,
       school.description,
     ]),
     en ? 'Projects' : 'Proyek',
     ...t.projects.flatMap((project) => [
-      `${project.name} — ${project.role}`,
+      `${project.name} — ${project.role} (${project.techStack.join(', ')})`,
       range(project.dates, present),
-      project.techStack.join(', '),
       project.description,
       ...project.bullets,
       project.link,
@@ -179,7 +180,7 @@ const atsSequence = (lang: Lang): string[] => {
     en ? 'Skills' : 'Keahlian',
     ...t.skills.map((skill) => `${skill.title}: ${skill.items.join(', ')}`),
     en ? 'Awards' : 'Penghargaan',
-    ...t.awards.flatMap((award) => [award.title, award.issuer, award.date, award.description]),
+    ...t.awards.flatMap((award) => [award.title, award.date, award.issuer, award.description]),
   ].filter(Boolean)
 }
 
@@ -236,6 +237,34 @@ const checkSequence = (label: string, extracted: string, fields: string[]) => {
   }
   if (problems.length) fail(`${label}: ${problems.slice(0, 4).join('; ')}${problems.length > 4 ? ` (+${problems.length - 4} more)` : ''}`)
   else pass(`${label}: ${fields.length} fields in order, each once`)
+}
+
+/**
+ * Poppler's normal mode infers columns from glyph positions. A right-aligned
+ * date can follow its entry's body even though raw PDF order is correct. Keep
+ * entry boundaries and every other field strict, and check the date stays
+ * within its own entry. Raw extraction below still requires the exact order.
+ */
+const checkNormalSequence = (label: string, extracted: string, fields: string[]) => {
+  const isDate = (field: string) => /^\d{4}(?: – (?:\d{4}|Present|Sekarang))?$/.test(field)
+  checkSequence(label, extracted, fields.filter((field) => !isDate(field)))
+  const body = squash(extracted)
+  let cursor = 0
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index]!
+    if (isDate(field)) {
+      // Dates follow the entry heading in the raw sequence. The next entry
+      // heading is the first marked field after this entry's body fields.
+      const after = fields.slice(index + 1)
+      const nextHeading = after.find((value) => /\b(?:[EDPSA]\d(?:CO|SCHOOL|NAME|TITLE))\b/.test(value) || /^(?:Education|Pendidikan|Projects|Proyek|Skills|Keahlian|Awards|Penghargaan)$/.test(value))
+      const end = nextHeading ? body.indexOf(squash(nextHeading), cursor) : body.length
+      const at = body.indexOf(squash(field), cursor)
+      check(at >= cursor && at < end, `${label}: date ${field} stays within its entry`)
+    } else {
+      const at = body.indexOf(squash(field), cursor)
+      if (at >= 0) cursor = at + squash(field).length
+    }
+  }
 }
 
 interface PdfReport {
@@ -297,14 +326,18 @@ const isA4 = (size: string) => {
 }
 // 16mm ≈ 45.4pt, 18mm ≈ 51.0pt; a little slack for glyph side bearings.
 const MIN_Y = 43
-const MIN_X = 49
+const CLASSIC_MIN_X = 49
 
-const checkGeometry = (label: string, pdf: PdfReport) => {
+const checkGeometry = (label: string, pdf: PdfReport, ats = true) => {
+  const minX = ats ? 43 : CLASSIC_MIN_X
   check(pdf.sizes.length === pdf.pages && pdf.sizes.every(isA4), `${label}: every page is A4`)
   const outside = pdf.words.filter(
-    (w) => w.xMin < MIN_X || w.yMin < MIN_Y || w.xMax > w.width - MIN_X || w.yMax > w.height - MIN_Y,
+    (w) => w.xMin < minX || w.yMin < MIN_Y || w.xMax > w.width - minX || w.yMax > w.height - MIN_Y,
   )
-  check(outside.length === 0, `${label}: all text inside 16mm/18mm margins on ${pdf.pages} pages${outside.length ? ` (${outside.length} words outside)` : ''}`)
+  const expectedLeft = (ats ? 16 : 18) * 72 / 25.4
+  const actualLeft = Math.min(...pdf.words.map((word) => word.xMin))
+  check(Math.abs(actualLeft - expectedLeft) < 1, `${label}: left edge confirms ${ats ? 16 : 18}mm margin (${actualLeft.toFixed(2)}pt)`)
+  check(outside.length === 0, `${label}: all text inside ${ats ? '16mm' : '16mm/18mm'} margins on ${pdf.pages} pages${outside.length ? ` (${outside.length} words outside)` : ''}`)
   check(pdf.words.length > 100, `${label}: text is selectable (${pdf.words.length} words)`)
   check(pdf.fonts.length > 0 && pdf.fonts.every((font) => font.embedded), `${label}: all ${pdf.fonts.length} fonts embedded`)
 }
@@ -482,10 +515,15 @@ const main = async () => {
     writeFileSync(path, Buffer.from(data, 'base64'))
     return inspect(path)
   }
+  const screenshot = async (name: string) => {
+    const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' })
+    writeFileSync(join(work, `${name}.png`), Buffer.from(data, 'base64'))
+  }
   const presentation = () => evaluate(`document.querySelector('.resume-paper')?.dataset.presentation`)
   /** Document and app settings live in the Settings panel. */
   const inSettings = async (label: string) => {
-    await click('Settings')
+    await click('More')
+    await clickSelector('[role="menuitem"]:nth-child(3)')
     await click(label)
     await key('Escape')
   }
@@ -534,17 +572,62 @@ const main = async () => {
     check(JSON.parse(baseline).profile.text.en.name === fixture.profile.text.en.name, 'fixture loaded')
 
     console.log('\nATS, English, desktop')
-    await click('Resume layout: ATS')
+    await inSettings('Resume layout: ATS')
     check((await presentation()) === 'ats', 'layout button selects ATS')
     const storedPrefs = JSON.parse(await evaluate(`localStorage.getItem(${JSON.stringify(PREFERENCES_KEY)})`))
     check(storedPrefs.themeKey === 'ats', 'ATS choice is saved')
+    await screenshot('ats-desktop')
     const atsEn = await print('ats-en-desktop')
     check(atsEn.pages >= 2, `multipage (${atsEn.pages} pages)`)
-    checkSequence('normal text', atsEn.normal, atsSequence('en'))
+    checkNormalSequence('normal text', atsEn.normal, atsSequence('en'))
     checkSequence('raw text', atsEn.raw, atsSequence('en'))
     checkGeometry('ATS', atsEn)
     check(atsEn.images === 0, `no images (${atsEn.images})`)
     checkClean('ATS', atsEn)
+
+    console.log('\nATS, wrapped headings, long values, and font scaling')
+    const long = structuredClone(fixture)
+    for (const lang of ['en', 'id'] as const) {
+      long.profile.text[lang].name = `${'Kurniawati Wulandari '.repeat(5)}PNAME`
+      long.content.education[0]!.text[lang].school = `${'University of Distributed Systems '.repeat(4)}D1SCHOOL`
+      long.content.projects[0]!.text[lang].role = `${'Principal Research Engineer '.repeat(4)}P1ROLE`
+    }
+    long.content.experience[0]!.company = `${'Perusahaan Nusantara '.repeat(6)}E1CO`
+    for (const documentLocale of ['en', 'id'] as const) {
+      for (const fontScale of ['xsmall', 'large']) {
+        await seed(long, { ...prefs, themeKey: 'ats', documentLocale, fontScale })
+        const wrapped = await evaluate(`(() => {
+          const h = document.querySelector('.ats-entry-head');
+          const title = h.querySelector('.item-title').getBoundingClientRect();
+          const date = h.querySelector('.item-dates').getBoundingClientRect();
+          return date.top >= title.bottom - 1 && date.height < 30;
+        })()`)
+        check(wrapped, `${documentLocale} ${fontScale}: complete date moves below long heading`)
+        const pdf = await print(`ats-wrapped-${documentLocale}-${fontScale}`)
+        const original = atsSequence(documentLocale)
+        const expected = original.map((field) => {
+          if (field === fixture.profile.text[documentLocale].name.toUpperCase()) return long.profile.text[documentLocale].name.toUpperCase()
+          if (field === fixture.content.experience[0]!.company) return long.content.experience[0]!.company
+          if (field === fixture.content.education[0]!.text[documentLocale].school) return long.content.education[0]!.text[documentLocale].school
+          return field.replace(fixture.content.projects[0]!.text[documentLocale].role, long.content.projects[0]!.text[documentLocale].role)
+        })
+        checkNormalSequence('wrapped normal text', pdf.normal, expected)
+        checkSequence('wrapped raw text', pdf.raw, expected)
+        checkGeometry(`ATS wrapped ${documentLocale} ${fontScale}`, pdf)
+      }
+    }
+
+    console.log('\nATS, missing contacts')
+    const missing = structuredClone(fixture)
+    for (const key of ['email', 'phone', 'website', 'github', 'linkedin'] as const) missing.contact[key] = ''
+    await seed(missing, { ...prefs, themeKey: 'ats' })
+    check(await evaluate(`!document.querySelector('.ats-contact')`), 'no empty contact line or pipes')
+    const missingPreview = await print('ats-missing-contacts-preview')
+    await click('Edit')
+    const missingEdit = await print('ats-missing-contacts-edit')
+    check(samePdf(missingPreview, missingEdit), 'missing-contact prompts do not affect PDF geometry or text')
+    check(!missingEdit.normal.includes('Email:'), 'missing contacts stay absent in PDF')
+    await seed(fixture, { ...prefs, themeKey: 'ats' })
 
     console.log('\nATS, reload keeps the choice')
     await load()
@@ -561,6 +644,7 @@ const main = async () => {
 
     console.log('\nATS, phone preview and background graphics')
     await viewport(375, 812)
+    await screenshot('ats-phone')
     const atsPhone = await print('ats-en-phone-bg', true)
     check(atsPhone.pages === atsEn.pages, `same page count from phone (${atsPhone.pages})`)
     check(squash(atsPhone.normal) === squash(atsEn.normal), 'same text from phone with backgrounds on')
@@ -573,7 +657,7 @@ const main = async () => {
     console.log('\nATS, Indonesian')
     await inSettings('Resume language: Indonesian')
     const atsId = await print('ats-id-desktop')
-    checkSequence('normal text', atsId.normal, atsSequence('id'))
+    checkNormalSequence('normal text', atsId.normal, atsSequence('id'))
     checkSequence('raw text', atsId.raw, atsSequence('id'))
     checkGeometry('ATS id', atsId)
     check(atsId.images === 0, 'no images')
@@ -585,7 +669,7 @@ const main = async () => {
     await inSettings('Resume language: English')
 
     console.log('\nBack to Classic')
-    await click('Resume layout: Classic')
+    await inSettings('Resume layout: Classic')
     check((await presentation()) === 'classic', 'layout button selects Classic')
     await Bun.sleep(1000)
     const finalDocument: string = await storedDocument()
@@ -594,7 +678,7 @@ const main = async () => {
     const classic = await print('classic-en-desktop')
     check(classic.images >= 1, `photo is back (${classic.images} image)`)
     check(!squash(classic.normal).includes('WorkExperience') && /EXPERIENCE/.test(classic.normal), 'Classic headings restored')
-    checkGeometry('Classic', classic)
+    checkGeometry('Classic', classic, false)
     checkClean('Classic', classic)
 
     console.log('\nATS with a remote photo')
@@ -665,7 +749,7 @@ const main = async () => {
     await typeText('json.export.ctmail@example.com')
     await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: work, eventsEnabled: true }, '')
     const downloaded = cdp.once('Browser.downloadProgress', (params) => params.state !== 'inProgress')
-    await click('Export')
+    await click('More')
     await clickSelector('[role="menuitem"]:nth-child(2)')
     const progress = await Promise.race([downloaded, Bun.sleep(10_000).then(() => ({ state: 'timeout' }))])
     check(progress.state === 'completed', `JSON export downloads (${progress.state})`)
@@ -734,7 +818,8 @@ const main = async () => {
     console.log(`\nverify:ats: ${failures} check(s) failed. PDFs kept in ${work}`)
     process.exit(1)
   }
-  rmSync(work, { recursive: true, force: true })
+  if (process.env.KEEP_ATS_ARTIFACTS) console.log(`Artifacts kept in ${work}`)
+  else rmSync(work, { recursive: true, force: true })
   console.log('\nverify:ats: OK')
 }
 

@@ -26,12 +26,15 @@
 
 {#if presentation === 'ats'}
   {#each items as item (item.id)}
-    {@const parts = meta(item)}
+    {@const parts = meta(item).slice(1)}
     {@const dates = formatRange(item.dates, locale, t(locale, 'date.present'))}
     <EntryShell section="experience" id={item.id} class="ats-entry">
-      <h3 class="item-title"><Editable ref={R(item.id, 'role')} value={item.role} /></h3>
+      <div class="ats-entry-head">
+        <h3 class="item-title"><Editable ref={R(item.id, 'company')} value={item.company} /></h3>
+        {#if dates}<p class="item-dates"><Editable ref={R(item.id, 'dates')} value={dates} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'dates')} value="" /></p>{/if}
+      </div>
+      {#if item.role}<p class="ats-role"><Editable ref={R(item.id, 'role')} value={item.role} /></p>{:else if editMode}<p class="ats-role" data-print-hide><Editable ref={R(item.id, 'role')} value="" /></p>{/if}
       {#if parts.some((part) => part.value)}<p class="item-meta"><Joined {parts} separator=", " /></p>{:else if editMode}<p class="item-meta" data-print-hide><Joined {parts} separator=", " /></p>{/if}
-      {#if dates}<p class="item-dates"><Editable ref={R(item.id, 'dates')} value={dates} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'dates')} value="" /></p>{/if}
       {#if item.bullets.length}
         <ul class="item-bullets">
           {#each item.bullets as bullet, index (index)}

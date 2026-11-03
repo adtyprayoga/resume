@@ -22,27 +22,27 @@ const ruleFor = (fragment: string) => {
 }
 
 describe('ATS typography', () => {
-  it('uses 11pt body, 20pt name, 12pt headings, 11pt entry titles, 1.45 leading', () => {
+  it('uses 11pt body, 14.4pt name, 12pt headings, 11pt entry titles, 1.2 leading', () => {
     const vars = buildThemeStyleVars(ats, 'standard')
     expect(vars['--paper-font-size']).toBe('11pt')
-    expect(vars['--name-font-size']).toBe('20pt')
+    expect(vars['--name-font-size']).toBe('14.4pt')
     expect(vars['--title-font-size']).toBe('12pt')
     expect(vars['--item-title-font-size']).toBe('11pt')
-    expect(vars['--paper-line-height']).toBe('1.45')
+    expect(vars['--paper-line-height']).toBe('1.2')
   })
 
-  it('uses common sans-serif fonts and dark text', () => {
-    expect(ats.type.fontFamily).toBe("Arial, Helvetica, 'Liberation Sans', sans-serif")
+  it('uses LaTeX-style serif fonts and dark text', () => {
+    expect(ats.type.fontFamily).toBe("'Latin Modern Roman', 'Computer Modern', 'Times New Roman', 'Liberation Serif', serif")
     expect(ats.palette.text).toMatch(/^#[0-3][0-9a-f]{5}$/i)
   })
 
-  it('keeps Classic margins and uses 5mm sections, 3.5mm entries', () => {
+  it('uses 16mm ATS margins and 3pt entries without changing Classic', () => {
     expect(ats.layout.pageMarginY).toBe(defaultTheme.layout.pageMarginY)
-    expect(ats.layout.pageMarginX).toBe(defaultTheme.layout.pageMarginX)
+    expect(defaultTheme.layout.pageMarginX).toBe('18mm')
     expect(ats.layout.pageMarginY).toBe('16mm')
-    expect(ats.layout.pageMarginX).toBe('18mm')
+    expect(ats.layout.pageMarginX).toBe('16mm')
     expect(ats.layout.sectionGap).toBe('5mm')
-    expect(ats.layout.itemGap).toBe('3.5mm')
+    expect(ats.layout.itemGap).toBe('3pt')
   })
 
   it('still honours the manual font-size control', () => {
@@ -64,15 +64,26 @@ describe('ATS stylesheet', () => {
     expect(ruleFor('.resume-name')).toMatch(/letter-spacing:\s*normal/)
   })
 
-  it('lays out the header and dates in normal block flow at body size', () => {
+  it('centers the header and wraps heading rows with complete dates at body size', () => {
     expect(ruleFor('.ats-header')).toMatch(/display:\s*block/)
     const dates = ruleFor('.item-dates')
-    expect(dates).toMatch(/display:\s*block/)
+    expect(dates).toMatch(/white-space:\s*nowrap/)
+    expect(ruleFor('.ats-entry-head')).toMatch(/flex-wrap:\s*wrap/)
+    expect(ruleFor('.ats-header')).toMatch(/text-align:\s*center/)
     expect(dates).toMatch(/font-size:\s*inherit/)
   })
 
   it('lets long values wrap rather than overflow', () => {
     expect(ruleFor("[data-presentation='ats']")).toMatch(/overflow-wrap:\s*(anywhere|break-word)/)
+  })
+
+  it('uses template spacing for paragraphs, bullets and entry gaps', () => {
+    expect(ruleFor('.item-desc')).toMatch(/margin-top:\s*4pt/)
+    expect(atsRules().some(({ selector, body }) => selector.endsWith('.item-bullets') && /padding-left:\s*0.9em/.test(body))).toBe(true)
+    expect(ruleFor('.item-bullets li + li')).toMatch(/margin-top:\s*2pt/)
+    expect(ruleFor('.resume-section-title')).toMatch(/border-bottom-width:\s*0.4pt/)
+    expect(ruleFor('.resume-name')).toMatch(/text-transform:\s*uppercase/)
+    expect(ruleFor('.ats-project-head .item-dates')).toMatch(/font-style:\s*italic/)
   })
 
   it('never clips: no fixed heights or hidden overflow', () => {

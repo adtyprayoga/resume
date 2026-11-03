@@ -87,7 +87,7 @@ bun run verify:ats
 `verify:ats` checks what a text extractor reads from each layout. It starts its
 own dev server (or takes a URL argument), drives headless Chromium over the
 DevTools protocol with a throwaway profile, seeds a multipage bilingual fixture,
-switches layouts and languages through the toolbar and Settings, and prints to
+switches layouts and languages through Settings, and prints to
 PDF. It then
 extracts the text with `pdftotext`, in both normal and raw modes, and asserts
 that every field appears once and in reading order. It also checks A4 pages,
@@ -107,26 +107,19 @@ at 320, 375, 768 and 1440px and phone landscape. Needs `chromium` and
 
 ## Workspace
 
-Above the resume are the title with a save status beneath it (Saving…, Saved
-in this browser, Change not applied yet, or a visible save error), the
-**Layout** selector (**Classic / ATS**; hovering or focusing ATS explains it),
-and four actions. **Edit / Done** is a labelled primary button; **Export** and
-**Import** show their names on wider screens and a tooltip on phones;
-**Settings** is an icon with a tooltip:
-
-| Action | What it does |
-| --- | --- |
-| Export | **Save as PDF** or **Export JSON** (arrow keys move through the menu, Escape closes it) |
-| Import | The validated import and review dialog |
-| Edit / Done | Enters editing, or applies the open edit and returns to Preview |
-| Settings | Resume language, font size, page guides, section order and visibility, copying untranslated text, reset, and help |
+Above the resume, three icon buttons have tooltips and accessible names.
+**Edit** opens the editor and **Save as PDF** prints the
+current resume. **More** contains Import JSON, Export JSON, and Settings.
+Settings includes the Classic / ATS layout selector, languages, font size,
+section controls, and data actions. The status shows whether work is saved in
+this browser or needs attention.
 
 ### Editing
 
 On a first visit the page shows a fictional sample resume with a short
-introduction above it, offering **Edit this resume**, **Start blank** or
-**Import JSON**. The introduction disappears once the sample is changed or the
-introduction is dismissed. **Start blank** is also in Settings → Data, where it
+introduction above it, offering **Start blank**. Use **Edit** or **More** to
+edit or import. The introduction disappears once the sample is changed or
+the introduction is dismissed. **Start blank** is also in Settings → Data, where it
 asks for confirmation.
 
 The app starts in **Preview**. Press **Edit** to reveal what can be changed;
@@ -169,22 +162,31 @@ editors are never part of the page.
 
 ## Layouts
 
-The **Classic / ATS** selector in the toolbar switches between two presentations
+The **Classic / ATS** selector in Settings switches between two presentations
 of the same content:
 
 - **Classic** (the default) has a photo, a single contact line, and dates
   aligned on the right.
-- **ATS** is plain single-column reading order for applicant tracking systems.
-  It uses 11pt Arial or a close equivalent, puts each contact detail on its own
-  line with full URLs, and lists each entry top to bottom: title, details,
-  dates, then description or bullets. Skills appear as `Category: a, b, c`.
-  It leaves the photo out.
+- **ATS** adapts a LaTeX-style layout in the browser, using a system serif
+  stack (Latin Modern Roman, Computer Modern, Times New Roman, Liberation Serif),
+  11pt body text, a 14.4pt uppercase name, 12pt section headings, and 1.2 line
+  spacing. A4 pages have 16mm margins on all sides; the font-size control still
+  applies. The centered header shows location separately and labelled contacts
+  with full URLs, separated by pipes. Entry headings have right-aligned dates;
+  dates move intact to the next row when space is short. Experience starts with
+  company, dates, then italic role and team/location. Education shows school,
+  degree and field, then dates and GPA; projects show name, italic role and
+  technologies before dates. Skills appear as `Category: a, b, c`. The photo
+  stays off the page. This uses browser PDF printing, with no LaTeX compilation
+  or `.tex` export; exact serif glyphs depend on installed fonts.
 
 Switching layouts changes presentation only. Content, section order, languages
 and the stored photo stay as they are, an open edit is applied first, and the
 choice is remembered in this browser. The ATS layout aims for formatting that parsers
 handle well; it is not a score and cannot guarantee that every system reads a
-resume correctly. To see what a parser is likely to get, save the PDF and
+resume correctly. Some text extractors place right-aligned dates after the
+rest of their entry; raw PDF extraction preserves the rendered field order.
+To see what a parser is likely to get, save the PDF and
 select all of its text, or run `pdftotext resume.pdf -`, and read it top to
 bottom.
 
@@ -243,7 +245,7 @@ src/
 │  ├─ themes/       typed theme presets to CSS custom properties
 │  └─ i18n/         interface strings only, never resume content
 ├─ components/
-│  ├─ shell/        toolbar, export menu, Settings, inline SVG icons
+│  ├─ shell/        toolbar, More menu, Settings, inline SVG icons
 │  ├─ editing/      in-page targets, inline editor, contextual forms, phone sheet
 │  └─ preview/      the resume paper, plus the two side-effect hosts beside it
 └─ styles/

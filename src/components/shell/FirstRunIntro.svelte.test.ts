@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/svelte'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { render, screen, act } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import FirstRunIntro from './FirstRunIntro.svelte'
 import { sampleDocument } from '../../data/sample'
@@ -18,7 +18,7 @@ const region = () => screen.queryByRole('region', { name: 'This is a sample resu
 
 describe('first-run introduction', () => {
   it('introduces the untouched sample', () => {
-    render(FirstRunIntro, { onImport: () => {} })
+    render(FirstRunIntro)
     expect(region()).toBeInTheDocument()
   })
 
@@ -26,46 +26,39 @@ describe('first-run introduction', () => {
     const mine = sampleDocument()
     mine.profile.text.en.name = 'Mine'
     resumeDoc.replace(mine)
-    render(FirstRunIntro, { onImport: () => {} })
+    render(FirstRunIntro)
     expect(region()).not.toBeInTheDocument()
   })
 
   it('stays hidden once dismissed and remembers it', async () => {
-    render(FirstRunIntro, { onImport: () => {} })
+    render(FirstRunIntro)
     await userEvent.click(screen.getByRole('button', { name: 'Dismiss introduction' }))
     expect(region()).not.toBeInTheDocument()
     expect(prefs.introDismissed).toBe(true)
   })
 
   it('hides in Edit mode', async () => {
-    render(FirstRunIntro, { onImport: () => {} })
-    await userEvent.click(screen.getByRole('button', { name: 'Edit this resume' }))
+    render(FirstRunIntro)
+    await act(() => editing.enter())
     expect(editing.mode).toBe('edit')
     expect(region()).not.toBeInTheDocument()
   })
 
   it('starts blank and enters Edit mode', async () => {
-    render(FirstRunIntro, { onImport: () => {} })
+    render(FirstRunIntro)
     await userEvent.click(screen.getByRole('button', { name: 'Start blank' }))
     expect(resumeDoc.current.profile.text.en.name).toBe('')
     expect(editing.mode).toBe('edit')
   })
 
-  it('opens import', async () => {
-    const onImport = vi.fn()
-    render(FirstRunIntro, { onImport })
-    await userEvent.click(screen.getByRole('button', { name: 'Import JSON' }))
-    expect(onImport).toHaveBeenCalledTimes(1)
-  })
-
   it('is hidden from print', () => {
-    render(FirstRunIntro, { onImport: () => {} })
+    render(FirstRunIntro)
     expect(region()).toHaveAttribute('data-print-hide')
   })
 
   it('renders in the interface language', () => {
     prefs.uiLocale = 'id'
-    render(FirstRunIntro, { onImport: () => {} })
+    render(FirstRunIntro)
     expect(screen.getByRole('region', { name: 'Ini contoh resume' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Mulai dari kosong' })).toBeInTheDocument()
   })

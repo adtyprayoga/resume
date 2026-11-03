@@ -26,10 +26,10 @@ afterEach(() => {
 const toolbar = () => screen.getByRole('toolbar', { name: 'Resume actions' })
 
 describe('toolbar actions', () => {
-  it('offers exactly four labelled icon actions', () => {
+  it('offers three labelled actions', () => {
     render(App)
     const buttons = within(toolbar()).getAllByRole('button')
-    expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual(['Export', 'Import', 'Edit', 'Settings'])
+    expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual(['Edit', 'Save as PDF', 'More'])
     for (const button of buttons) expect(button.querySelector('svg')).not.toBeNull()
   })
 
@@ -37,45 +37,62 @@ describe('toolbar actions', () => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'id', documentLocale: 'en' }))
     render(App)
     const names = within(screen.getByRole('toolbar', { name: 'Tindakan resume' })).getAllByRole('button').map((button) => button.getAttribute('aria-label'))
-    expect(names).toEqual(['Ekspor', 'Impor', 'Sunting', 'Pengaturan'])
+    expect(names).toEqual(['Sunting', 'Simpan sebagai PDF', 'Lainnya'])
   })
 
-  it('labels Edit as a visible primary action', async () => {
+  it('keeps Edit primary and updates its accessible name', async () => {
     render(App)
     const edit = within(toolbar()).getByRole('button', { name: 'Edit' })
     expect(edit).toHaveClass('primary')
-    expect(edit).toHaveTextContent('Edit')
+    expect(edit).toHaveAccessibleName('Edit')
     await userEvent.setup().click(edit)
-    expect(within(toolbar()).getByRole('button', { name: 'Done' })).toHaveTextContent('Done')
+    expect(within(toolbar()).getByRole('button', { name: 'Done' })).toHaveAccessibleName('Done')
   })
 
-  it('shows text labels for Export and Import', () => {
+  it('uses icons with translated tooltips for every action', () => {
     render(App)
-    for (const name of ['Export', 'Import']) {
-      expect(within(toolbar()).getByRole('button', { name }).querySelector('.icon-btn-text')).toHaveTextContent(name)
+    for (const name of ['Edit', 'Save as PDF', 'More']) {
+      const button = within(toolbar()).getByRole('button', { name })
+      expect(button.textContent?.trim()).toBe('')
+      expect(document.getElementById(button.getAttribute('aria-describedby')!)).toHaveTextContent(name)
     }
-    expect(within(toolbar()).getByRole('button', { name: 'Settings' }).querySelector('.icon-btn-text')).toBeNull()
   })
 
   it('explains how to edit in Edit mode', async () => {
     render(App)
-    expect(screen.queryByText(/Click or tap any outlined text/)).toBeNull()
+    expect(screen.queryByText(/Select outlined text to edit/)).toBeNull()
     await userEvent.setup().click(within(toolbar()).getByRole('button', { name: 'Edit' }))
-    expect(screen.getByText(/Click or tap any outlined text/).closest('[data-print-hide]')).not.toBeNull()
+    expect(screen.getByText(/Select outlined text to edit/).closest('[data-print-hide]')).not.toBeNull()
   })
 
   it('shows a tooltip naming each action', () => {
     render(App)
-    const settings = within(toolbar()).getByRole('button', { name: 'Settings' })
+    const settings = within(toolbar()).getByRole('button', { name: 'More' })
     const tip = document.getElementById(settings.getAttribute('aria-describedby') ?? '')
-    expect(tip).toHaveTextContent('Settings')
+    expect(tip).toHaveTextContent('More')
     expect(tip).toHaveAttribute('role', 'tooltip')
   })
 
   it('opens the existing import review dialog', async () => {
     render(App)
-    await userEvent.setup().click(within(toolbar()).getByRole('button', { name: 'Import' }))
+    const user = userEvent.setup()
+    await user.click(within(toolbar()).getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Import JSON' }))
     expect(screen.getByRole('dialog', { name: 'Import resume JSON' })).toBeInTheDocument()
+  })
+
+  it('restores focus and the open draft after closing Import', async () => {
+    render(App)
+    const user = userEvent.setup()
+    editing.enter()
+    editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
+    editing.setDraft('profile.name', 'Draft')
+    await user.click(within(toolbar()).getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Import JSON' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Import resume JSON' })).getByRole('button', { name: 'Close' }))
+    expect(within(toolbar()).getByRole('button', { name: 'More' })).toHaveFocus()
+    expect(editing.active).not.toBeNull()
+    expect(editing.suspended).toBe(false)
   })
 
   it('toggles between Edit and Done', async () => {
@@ -98,25 +115,27 @@ describe('toolbar actions', () => {
   })
 })
 
-describe('export menu', () => {
+describe('more menu', () => {
   it('opens from the keyboard, moves with arrows, and closes on Escape', async () => {
     render(App)
     const user = userEvent.setup()
-    const button = within(toolbar()).getByRole('button', { name: 'Export' })
+    const button = within(toolbar()).getByRole('button', { name: 'More' })
     expect(button).toHaveAttribute('aria-haspopup', 'menu')
     button.focus()
     await user.keyboard('{ArrowDown}')
-    const menu = screen.getByRole('menu', { name: 'Export' })
+    const menu = screen.getByRole('menu', { name: 'More' })
     const items = within(menu).getAllByRole('menuitem')
-    expect(items.map((item) => item.textContent?.trim())).toEqual(['Save as PDF', 'Export JSON'])
+    expect(items.map((item) => item.textContent?.trim())).toEqual(['Import JSON', 'Export JSON', 'Settings'])
     expect(button).toHaveAttribute('aria-expanded', 'true')
     expect(items[0]).toHaveFocus()
     await user.keyboard('{ArrowDown}')
     expect(items[1]).toHaveFocus()
     await user.keyboard('{ArrowDown}')
+    expect(items[2]).toHaveFocus()
+    await user.keyboard('{ArrowDown}')
     expect(items[0]).toHaveFocus()
     await user.keyboard('{ArrowUp}')
-    expect(items[1]).toHaveFocus()
+    expect(items[2]).toHaveFocus()
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(button).toHaveFocus()
@@ -132,7 +151,7 @@ describe('export menu', () => {
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     editing.setDraft('profile.name', 'Exported Draft')
-    await user.click(within(toolbar()).getByRole('button', { name: 'Export' }))
+    await user.click(within(toolbar()).getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('menuitem', { name: 'Export JSON' }))
     expect(created).toHaveLength(1)
     expect(await created[0]!.text()).toContain('Exported Draft')
@@ -147,8 +166,7 @@ describe('export menu', () => {
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     editing.setDraft('profile.name', 'Printed Draft')
-    await user.click(within(toolbar()).getByRole('button', { name: 'Export' }))
-    await user.click(screen.getByRole('menuitem', { name: 'Save as PDF' }))
+    await user.click(within(toolbar()).getByRole('button', { name: 'Save as PDF' }))
     await vi.waitFor(() => expect(printedName).toBe('Printed Draft'))
   })
 })
@@ -156,7 +174,8 @@ describe('export menu', () => {
 describe('settings panel', () => {
   const openSettings = async () => {
     const user = userEvent.setup()
-    await user.click(within(toolbar()).getByRole('button', { name: 'Settings' }))
+    await user.click(within(toolbar()).getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Settings' }))
     return { user, dialog: screen.getByRole('dialog', { name: 'Settings' }) }
   }
 
@@ -177,7 +196,7 @@ describe('settings panel', () => {
     const { user } = await openSettings()
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
-    expect(within(toolbar()).getByRole('button', { name: 'Settings' })).toHaveFocus()
+    expect(within(toolbar()).getByRole('button', { name: 'More' })).toHaveFocus()
   })
 
   it('closes from its Close button', async () => {
@@ -287,7 +306,8 @@ describe('status', () => {
 describe('section settings inside Settings', () => {
   const openSettings = async () => {
     const user = userEvent.setup()
-    await user.click(within(toolbar()).getByRole('button', { name: 'Settings' }))
+    await user.click(within(toolbar()).getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Settings' }))
     return { user, dialog: screen.getByRole('dialog', { name: 'Settings' }) }
   }
 

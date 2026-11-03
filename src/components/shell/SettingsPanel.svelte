@@ -9,7 +9,7 @@
   import { prefs } from '$lib/state/preferences.svelte'
   import { startBlank } from '$lib/state/actions'
   import { clearDocument } from '$lib/storage/persist'
-  import { FONT_SCALES } from '$lib/themes/index'
+  import { FONT_SCALES, resumeThemes } from '$lib/themes/index'
   import type { FontScaleKey } from '$lib/themes/types'
   import { focusTrap } from '$lib/ui/focusTrap'
 
@@ -58,6 +58,7 @@
 
 <div
   class="drawer-overlay"
+  data-print-hide
   role="presentation"
   onclick={(event) => {
     if (event.target === event.currentTarget) onClose()
@@ -74,6 +75,21 @@
     <div class="drawer-body settings-body">
       <section class="settings-group" style="--i: 0">
         <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.document')}</h3>
+
+        <div class="settings-row">
+          <span class="field-label" id="{uid}-layout">{t(prefs.uiLocale, 'app.layout')}</span>
+          <div class="toggle-group" role="group" aria-labelledby="{uid}-layout" aria-describedby="{uid}-layout-hint">
+            {#each resumeThemes as theme (theme.key)}
+              <button type="button"
+                aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
+                aria-pressed={prefs.themeKey === theme.key}
+                onclick={() => editing.setLayout(theme.key)}>
+                {t(prefs.uiLocale, `layout.${theme.presentation}`)}
+              </button>
+            {/each}
+          </div>
+        </div>
+        <p id="{uid}-layout-hint" class="field-hint">{t(prefs.uiLocale, 'layout.atsHint')}</p>
 
         <div class="settings-row">
           <span class="field-label" id="{uid}-doc">{t(prefs.uiLocale, 'app.resumeLanguage')}</span>
