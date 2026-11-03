@@ -197,7 +197,7 @@ describe('settings panel', () => {
   const openSettings = async () => {
     const user = userEvent.setup()
     await user.click(within(toolbar()).getByRole('button', { name: 'Settings' }))
-    return { user, dialog: screen.getByRole('dialog', { name: 'Settings' }) }
+    return { user, dialog: screen.getByRole('complementary', { name: 'Settings' }) }
   }
 
   it('holds the document and application settings', async () => {
@@ -207,8 +207,7 @@ describe('settings panel', () => {
     expect(within(dialog).getByRole('group', { name: 'Resume language' })).toBeInTheDocument()
     expect(within(dialog).getByRole('group', { name: 'Font size' })).toBeInTheDocument()
     expect(within(dialog).getByRole('button', { name: 'Page breaks' })).toBeInTheDocument()
-    expect(within(dialog).getAllByRole('button', { name: /^Reorder / })).toHaveLength(5)
-    expect(within(dialog).getByRole('button', { name: 'Reset to sample' })).toBeInTheDocument()
+        expect(within(dialog).getByRole('button', { name: 'Reset to sample' })).toBeInTheDocument()
     expect(within(dialog).getByText(/choose A4/)).toBeInTheDocument()
   })
 
@@ -216,7 +215,7 @@ describe('settings panel', () => {
     render(App)
     const { user } = await openSettings()
     await user.keyboard('{Escape}')
-    expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Settings' })).not.toBeInTheDocument()
     expect(within(toolbar()).getByRole('button', { name: 'Settings' })).toHaveFocus()
   })
 
@@ -224,19 +223,18 @@ describe('settings panel', () => {
     render(App)
     const { user, dialog } = await openSettings()
     await user.click(within(dialog).getByRole('button', { name: 'Close' }))
-    expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Settings' })).not.toBeInTheDocument()
   })
 
-  it('suspends the active draft while open and resumes it after', async () => {
+  it('applies the active draft on opening and never suspends editing', async () => {
     render(App)
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
-    editing.setDraft('profile.name', 'Waiting')
-    const { user } = await openSettings()
-    expect(editing.suspended).toBe(true)
-    await user.keyboard('{Escape}')
+    editing.setDraft('profile.name', 'Applied')
+    await openSettings()
     expect(editing.suspended).toBe(false)
-    expect(editing.active?.draft['profile.name']).toBe('Waiting')
+    expect(editing.active).toBeNull()
+    expect(resumeDoc.current.profile.text.en.name).toBe('Applied')
   })
 
   it('commits the draft before switching the resume language', async () => {
@@ -324,28 +322,27 @@ describe('status', () => {
   })
 })
 
-describe('section settings inside Settings', () => {
-  const openSettings = async () => {
+describe('section settings inside the Sections panel', () => {
+  const openSections = async () => {
     const user = userEvent.setup()
-    await user.click(within(toolbar()).getByRole('button', { name: 'Settings' }))
-    return { user, dialog: screen.getByRole('dialog', { name: 'Settings' }) }
+    await user.click(within(toolbar()).getByRole('button', { name: 'Sections' }))
+    return { user, panel: screen.getByRole('complementary', { name: 'Sections' }) }
   }
 
   it('reorders a section from the keyboard and announces each handle position', async () => {
     render(App)
-    const { user, dialog } = await openSettings()
+    const { user, panel } = await openSections()
     const before = resumeDoc.current.sections.map((section) => section.kind)
-    within(dialog).getByRole('button', { name: 'Reorder Experience, position 1 of 5' }).focus()
+    within(panel).getByRole('button', { name: 'Reorder Experience, position 1 of 5' }).focus()
     await user.keyboard('{ArrowDown}')
     expect(resumeDoc.current.sections.map((section) => section.kind)).toEqual([before[1], before[0], ...before.slice(2)])
   })
 
   it('hides a section from the paper when switched off', async () => {
     render(App)
-    const { user, dialog } = await openSettings()
-    await user.click(within(dialog).getByRole('checkbox', { name: /Awards/ }))
+    const { user, panel } = await openSections()
+    await user.click(within(panel).getByRole('checkbox', { name: /Awards/ }))
     expect(resumeDoc.current.sections.find((section) => section.kind === 'awards')?.enabled).toBe(false)
-    await user.keyboard('{Escape}')
     expect([...document.querySelectorAll('.resume-paper h2')].map((h) => h.textContent)).not.toContain('Awards')
   })
 })

@@ -13,9 +13,9 @@ beforeEach(() => {
 describe('settings panel', () => {
   // Groups never reorder; a reordered keyed row would restart its entry animation.
   it('staggers its groups', () => {
-    const { container } = render(SettingsPanel, { onClose: () => {} })
+    const { container } = render(SettingsPanel, { id: 'settings-panel', onClose: () => {} })
     const groups = [...container.ownerDocument.querySelectorAll('.settings-group')]
-    expect(groups.length).toBe(5)
+    expect(groups.length).toBe(4)
     groups.forEach((group, index) => expect(group.getAttribute('style')).toContain(`--i: ${index}`))
   })
 })

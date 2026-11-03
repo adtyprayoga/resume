@@ -9,6 +9,7 @@
   import Icon from './components/shell/Icon.svelte'
   import EditLayer from './components/editing/EditLayer.svelte'
   import SettingsPanel from './components/shell/SettingsPanel.svelte'
+  import SectionsPanel from './components/shell/SectionsPanel.svelte'
   import PageBreakOverlay from './components/preview/PageBreakOverlay.svelte'
   import ResumePaper from './components/preview/ResumePaper.svelte'
   import { flushSync, tick, untrack } from 'svelte'
@@ -33,6 +34,7 @@
   let sectionsOpen = $state(false)
   let importButton = $state<HTMLButtonElement | undefined>()
   let settingsButton = $state<HTMLButtonElement | undefined>()
+  let sectionsButton = $state<HTMLButtonElement | undefined>()
 
   $effect(() => { document.documentElement.lang = prefs.uiLocale })
 
@@ -124,16 +126,49 @@
     else editing.begin({ kind: 'profile' })
   }
 
-  const openSettings = () => {
-    editing.suspend()
-    settingsOpen = true
+  type Panel = 'sections' | 'settings'
+  const PANEL_ID: Record<Panel, string> = { sections: 'sections-panel', settings: 'settings-panel' }
+  /** Below this width only one panel fits, above the CV rather than beside it. */
+  const NARROW_QUERY = '(max-width: 1023px)'
+  const isNarrow = () => typeof window.matchMedia === 'function' && window.matchMedia(NARROW_QUERY).matches
+  let lastOpened = $state<Panel | null>(null)
+
+  const isOpen = (panel: Panel) => (panel === 'sections' ? sectionsOpen : settingsOpen)
+  const setOpen = (panel: Panel, open: boolean) => {
+    if (panel === 'sections') sectionsOpen = open
+    else settingsOpen = open
   }
 
-  const closeSettings = () => {
-    settingsOpen = false
-    editing.resume()
-    void tick().then(() => settingsButton?.focus())
+  /**
+   * Opening or closing a panel moves the paper, so the open editor is applied and
+   * closed first rather than left floating at a stale position.
+   */
+  const setPanel = async (panel: Panel, open: boolean) => {
+    editing.dismiss()
+    setOpen(panel, open)
+    if (open) {
+      lastOpened = panel
+      if (isNarrow()) setOpen(panel === 'sections' ? 'settings' : 'sections', false)
+    }
+    await tick()
+    if (open) document.getElementById(`${PANEL_ID[panel]}-title`)?.focus()
+    else (panel === 'sections' ? sectionsButton : settingsButton)?.focus()
   }
+
+  const togglePanel = (panel: Panel) => void setPanel(panel, !isOpen(panel))
+
+  // Narrowing the window with both open keeps the one opened last.
+  $effect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const query = window.matchMedia(NARROW_QUERY)
+    const onChange = (event: { matches: boolean }) => {
+      if (!event.matches || !sectionsOpen || !settingsOpen) return
+      editing.dismiss()
+      setOpen(lastOpened === 'settings' ? 'sections' : 'settings', false)
+    }
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  })
 
   const openImport = () => {
     editing.suspend()
@@ -169,8 +204,10 @@
         <IconButton
           icon="sections"
           label={t(prefs.uiLocale, 'action.sections')}
+          controls={sectionsOpen ? PANEL_ID.sections : undefined}
           expanded={sectionsOpen}
-          onclick={() => (sectionsOpen = !sectionsOpen)}
+          bind:element={sectionsButton}
+          onclick={() => togglePanel('sections')}
         />
         <IconButton
           icon={editing.mode === 'edit' ? 'done' : 'edit'}
@@ -180,7 +217,14 @@
         />
         <IconButton icon="import" label={t(prefs.uiLocale, 'action.importJson')} haspopup="dialog" expanded={importing} onclick={openImport} bind:element={importButton} />
         <ExportMenu onPdf={exportPdf} onJson={exportJson} />
-        <IconButton icon="settings" label={t(prefs.uiLocale, 'action.settings')} haspopup="dialog" expanded={settingsOpen} onclick={openSettings} bind:element={settingsButton} />
+        <IconButton
+          icon="settings"
+          label={t(prefs.uiLocale, 'action.settings')}
+          controls={settingsOpen ? PANEL_ID.settings : undefined}
+          expanded={settingsOpen}
+          bind:element={settingsButton}
+          onclick={() => togglePanel('settings')}
+        />
       </div>
     </div>
 
@@ -205,25 +249,33 @@
     </div>
   {/if}
 
-  <FirstRunIntro />
+  <div class="workspace">
+    {#if sectionsOpen}
+      <SectionsPanel id={PANEL_ID.sections} onClose={() => void setPanel('sections', false)} />
+    {/if}
 
-  <div class="preview-container" bind:this={previewContainer}>
-    <div class="resume-paper-frame" style={`--preview-zoom: ${previewZoom}`}>
-      <ResumePaper {resume} {locale} presentation={prefs.theme.presentation} bind:element={paperElement} />
-      {#if prefs.showPageBreaks && editing.mode === 'preview'}
-        <!-- Guides are a Preview aid; editing would remeasure them on every change. -->
-        <div data-page-guides data-print-hide><PageBreakOverlay paper={paperElement} /></div>
-      {/if}
+    <div class="workspace-main">
+      <FirstRunIntro />
+
+      <div class="preview-container" bind:this={previewContainer}>
+        <div class="resume-paper-frame" style={`--preview-zoom: ${previewZoom}`}>
+          <ResumePaper {resume} {locale} presentation={prefs.theme.presentation} bind:element={paperElement} />
+          {#if prefs.showPageBreaks && editing.mode === 'preview'}
+            <!-- Guides are a Preview aid; editing would remeasure them on every change. -->
+            <div data-page-guides data-print-hide><PageBreakOverlay paper={paperElement} /></div>
+          {/if}
+        </div>
+      </div>
     </div>
+
+    {#if settingsOpen}
+      <SettingsPanel id={PANEL_ID.settings} onClose={() => void setPanel('settings', false)} />
+    {/if}
   </div>
 </div>
 
 <EditLayer />
 <div class="sr-only" aria-live="polite" aria-atomic="true" data-print-hide>{editing.announcement}</div>
-
-{#if settingsOpen}
-  <SettingsPanel onClose={closeSettings} />
-{/if}
 
 {#if importing}
   <ImportDialog onClose={closeImport} />

@@ -1,6 +1,5 @@
 <script lang="ts">
-  import Icon from './Icon.svelte'
-  import SectionSettings from '../editor/SectionSettings.svelte'
+  import SidePanel from './SidePanel.svelte'
   import { sampleDocument } from '../../data/sample'
   import { t } from '$lib/i18n/ui'
   import { LOCALES, type Locale } from '$lib/model/types'
@@ -11,9 +10,8 @@
   import { clearDocument } from '$lib/storage/persist'
   import { FONT_SCALES, resumeThemes } from '$lib/themes/index'
   import type { FontScaleKey } from '$lib/themes/types'
-  import { focusTrap } from '$lib/ui/focusTrap'
 
-  const { onClose }: { onClose: () => void } = $props()
+  const { id, onClose }: { id: string; onClose: () => void } = $props()
   const uid = $props.id()
 
   let confirmReset = $state(false)
@@ -46,146 +44,117 @@
     startBlank()
   }
 
-  const onKeydown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      onClose()
-    }
-  }
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<SidePanel {id} side="settings" title={t(prefs.uiLocale, 'settings.title')} {onClose}>
+  <div class="settings-body">
+    <section class="settings-group" style="--i: 0">
+      <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.document')}</h3>
 
-<div
-  class="drawer-overlay"
-  data-print-hide
-  role="presentation"
-  onclick={(event) => {
-    if (event.target === event.currentTarget) onClose()
-  }}
->
-  <div class="drawer settings-panel" role="dialog" aria-modal="true" aria-labelledby="{uid}-title" use:focusTrap>
-    <header class="drawer-head settings-head">
-      <h2 id="{uid}-title" class="settings-title">{t(prefs.uiLocale, 'settings.title')}</h2>
-      <button type="button" class="icon-btn" aria-label={t(prefs.uiLocale, 'action.close')} onclick={onClose}>
-        <Icon name="close" />
-      </button>
-    </header>
-
-    <div class="drawer-body settings-body">
-      <section class="settings-group" style="--i: 0">
-        <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.document')}</h3>
-
-        <div class="settings-row">
-          <span class="field-label" id="{uid}-layout">{t(prefs.uiLocale, 'app.layout')}</span>
-          <div class="toggle-group" role="group" aria-labelledby="{uid}-layout" aria-describedby="{uid}-layout-hint">
-            {#each resumeThemes as theme (theme.key)}
-              <button type="button"
-                aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
-                aria-pressed={prefs.themeKey === theme.key}
-                onclick={() => editing.setLayout(theme.key)}>
-                {t(prefs.uiLocale, `layout.${theme.presentation}`)}
-              </button>
-            {/each}
-          </div>
+      <div class="settings-row">
+        <span class="field-label" id="{uid}-layout">{t(prefs.uiLocale, 'app.layout')}</span>
+        <div class="toggle-group" role="group" aria-labelledby="{uid}-layout" aria-describedby="{uid}-layout-hint">
+          {#each resumeThemes as theme (theme.key)}
+            <button type="button"
+              aria-label={t(prefs.uiLocale, 'app.layoutOption', { layout: t(prefs.uiLocale, `layout.${theme.presentation}`) })}
+              aria-pressed={prefs.themeKey === theme.key}
+              onclick={() => editing.setLayout(theme.key)}>
+              {t(prefs.uiLocale, `layout.${theme.presentation}`)}
+            </button>
+          {/each}
         </div>
-        <p id="{uid}-layout-hint" class="field-hint">{t(prefs.uiLocale, 'layout.atsHint')}</p>
+      </div>
+      <p id="{uid}-layout-hint" class="field-hint">{t(prefs.uiLocale, 'layout.atsHint')}</p>
 
-        <div class="settings-row">
-          <span class="field-label" id="{uid}-doc">{t(prefs.uiLocale, 'app.resumeLanguage')}</span>
-          <div class="toggle-group" role="group" aria-labelledby="{uid}-doc">
-            {#each LOCALES as option (option)}
-              <button
-                type="button"
-                aria-label={t(prefs.uiLocale, 'app.documentLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
-                aria-pressed={prefs.documentLocale === option}
-                onclick={() => editing.setDocumentLocale(option)}
-              >
-                {option.toUpperCase()}
-              </button>
-            {/each}
-          </div>
-        </div>
-
-        <div class="settings-row">
-          <span class="field-label" id="{uid}-size">{t(prefs.uiLocale, 'app.fontSize')}</span>
-          <div class="toggle-group" role="group" aria-labelledby="{uid}-size">
-            {#each Object.keys(FONT_SCALES) as FontScaleKey[] as scale (scale)}
-              <button
-                type="button"
-                aria-label={t(prefs.uiLocale, 'app.fontSizeOption', { size: t(prefs.uiLocale, `size.${scale}`) })}
-                aria-pressed={prefs.fontScale === scale}
-                onclick={() => (prefs.fontScale = scale)}
-              >
-                {sizeLabel(scale)}
-              </button>
-            {/each}
-          </div>
-        </div>
-
-        <div class="settings-row">
-          <div class="toggle-group">
+      <div class="settings-row">
+        <span class="field-label" id="{uid}-doc">{t(prefs.uiLocale, 'app.resumeLanguage')}</span>
+        <div class="toggle-group" role="group" aria-labelledby="{uid}-doc">
+          {#each LOCALES as option (option)}
             <button
               type="button"
-              aria-pressed={prefs.showPageBreaks}
-              onclick={() => (prefs.showPageBreaks = !prefs.showPageBreaks)}
+              aria-label={t(prefs.uiLocale, 'app.documentLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
+              aria-pressed={prefs.documentLocale === option}
+              onclick={() => editing.setDocumentLocale(option)}
             >
-              {t(prefs.uiLocale, 'app.pageBreaks')}
+              {option.toUpperCase()}
             </button>
-          </div>
+          {/each}
         </div>
+      </div>
 
-        {#if untranslated > 0}
-          <div class="settings-row">
-            <button type="button" class="tool-btn" onclick={() => resumeDoc.fillUntranslated(otherLocale(locale), locale)}>
-              {t(prefs.uiLocale, 'app.fillUntranslated', { count: untranslated, language: otherLocale(locale).toUpperCase() })}
+      <div class="settings-row">
+        <span class="field-label" id="{uid}-size">{t(prefs.uiLocale, 'app.fontSize')}</span>
+        <div class="toggle-group" role="group" aria-labelledby="{uid}-size">
+          {#each Object.keys(FONT_SCALES) as FontScaleKey[] as scale (scale)}
+            <button
+              type="button"
+              aria-label={t(prefs.uiLocale, 'app.fontSizeOption', { size: t(prefs.uiLocale, `size.${scale}`) })}
+              aria-pressed={prefs.fontScale === scale}
+              onclick={() => (prefs.fontScale = scale)}
+            >
+              {sizeLabel(scale)}
             </button>
-          </div>
-        {/if}
-      </section>
+          {/each}
+        </div>
+      </div>
 
-      <section class="settings-group" style="--i: 1">
-        <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.sections')}</h3>
-        <SectionSettings />
-      </section>
+      <div class="settings-row">
+        <div class="toggle-group">
+          <button
+            type="button"
+            aria-pressed={prefs.showPageBreaks}
+            onclick={() => (prefs.showPageBreaks = !prefs.showPageBreaks)}
+          >
+            {t(prefs.uiLocale, 'app.pageBreaks')}
+          </button>
+        </div>
+      </div>
 
-      <section class="settings-group" style="--i: 2">
-        <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.interface')}</h3>
+      {#if untranslated > 0}
         <div class="settings-row">
-          <span class="field-label" id="{uid}-ui">{t(prefs.uiLocale, 'app.interfaceLanguage')}</span>
-          <div class="toggle-group" role="group" aria-labelledby="{uid}-ui">
-            {#each LOCALES as option (option)}
-              <button
-                type="button"
-                aria-label={t(prefs.uiLocale, 'app.interfaceLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
-                aria-pressed={prefs.uiLocale === option}
-                onclick={() => (prefs.uiLocale = option)}
-              >
-                {option.toUpperCase()}
-              </button>
-            {/each}
-          </div>
-        </div>
-      </section>
-
-      <section class="settings-group" style="--i: 3">
-        <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.data')}</h3>
-        <div class="repeat-actions">
-          <button type="button" class="tool-btn" onclick={reset}>
-            {t(prefs.uiLocale, confirmReset ? 'action.confirmReset' : 'action.reset')}
-          </button>
-          <button type="button" class="tool-btn" onclick={blank}>
-            {t(prefs.uiLocale, confirmBlank ? 'action.confirmBlank' : 'action.startBlank')}
+          <button type="button" class="tool-btn" onclick={() => resumeDoc.fillUntranslated(otherLocale(locale), locale)}>
+            {t(prefs.uiLocale, 'app.fillUntranslated', { count: untranslated, language: otherLocale(locale).toUpperCase() })}
           </button>
         </div>
-      </section>
+      {/if}
+    </section>
 
-      <section class="settings-group" style="--i: 4">
-        <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.help')}</h3>
-        <p class="field-hint">{t(prefs.uiLocale, 'app.printHint')}</p>
-        <p class="field-hint">{t(prefs.uiLocale, 'app.pageBreakHint')}</p>
-        <p class="field-hint">{t(prefs.uiLocale, 'app.demoNotice')}</p>
-      </section>
-    </div>
+    <section class="settings-group" style="--i: 1">
+      <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.interface')}</h3>
+      <div class="settings-row">
+        <span class="field-label" id="{uid}-ui">{t(prefs.uiLocale, 'app.interfaceLanguage')}</span>
+        <div class="toggle-group" role="group" aria-labelledby="{uid}-ui">
+          {#each LOCALES as option (option)}
+            <button
+              type="button"
+              aria-label={t(prefs.uiLocale, 'app.interfaceLanguageOption', { language: t(prefs.uiLocale, `language.${option}`) })}
+              aria-pressed={prefs.uiLocale === option}
+              onclick={() => (prefs.uiLocale = option)}
+            >
+              {option.toUpperCase()}
+            </button>
+          {/each}
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-group" style="--i: 2">
+      <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.data')}</h3>
+      <div class="repeat-actions">
+        <button type="button" class="tool-btn" onclick={reset}>
+          {t(prefs.uiLocale, confirmReset ? 'action.confirmReset' : 'action.reset')}
+        </button>
+        <button type="button" class="tool-btn" onclick={blank}>
+          {t(prefs.uiLocale, confirmBlank ? 'action.confirmBlank' : 'action.startBlank')}
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-group" style="--i: 3">
+      <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.help')}</h3>
+      <p class="field-hint">{t(prefs.uiLocale, 'app.printHint')}</p>
+      <p class="field-hint">{t(prefs.uiLocale, 'app.pageBreakHint')}</p>
+      <p class="field-hint">{t(prefs.uiLocale, 'app.demoNotice')}</p>
+    </section>
   </div>
-</div>
+</SidePanel>
