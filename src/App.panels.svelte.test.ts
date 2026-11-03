@@ -178,3 +178,77 @@ describe('side panels on narrow screens', () => {
     expect(panel('Settings')).toBeNull()
   })
 })
+
+describe('section navigation from the Sections panel', () => {
+  const openSections = async () => {
+    const user = userEvent.setup()
+    await user.click(toggle('Sections'))
+    return { user, sections: panel('Sections')! }
+  }
+  const awardsHeading = () => document.querySelector<HTMLElement>('[data-cv-section="awards"] h2')!
+
+  it('anchors each rendered section and the profile by kind', () => {
+    render(App)
+    const kinds = [...document.querySelectorAll('.resume-paper [data-cv-section]')].map((el) => el.getAttribute('data-cv-section'))
+    expect(kinds).toEqual(['profile', ...resumeDoc.current.sections.map((s) => s.kind)])
+  })
+
+  it('scrolls a section heading outside the viewport into view and keeps focus on the button', async () => {
+    render(App)
+    const { user, sections } = await openSections()
+    const heading = awardsHeading()
+    heading.getBoundingClientRect = () => ({ top: 5000, bottom: 5030, left: 0, right: 0, width: 0, height: 30, x: 0, y: 5000, toJSON: () => ({}) })
+    const scroll = vi.fn()
+    heading.scrollIntoView = scroll
+    const go = within(sections).getByRole('button', { name: 'Go to Awards' })
+    await user.click(go)
+    await vi.waitFor(() => expect(scroll).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest', behavior: 'instant' }))
+    expect(go).toHaveFocus()
+    expect(document.querySelector('[data-cv-section="awards"]')!.className).toBe('resume-section')
+  })
+
+  it('leaves a visible heading where it is', async () => {
+    render(App)
+    const { user, sections } = await openSections()
+    const scroll = vi.fn()
+    awardsHeading().scrollIntoView = scroll
+    await user.click(within(sections).getByRole('button', { name: 'Go to Awards' }))
+    await tick()
+    expect(scroll).not.toHaveBeenCalled()
+  })
+
+  it('applies the open edit before navigating', async () => {
+    render(App)
+    const { user, sections } = await openSections()
+    editing.enter()
+    editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
+    editing.setDraft('profile.name', 'Before Navigating')
+    await user.click(within(sections).getByRole('button', { name: 'Go to Awards' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('Before Navigating')
+    expect(editing.active).toBeNull()
+  })
+
+  it('applies the open edit before reordering, and the paper follows the new order', async () => {
+    render(App)
+    const { user, sections } = await openSections()
+    editing.enter()
+    editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
+    editing.setDraft('profile.name', 'Before Moving')
+    await user.click(within(sections).getByRole('button', { name: 'Move Experience down' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('Before Moving')
+    expect(editing.active).toBeNull()
+    const order = resumeDoc.current.sections.map((s) => s.kind)
+    expect([...document.querySelectorAll('.resume-paper [data-cv-section]')].map((el) => el.getAttribute('data-cv-section'))).toEqual(['profile', ...order])
+    expect(within(sections).getAllByRole('button', { name: /^Go to / }).map((b) => b.getAttribute('aria-label'))).toEqual(
+      ['Go to Profile', ...order.map((kind) => `Go to ${kind === 'experience' ? 'Experience' : kind === 'education' ? 'Education' : kind === 'projects' ? 'Projects' : kind === 'skills' ? 'Skills' : 'Awards'}`)],
+    )
+  })
+
+  it('removes a section from the paper when switched off', async () => {
+    render(App)
+    const { user, sections } = await openSections()
+    await user.click(within(sections).getByRole('checkbox', { name: /Awards/ }))
+    expect(document.querySelector('[data-cv-section="awards"]')).toBeNull()
+    expect(within(sections).getByRole('button', { name: 'Go to Awards' })).toBeDisabled()
+  })
+})

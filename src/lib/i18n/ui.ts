@@ -45,6 +45,10 @@ export const strings = {
     "sections.position": "{section}, position {position} of {count}",
     "sections.moveUp": "Move {section} up",
     "sections.moveDown": "Move {section} down",
+    "sections.goTo": "Go to {section}",
+    "sections.profile": "Profile",
+    "sections.hiddenNote": "Hidden from the resume",
+    "sections.emptyNote": "No entries; shown only in Edit mode",
     "import.title": "Import resume JSON",
     "import.file": "Resume JSON file",
     "import.url": "Resume JSON URL",
@@ -196,7 +200,7 @@ export const strings = {
     'action.importJson': 'Import JSON',
     'action.edit': 'Edit',
     'app.demoNotice':
-      'The resume shown is a fictional example, for demonstrating layout and export only.',
+      'Disclaimer: The resume information displayed on this page is fictitious and is used only for style and function demonstration.',
     'app.printHint':
       'In the print dialog choose A4, set margins to Default or None, and turn off headers and footers — browsers add a URL and date that no page can suppress.',
     'app.pageBreakHint': 'Page break guides are approximate; the print preview is authoritative.',
@@ -244,6 +248,10 @@ export const strings = {
     "sections.position": "{section}, posisi {position} dari {count}",
     "sections.moveUp": "Pindahkan {section} ke atas",
     "sections.moveDown": "Pindahkan {section} ke bawah",
+    "sections.goTo": "Ke {section}",
+    "sections.profile": "Profil",
+    "sections.hiddenNote": "Disembunyikan dari resume",
+    "sections.emptyNote": "Belum ada entri; hanya tampil di mode Sunting",
     "import.title": "Impor JSON resume",
     "import.file": "Berkas JSON resume",
     "import.url": "URL JSON resume",
@@ -395,7 +403,7 @@ export const strings = {
     'action.importJson': 'Impor JSON',
     'action.edit': 'Sunting',
     'app.demoNotice':
-      'Resume yang ditampilkan adalah contoh fiktif, hanya untuk mendemonstrasikan tata letak dan ekspor.',
+      'Penafian: Informasi resume yang ditampilkan di halaman ini bersifat fiktif dan hanya digunakan untuk demonstrasi tampilan dan fungsi.',
     'app.printHint':
       'Pada dialog cetak, pilih A4, atur margin ke Default atau None, lalu matikan header dan footer — peramban menambahkan URL dan tanggal yang tidak dapat dihilangkan oleh halaman.',
     'app.pageBreakHint': 'Panduan batas halaman bersifat perkiraan; pratinjau cetak adalah acuan utama.',
