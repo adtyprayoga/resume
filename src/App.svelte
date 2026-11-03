@@ -253,7 +253,7 @@
     </div>
   {/if}
 
-  <div class="workspace">
+  <div class="workspace" class:with-sections={sectionsOpen} class:with-settings={settingsOpen}>
     {#if sectionsOpen}
       <SectionsPanel id={PANEL_ID.sections} onClose={() => void setPanel('sections', false)} />
     {/if}

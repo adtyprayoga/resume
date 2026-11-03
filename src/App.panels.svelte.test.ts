@@ -234,7 +234,9 @@ describe('section navigation from the Sections panel', () => {
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     editing.setDraft('profile.name', 'Before Moving')
-    await user.click(within(sections).getByRole('button', { name: 'Move Experience down' }))
+    await tick() // the inline editor mounts and takes focus first
+    within(sections).getByRole('button', { name: 'Reorder Experience, position 1 of 5' }).focus()
+    await user.keyboard('{ArrowDown}')
     expect(resumeDoc.current.profile.text.en.name).toBe('Before Moving')
     expect(editing.active).toBeNull()
     const order = resumeDoc.current.sections.map((s) => s.kind)
