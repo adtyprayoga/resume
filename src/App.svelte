@@ -3,7 +3,7 @@
   import PersistenceHost from './components/PersistenceHost.svelte'
   import RecoveryScreen from './components/RecoveryScreen.svelte'
   import ThemeHost from './components/ThemeHost.svelte'
-  import MoreMenu from './components/shell/MoreMenu.svelte'
+  import ExportMenu from './components/shell/ExportMenu.svelte'
   import FirstRunIntro from './components/shell/FirstRunIntro.svelte'
   import IconButton from './components/shell/IconButton.svelte'
   import Icon from './components/shell/Icon.svelte'
@@ -30,7 +30,9 @@
   let previewZoom = $state(1)
   let importing = $state(false)
   let settingsOpen = $state(false)
-  let moreButton = $state<HTMLButtonElement | undefined>()
+  let sectionsOpen = $state(false)
+  let importButton = $state<HTMLButtonElement | undefined>()
+  let settingsButton = $state<HTMLButtonElement | undefined>()
 
   $effect(() => { document.documentElement.lang = prefs.uiLocale })
 
@@ -130,7 +132,7 @@
   const closeSettings = () => {
     settingsOpen = false
     editing.resume()
-    void tick().then(() => moreButton?.focus())
+    void tick().then(() => settingsButton?.focus())
   }
 
   const openImport = () => {
@@ -141,7 +143,7 @@
   const closeImport = () => {
     importing = false
     editing.resume()
-    void tick().then(() => moreButton?.focus())
+    void tick().then(() => importButton?.focus())
   }
 </script>
 
@@ -165,13 +167,20 @@
 
       <div class="app-actions" role="toolbar" aria-label={t(prefs.uiLocale, 'app.actions')}>
         <IconButton
+          icon="sections"
+          label={t(prefs.uiLocale, 'action.sections')}
+          expanded={sectionsOpen}
+          onclick={() => (sectionsOpen = !sectionsOpen)}
+        />
+        <IconButton
           icon={editing.mode === 'edit' ? 'done' : 'edit'}
           label={t(prefs.uiLocale, editing.mode === 'edit' ? 'action.done' : 'action.edit')}
           onclick={toggleEdit}
           variant="primary"
         />
-        <IconButton icon="pdf" label={t(prefs.uiLocale, 'action.print')} onclick={exportPdf} />
-        <MoreMenu onImport={openImport} onJson={exportJson} onSettings={openSettings} bind:button={moreButton} />
+        <IconButton icon="import" label={t(prefs.uiLocale, 'action.importJson')} haspopup="dialog" expanded={importing} onclick={openImport} bind:element={importButton} />
+        <ExportMenu onPdf={exportPdf} onJson={exportJson} />
+        <IconButton icon="settings" label={t(prefs.uiLocale, 'action.settings')} haspopup="dialog" expanded={settingsOpen} onclick={openSettings} bind:element={settingsButton} />
       </div>
     </div>
 

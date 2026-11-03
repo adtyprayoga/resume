@@ -6,11 +6,10 @@
   import { prefs } from '$lib/state/preferences.svelte'
 
   let {
-    onImport,
+    onPdf,
     onJson,
-    onSettings,
     button = $bindable<HTMLButtonElement | undefined>(),
-  }: { onImport: () => void; onJson: () => void; onSettings: () => void; button?: HTMLButtonElement | undefined } = $props()
+  }: { onPdf: () => void; onJson: () => void; button?: HTMLButtonElement | undefined } = $props()
 
   const uid = $props.id()
   let open = $state(false)
@@ -71,9 +70,10 @@
 
 <span class="menu-anchor">
   <IconButton
-    icon="more"
-    label={t(prefs.uiLocale, 'action.more')}
+    icon="export"
+    label={t(prefs.uiLocale, 'action.export')}
     haspopup="menu"
+    controls={open ? `${uid}-menu` : undefined}
     expanded={open}
     bind:element={button}
     onclick={() => (open ? close() : void show())}
@@ -85,18 +85,15 @@
       id="{uid}-menu"
       class="menu"
       role="menu"
-      aria-label={t(prefs.uiLocale, 'action.more')}
+      aria-label={t(prefs.uiLocale, 'action.export')}
       bind:this={menu}
       onkeydown={onMenuKey}
     >
-      <button type="button" role="menuitem" tabindex="-1" class="menu-item" onclick={() => choose(onImport)}>
-        <Icon name="import" />{t(prefs.uiLocale, 'action.importJson')}
+      <button type="button" role="menuitem" tabindex="-1" class="menu-item" onclick={() => choose(onPdf)}>
+        <Icon name="pdf" />{t(prefs.uiLocale, 'action.exportPdf')}
       </button>
       <button type="button" role="menuitem" tabindex="-1" class="menu-item" onclick={() => choose(onJson)}>
         <Icon name="json" />{t(prefs.uiLocale, 'action.exportJson')}
-      </button>
-      <button type="button" role="menuitem" tabindex="-1" class="menu-item" onclick={() => choose(onSettings)}>
-        <Icon name="settings" />{t(prefs.uiLocale, 'action.settings')}
       </button>
     </div>
   {/if}

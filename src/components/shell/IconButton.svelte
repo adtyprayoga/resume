@@ -8,6 +8,7 @@
     element = $bindable<HTMLButtonElement | undefined>(),
     pressed,
     haspopup,
+    controls,
     expanded,
     onkeydown,
     variant,
@@ -18,6 +19,9 @@
     element?: HTMLButtonElement | undefined
     pressed?: boolean
     haspopup?: 'menu' | 'dialog'
+    /** Id of the menu or panel this button opens; set only while it is rendered. */
+    controls?: string | undefined
+    /** Set for any disclosure (menu, dialog or panel); omit for plain actions. */
     expanded?: boolean
     onkeydown?: (event: KeyboardEvent) => void
     variant?: 'primary' | undefined
@@ -35,7 +39,8 @@
     aria-describedby="{uid}-tip"
     aria-pressed={pressed}
     aria-haspopup={haspopup}
-    aria-expanded={haspopup ? expanded === true : undefined}
+    aria-controls={controls}
+    aria-expanded={expanded}
     bind:this={element}
     {onclick}
     {onkeydown}

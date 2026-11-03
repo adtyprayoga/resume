@@ -12,8 +12,7 @@ import { defaultTheme, getTheme } from '$lib/themes/index'
 const paper = () => document.querySelector<HTMLElement>('.resume-paper')!
 
 const openLayout = async () => {
-  await fireEvent.click(screen.getByRole('button', { name: prefs.uiLocale === 'id' ? 'Lainnya' : 'More' }))
-  await fireEvent.click(screen.getByRole('menuitem', { name: prefs.uiLocale === 'id' ? 'Pengaturan' : 'Settings' }))
+  await fireEvent.click(screen.getByRole('button', { name: prefs.uiLocale === 'id' ? 'Pengaturan' : 'Settings' }))
 }
 
 beforeEach(() => {
