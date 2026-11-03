@@ -11,6 +11,7 @@
     anchor,
     onApply,
     onCancel,
+    onDismiss,
     actions,
   }: {
     title: string
@@ -18,8 +19,25 @@
     anchor: () => Element | null
     onApply: () => void
     onCancel: () => void
+    /** A press outside both the popover and what it edits. */
+    onDismiss: () => void
     actions?: Snippet | undefined
   } = $props()
+
+  let surface = $state<HTMLDivElement>()
+
+  // Capture phase, so the popover closes before whatever was pressed acts.
+  $effect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Node) || surface?.contains(target)) return
+      // The opener toggles itself; closing here too would reopen it on click.
+      if (anchor()?.contains(target)) return
+      onDismiss()
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  })
 
   let rect = $state<{ top: number; bottom: number; left: number } | null>(null)
   let height = $state(0)
@@ -40,6 +58,6 @@
   })
 </script>
 
-<div class="form-popover" data-edit-surface data-print-hide {style} bind:clientHeight={height}>
+<div class="form-popover" bind:this={surface} data-edit-surface data-print-hide {style} bind:clientHeight={height}>
   <EditForm {title} {refs} {onApply} {onCancel} {actions} />
 </div>

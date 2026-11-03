@@ -114,6 +114,14 @@
     else editing.enter()
   }
 
+  const profileDetailsOpen = $derived(!editing.suspended && editing.active?.target.kind === 'profile')
+
+  /** A second click closes the form, keeping what was typed. */
+  const toggleProfileDetails = () => {
+    if (profileDetailsOpen) editing.commit()
+    else editing.begin({ kind: 'profile' })
+  }
+
   const openSettings = () => {
     editing.suspend()
     settingsOpen = true
@@ -180,7 +188,8 @@
         class="tool-btn"
         data-profile-details="true"
         aria-haspopup="dialog"
-        onclick={() => editing.begin({ kind: 'profile' })}
+        aria-expanded={profileDetailsOpen}
+        onclick={toggleProfileDetails}
       >
         <Icon name="user" />{t(prefs.uiLocale, 'edit.profileDetails')}
       </button>
