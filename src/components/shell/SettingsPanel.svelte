@@ -154,7 +154,6 @@
       <h3 class="settings-subhead">{t(prefs.uiLocale, 'settings.help')}</h3>
       <p class="field-hint">{t(prefs.uiLocale, 'app.printHint')}</p>
       <p class="field-hint">{t(prefs.uiLocale, 'app.pageBreakHint')}</p>
-      <p class="field-hint">{t(prefs.uiLocale, 'app.demoNotice')}</p>
     </section>
   </div>
 </SidePanel>

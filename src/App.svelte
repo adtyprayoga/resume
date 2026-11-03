@@ -12,6 +12,7 @@
   import SectionsPanel from './components/shell/SectionsPanel.svelte'
   import PageBreakOverlay from './components/preview/PageBreakOverlay.svelte'
   import ResumePaper from './components/preview/ResumePaper.svelte'
+  import { isSampleDocument } from './data/sample'
   import { flushSync, tick, untrack } from 'svelte'
   import { resumeFileName, serializeResume } from '$lib/io/exportJson'
   import { t, translatedMessage } from '$lib/i18n/ui'
@@ -230,6 +231,9 @@
 
     {#if prefs.saveStatus.kind === 'error'}
       <p class="save-status error" role="alert">{translatedMessage(prefs.uiLocale, prefs.saveStatus, prefs.saveStatus.message)}</p>
+    {/if}
+    {#if isSampleDocument(resumeDoc.current)}
+      <p class="app-demo-notice">{t(prefs.uiLocale, 'app.demoNotice')}</p>
     {/if}
   </header>
 

@@ -343,7 +343,7 @@ const checkGeometry = (label: string, pdf: PdfReport, ats = true) => {
 }
 
 const LEAKS = [
-  'Save as PDF', 'Simpan sebagai PDF', 'Export JSON', 'Resume layout', 'Tata letak', 'fictional example',
+  'Save as PDF', 'Simpan sebagai PDF', 'Export JSON', 'Resume layout', 'Tata letak', 'fictional example', 'Disclaimer:', 'Penafian:',
   'Load photo', 'Muat foto', 'hosted elsewhere', 'Page breaks',
 ]
 

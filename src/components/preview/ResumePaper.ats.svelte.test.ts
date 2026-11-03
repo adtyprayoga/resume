@@ -132,7 +132,7 @@ describe('ATS section reading order', () => {
   it('reads Work Experience as company, dates, role, team/location, bullets', () => {
     const { container } = mount(sampleDocument())
     expect(sectionBlocks(container, 'Work Experience').slice(0, 7)).toEqual([
-      'PT Nusantara Digital',
+      'PT Arkasa Melanglang Buana',
       'Mar 2022 – Present',
       'Senior Software Engineer',
       'Payments Platform, Jakarta',
@@ -145,10 +145,10 @@ describe('ATS section reading order', () => {
   it('reads Pengalaman Kerja in Indonesian with the translated present label', () => {
     const { container } = mount(sampleDocument(), 'id')
     expect(sectionBlocks(container, 'Pengalaman Kerja').slice(0, 4)).toEqual([
-      'PT Nusantara Digital',
+      'PT Arkasa Melanglang Buana',
       'Mar 2022 – Sekarang',
-      'Perekayasa Perangkat Lunak Senior',
-      'Platform Pembayaran, Jakarta',
+      'Programmer Senior',
+      'Fitur Pembayaran, Jakarta',
     ])
   })
 
@@ -167,10 +167,10 @@ describe('ATS section reading order', () => {
     expect(sectionBlocks(container, 'Projects')).toEqual([
       'Antrean — Author (TypeScript, PostgreSQL, Redis)',
       'Feb 2023 – Nov 2023',
-      'A lightweight job queue library for Node.js with exactly-once delivery guarantees.',
+      'A lightweight job queue library for Node.js with delivery guarantees.',
       'Reached 1,200 GitHub stars and production use at three companies.',
       'Wrote bilingual documentation and a test suite at 94% coverage.',
-      'https://github.com/example/antrean',
+      'https://github.com/example/Ngantre',
     ])
   })
 

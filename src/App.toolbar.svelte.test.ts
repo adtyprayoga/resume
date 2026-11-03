@@ -25,6 +25,38 @@ afterEach(() => {
 
 const toolbar = () => screen.getByRole('toolbar', { name: 'Resume actions' })
 
+describe('sample disclaimer', () => {
+  const disclaimer = 'Disclaimer: The resume information displayed on this page is fictitious and is used only for style and function demonstration.'
+
+  it('shows a print-hidden note beside the save status even after the introduction is dismissed', async () => {
+    render(App)
+    prefs.introDismissed = true
+    prefs.saveStatus = { kind: 'saved', at: Date.now() }
+    await tick()
+
+    const note = screen.getByText(disclaimer)
+    const status = screen.getByRole('status', { name: 'Status' })
+    expect(note.closest('.app-header')).toBe(status.closest('.app-header'))
+    expect(note.closest('[data-print-hide]')).not.toBeNull()
+    expect(status).toHaveTextContent('Saved in this browser')
+    expect(status).not.toContainElement(note)
+  })
+
+  it('removes the disclaimer when the sample becomes a personal resume', async () => {
+    render(App)
+    expect(screen.getByText(disclaimer)).toBeInTheDocument()
+    resumeDoc.current.profile.text.en.name = 'My own resume'
+    await tick()
+    expect(screen.queryByText(disclaimer)).not.toBeInTheDocument()
+  })
+
+  it('translates the disclaimer with the interface language', () => {
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'id', documentLocale: 'en' }))
+    render(App)
+    expect(screen.getByText('Penafian: Informasi resume yang ditampilkan di halaman ini bersifat fiktif dan hanya digunakan untuk demonstrasi tampilan dan fungsi.')).toBeInTheDocument()
+  })
+})
+
 describe('toolbar actions', () => {
   const NAMES = ['Sections', 'Edit', 'Import JSON', 'Export', 'Settings']
 

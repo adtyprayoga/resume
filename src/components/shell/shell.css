@@ -51,6 +51,13 @@
   color: var(--color-danger);
 }
 
+.app-demo-notice {
+  margin: 0.5rem 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--color-muted);
+}
+
 .app-actions {
   grid-column: 4 / 13;
   justify-self: end;

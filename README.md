@@ -135,8 +135,10 @@ actions and help.
 
 ### Editing
 
-On a first visit the page shows a fictional sample resume with a short
-introduction above it, offering **Start blank**. Use **Edit** or **Import JSON** to
+On a first visit the page shows a fictional sample resume. A disclaimer below
+the toolbar appears only while the sample is unchanged; it is separate from
+the save status and excluded from print. A short introduction above the resume
+offers **Start blank**. Use **Edit** or **Import JSON** to
 edit or import. The introduction disappears once the sample is changed or
 the introduction is dismissed. **Start blank** is also in Settings → Data, where it
 asks for confirmation.
