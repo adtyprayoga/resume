@@ -137,7 +137,7 @@
 
         {#if untranslated > 0}
           <div class="settings-row">
-            <button type="button" class="tool-btn" onclick={() => resumeDoc.copyLocale(otherLocale(locale), locale)}>
+            <button type="button" class="tool-btn" onclick={() => resumeDoc.fillUntranslated(otherLocale(locale), locale)}>
               {t(prefs.uiLocale, 'app.fillUntranslated', { count: untranslated, language: otherLocale(locale).toUpperCase() })}
             </button>
           </div>

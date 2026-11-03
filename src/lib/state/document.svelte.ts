@@ -4,6 +4,10 @@ import { LOCALES, type Locale, type ResolvedResume, type ResumeDocument } from '
 import type { ListSectionKind } from '$lib/sections/kinds'
 import { getSectionModule } from '$lib/sections/registry'
 
+/** The single rule for "untranslated", shared by the count and the fill. */
+const isBlank = (value: unknown): boolean =>
+  value === '' || (Array.isArray(value) && value.length === 0)
+
 interface Identified {
   id: string
   [key: string]: unknown
@@ -93,18 +97,31 @@ class ResumeDocumentStore {
     if (moved) sections.splice(to, 0, moved)
   }
 
-/** Only touches text: the structure is shared, so there is nothing to merge. */
-  copyLocale(from: Locale, to: Locale): void {
+/** Profile text plus every list item's text, keyed by locale. */
+  private textRecords(): Array<Record<Locale, Record<string, unknown>>> {
+    const records = [this.current.profile.text as unknown as Record<Locale, Record<string, unknown>>]
+    for (const kind of Object.keys(this.current.content) as ListSectionKind[]) {
+      for (const item of this.list(kind) as unknown as Array<{ text: Record<Locale, Record<string, unknown>> }>) {
+        records.push(item.text)
+      }
+    }
+    return records
+  }
+
+  /**
+   * Copies only fields blank in `to` but filled in `from`, so text already
+   * translated survives. Autosave means no undo, so it must never overwrite.
+   */
+  fillUntranslated(from: Locale, to: Locale): void {
     if (from === to) return
 
-    const profile = this.current.profile.text
-    profile[to] = structuredClone($state.snapshot(profile[from])) as typeof profile.en
-
-    for (const kind of Object.keys(this.current.content) as ListSectionKind[]) {
-      for (const item of this.list(kind) as unknown as Array<{
-        text: Record<Locale, unknown>
-      }>) {
-        item.text[to] = structuredClone($state.snapshot(item.text[from]))
+    for (const record of this.textRecords()) {
+      const source = record[from]
+      const target = record[to]
+      for (const [key, value] of Object.entries(target)) {
+        if (isBlank(value) && !isBlank(source[key])) {
+          target[key] = structuredClone($state.snapshot(source[key]))
+        }
       }
     }
   }
@@ -114,29 +131,12 @@ class ResumeDocumentStore {
     const other = LOCALES.find((candidate) => candidate !== locale)
     if (!other) return 0
 
-    const isBlank = (value: unknown) =>
-      value === '' || (Array.isArray(value) && value.length === 0)
-
     let count = 0
-    const compare = (a: Record<string, unknown>, b: Record<string, unknown>) => {
-      for (const [key, value] of Object.entries(a)) {
-        if (isBlank(value) && !isBlank(b[key])) count += 1
+    for (const record of this.textRecords()) {
+      for (const [key, value] of Object.entries(record[locale])) {
+        if (isBlank(value) && !isBlank(record[other][key])) count += 1
       }
     }
-
-    compare(
-      this.current.profile.text[locale] as unknown as Record<string, unknown>,
-      this.current.profile.text[other] as unknown as Record<string, unknown>,
-    )
-
-    for (const kind of Object.keys(this.current.content) as ListSectionKind[]) {
-      for (const item of this.list(kind) as unknown as Array<{
-        text: Record<Locale, Record<string, unknown>>
-      }>) {
-        compare(item.text[locale], item.text[other])
-      }
-    }
-
     return count
   }
 }

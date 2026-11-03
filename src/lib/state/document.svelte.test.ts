@@ -85,32 +85,60 @@ describe('sections', () => {
   })
 })
 
-describe('copyLocale', () => {
-  it('overwrites the target locale text and leaves the source alone', () => {
-    resumeDoc.copyLocale('en', 'id')
-    expect(resumeDoc.current.profile.text.id.headline).toBe(
-      resumeDoc.current.profile.text.en.headline,
-    )
-    expect(resumeDoc.current.content.experience[0]!.text.id.role).toBe(
-      resumeDoc.current.content.experience[0]!.text.en.role,
-    )
+describe('fillUntranslated', () => {
+  it('fills a field blank in the target from the source', () => {
+    const en = resumeDoc.current.content.experience[0]!.text.en.role
+    resumeDoc.current.content.experience[0]!.text.id.role = ''
+    resumeDoc.fillUntranslated('en', 'id')
+    expect(resumeDoc.current.content.experience[0]!.text.id.role).toBe(en)
+  })
+
+  it('keeps fields already translated in the target', () => {
+    const headline = resumeDoc.current.profile.text.id.headline
+    const bullets = [...resumeDoc.current.content.experience[0]!.text.id.bullets]
+    expect(headline).not.toBe(resumeDoc.current.profile.text.en.headline)
+    resumeDoc.current.profile.text.id.summary = ''
+    resumeDoc.fillUntranslated('en', 'id')
+    expect(resumeDoc.current.profile.text.id.headline).toBe(headline)
+    expect(resumeDoc.current.content.experience[0]!.text.id.bullets).toEqual(bullets)
+    expect(resumeDoc.current.profile.text.id.summary).toBe(resumeDoc.current.profile.text.en.summary)
+  })
+
+  it('leaves a field blank in both locales blank', () => {
+    resumeDoc.current.profile.text.en.summary = ''
+    resumeDoc.current.profile.text.id.summary = ''
+    resumeDoc.fillUntranslated('en', 'id')
+    expect(resumeDoc.current.profile.text.id.summary).toBe('')
+  })
+
+  it('leaves nothing untranslated afterwards', () => {
+    resumeDoc.current.profile.text.id.summary = ''
+    resumeDoc.current.content.experience[0]!.text.id.bullets = []
+    expect(resumeDoc.untranslatedCount('id')).toBe(2)
+    resumeDoc.fillUntranslated('en', 'id')
+    expect(resumeDoc.untranslatedCount('id')).toBe(0)
   })
 
   it('deep-copies so later edits do not bleed across locales', () => {
-    resumeDoc.copyLocale('en', 'id')
+    resumeDoc.current.content.experience[0]!.text.id.bullets = []
+    resumeDoc.fillUntranslated('en', 'id')
     resumeDoc.current.content.experience[0]!.text.id.bullets[0] = 'Diubah'
     expect(resumeDoc.current.content.experience[0]!.text.en.bullets[0]).not.toBe('Diubah')
   })
 
-  it('leaves shared fields untouched', () => {
+  it('leaves the source and shared fields untouched', () => {
+    resumeDoc.current.content.experience[0]!.text.id.role = ''
+    const en = structuredClone(resumeDoc.snapshot().content.experience[0]!.text.en)
     const company = resumeDoc.current.content.experience[0]!.company
-    resumeDoc.copyLocale('en', 'id')
+    resumeDoc.fillUntranslated('en', 'id')
+    expect(resumeDoc.snapshot().content.experience[0]!.text.en).toEqual(en)
     expect(resumeDoc.current.content.experience[0]!.company).toBe(company)
   })
 
   it('is a no-op when source and target match', () => {
+    resumeDoc.current.profile.text.en.summary = ''
     const before = resumeDoc.snapshot()
-    resumeDoc.copyLocale('en', 'en')
+    resumeDoc.fillUntranslated('en', 'en')
     expect(resumeDoc.snapshot()).toEqual(before)
   })
 })
