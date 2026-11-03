@@ -126,10 +126,11 @@ open. On narrower screens one panel opens above the resume, and opening the
 other replaces it. Escape closes the panel that has focus. Both panels start
 closed on every visit and never print.
 
-**Sections** lists Profile first, then each section with its entry count, a
-visibility checkbox, reorder controls and a **Go to** button. Go to scrolls only
-when the section heading is off screen. It is unavailable for a hidden section,
-and for an empty one outside Edit mode, and the row says why. **Settings** holds
+**Sections** lists Profile first, then one row per section: a drag handle, the
+section name with its entry count, and a checkbox that shows or hides the
+section. Select a name to go to that section; the page scrolls only when its
+heading is off screen. A hidden section, or an empty one outside Edit mode,
+cannot be selected, and the row says why. **Settings** holds
 the Classic / ATS layout selector, languages, font size, page guides, data
 actions and help.
 
@@ -240,8 +241,9 @@ you want to keep a copy.
 The interface language and resume language are independent; both are in
 Settings. Changing the interface language translates controls and messages
 without changing your resume content or discarding an unfinished draft. In the
-**Sections** panel, use the move buttons, drag a section, or focus
-its handle and press the arrow keys to change the order.
+**Sections** panel, drag a section by its handle, or focus the handle and press
+the arrow keys, to change the order. On a phone, where dragging is unreliable,
+each row also has move up and move down buttons.
 
 There is no server, so a photo cannot be uploaded anywhere. Choosing one resizes
 it to 320px and embeds it in the document itself, which means it survives an

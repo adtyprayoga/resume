@@ -253,10 +253,26 @@
 }
 
 @media screen and (min-width: 1024px) {
+  /*
+   * Equal side columns, each as wide as the widest open panel, keep the CV
+   * centred under the header whichever panels are open.
+   */
   .workspace {
+    --panel-gutter: 0px;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns:
+      minmax(var(--panel-gutter), 1fr)
+      minmax(0, calc(210mm + 34px))
+      minmax(var(--panel-gutter), 1fr);
     align-items: start;
+  }
+
+  .workspace.with-sections {
+    --panel-gutter: calc(18rem + 16px);
+  }
+
+  .workspace.with-settings {
+    --panel-gutter: calc(22rem + 16px);
   }
 
   .workspace-main {
@@ -274,12 +290,14 @@
 
   .sections-side {
     grid-column: 1;
+    justify-self: start;
     width: 18rem;
     margin-left: 16px;
   }
 
   .settings-side {
     grid-column: 3;
+    justify-self: end;
     width: 22rem;
     margin-right: 16px;
   }

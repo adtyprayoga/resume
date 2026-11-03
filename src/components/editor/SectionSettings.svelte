@@ -14,6 +14,18 @@
 
   const sections = $derived(resumeDoc.current.sections)
 
+  // Native drag and drop is unreliable under a finger, so phones also get move buttons.
+  const PHONE_QUERY = '(max-width: 639px)'
+  let phone = $state(false)
+  $effect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const query = window.matchMedia(PHONE_QUERY)
+    phone = query.matches
+    const onChange = (event: { matches: boolean }) => (phone = event.matches)
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  })
+
   /** Why a section has nothing on the paper to go to, or null when it does. */
   const unavailable = (kind: ListSectionKind, enabled: boolean): 'sections.hiddenNote' | 'sections.emptyNote' | null =>
     !enabled ? 'sections.hiddenNote'
@@ -69,18 +81,18 @@
 
 {#if onNavigate}
   <div class="setting-row setting-row-fixed" data-section="profile">
-    <span class="setting-name">{t(prefs.uiLocale, 'sections.profile')}</span>
     <button
       type="button"
-      class="repeat-btn section-goto"
+      class="setting-name"
       aria-label={t(prefs.uiLocale, 'sections.goTo', { section: t(prefs.uiLocale, 'sections.profile') })}
       onclick={() => onNavigate('profile')}
-    ><Icon name="goto" size={18} /></button>
+    >{t(prefs.uiLocale, 'sections.profile')}</button>
   </div>
 {/if}
 
 <ul class="section-list" bind:this={list}>
   {#each sections as section, index (section.kind)}
+    {@const reason = onNavigate ? unavailable(section.kind, section.enabled) : null}
     <li
       class="setting-row"
       data-section={section.kind}
@@ -111,37 +123,45 @@
         onkeydown={(event) => onKeydown(event, section.kind)}
       ><Icon name="grip" /></span>
 
-      <label class="field-check" style="flex:1">
+      {#if onNavigate}
+        <button
+          type="button"
+          class="setting-name"
+          disabled={reason !== null}
+          aria-label={t(prefs.uiLocale, 'sections.goTo', { section: label(section.kind) })}
+          aria-describedby={reason ? `${uid}-${section.kind}-why` : undefined}
+          onclick={() => onNavigate(section.kind)}
+        >
+          <span>{label(section.kind)}</span>
+          <span class="setting-count">{resumeDoc.current.content[section.kind].length}</span>
+        </button>
+      {:else}
+        <span class="setting-name">
+          <span>{label(section.kind)}</span>
+          <span class="setting-count">{resumeDoc.current.content[section.kind].length}</span>
+        </span>
+      {/if}
+
+      {#if phone}
+        <div class="repeat-actions">
+          <button type="button" class="repeat-btn" disabled={index === 0} aria-label={t(prefs.uiLocale, 'sections.moveUp', { section: label(section.kind) })} onclick={() => move(section.kind, -1)}><Icon name="up" size={18} /></button>
+          <button type="button" class="repeat-btn" disabled={index === sections.length - 1} aria-label={t(prefs.uiLocale, 'sections.moveDown', { section: label(section.kind) })} onclick={() => move(section.kind, 1)}><Icon name="down" size={18} /></button>
+        </div>
+      {/if}
+
+      <label class="setting-show">
         <input
           type="checkbox"
           checked={section.enabled}
+          aria-label={t(prefs.uiLocale, 'sections.show', { section: label(section.kind) })}
           onchange={(event) => {
             editing.dismiss()
             resumeDoc.setSectionEnabled(section.kind, (event.currentTarget as HTMLInputElement).checked)
           }}
         />
-        <span>{label(section.kind)}</span>
-        <span class="setting-count">{resumeDoc.current.content[section.kind].length}</span>
       </label>
-      {#if onNavigate}
-        {@const reason = unavailable(section.kind, section.enabled)}
-        {#if reason}<span id="{uid}-{section.kind}-why" class="setting-note">{t(prefs.uiLocale, reason)}</span>{/if}
-      {/if}
-      <div class="repeat-actions">
-        {#if onNavigate}
-          {@const reason = unavailable(section.kind, section.enabled)}
-          <button
-            type="button"
-            class="repeat-btn section-goto"
-            disabled={reason !== null}
-            aria-label={t(prefs.uiLocale, 'sections.goTo', { section: label(section.kind) })}
-            aria-describedby={reason ? `${uid}-${section.kind}-why` : undefined}
-            onclick={() => onNavigate(section.kind)}
-          ><Icon name="goto" size={18} /></button>
-        {/if}
-        <button type="button" class="repeat-btn" disabled={index === 0} aria-label={t(prefs.uiLocale, 'sections.moveUp', { section: label(section.kind) })} onclick={() => move(section.kind, -1)}><Icon name="up" size={18} /></button>
-        <button type="button" class="repeat-btn" disabled={index === sections.length - 1} aria-label={t(prefs.uiLocale, 'sections.moveDown', { section: label(section.kind) })} onclick={() => move(section.kind, 1)}><Icon name="down" size={18} /></button>
-      </div>
+
+      {#if reason}<span id="{uid}-{section.kind}-why" class="setting-note">{t(prefs.uiLocale, reason)}</span>{/if}
     </li>
   {/each}
 </ul>

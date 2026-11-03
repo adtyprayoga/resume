@@ -809,6 +809,14 @@ const main = async () => {
       check(JSON.stringify(await panelState()) === '{"sections":false,"settings":false}', `${width}px: both panels start closed`)
       await click('Sections')
       check(await evaluate(`document.activeElement?.id === 'sections-panel-title'`), `${width}px: opening Sections focuses its heading`)
+      const moves = await evaluate(`document.querySelectorAll('#sections-panel [aria-label^="Move "]').length`)
+      check(width < 640 ? moves === 10 : moves === 0, `${width}px: ${width < 640 ? 'phones get move buttons' : 'no move buttons beside drag and drop'} (${moves})`)
+      if (width < 640) {
+        const tight = await smallPanelTargets()
+        const sectionsFlow = await overflow()
+        check(tight.length === 0 && sectionsFlow.ok, `${width}px Sections: 44px targets and no overflow${tight.length ? ` (${tight.join(', ')})` : ''}`)
+        if (width === 320) await screenshot('sections-320')
+      }
       await click('Settings')
       const both = await panelState()
       const wide = width >= 1024
@@ -816,6 +824,21 @@ const main = async () => {
       if (wide) {
         const columns = await evaluate(`(() => { const s = document.getElementById('sections-panel').getBoundingClientRect(), p = document.querySelector('.resume-paper').getBoundingClientRect(), g = document.getElementById('settings-panel').getBoundingClientRect(); return s.right <= p.left + 1 && p.right <= g.left + 1 })()`)
         check(columns, `${width}px: Sections, CV and Settings sit in three columns`)
+        const centered = async (state: string) => {
+          const offset = await evaluate(`(() => { const h = document.querySelector('.app-header').getBoundingClientRect(), p = document.querySelector('.resume-paper').getBoundingClientRect(); return Math.abs((h.left + h.right) / 2 - (p.left + p.right) / 2) })()`)
+          check(offset < 1, `${width}px ${state}: the CV stays centred under the header (off by ${offset.toFixed(1)}px)`)
+        }
+        await centered('both panels')
+        await screenshot(`panels-${width}`)
+        await click('Settings')
+        await centered('Sections only')
+        await click('Sections')
+        await click('Settings')
+        await centered('Settings only')
+        await click('Sections')
+        // Reopen Settings last so focus is back inside it for the Escape check.
+        await click('Settings')
+        await click('Settings')
       } else {
         const above = await evaluate(`document.getElementById('settings-panel').getBoundingClientRect().bottom <= document.querySelector('.resume-paper').getBoundingClientRect().top + 1`)
         check(above, `${width}px: the panel sits above the CV`)
