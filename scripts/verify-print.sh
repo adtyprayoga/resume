@@ -22,7 +22,7 @@ echo "page size: $size"
 
 fail=0
 grep -q '(A4)' <<<"$size" || { echo "FAIL: page size is not A4"; fail=1; }
-grep -q 'Budi Santoso' <<<"$text" || { echo "FAIL: no selectable text found"; fail=1; }
+grep -q 'Aditya Prayoga' <<<"$text" || { echo "FAIL: no selectable text found"; fail=1; }
 for chrome in 'Save as PDF' 'Export JSON' 'fictional example' 'This is a sample resume'; do
   if grep -qF "$chrome" <<<"$text"; then
     echo "FAIL: app chrome leaked into the PDF: $chrome"

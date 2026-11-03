@@ -32,7 +32,7 @@ const storedName = () => {
 describe('App startup', () => {
   it('shows the sample when nothing is stored', () => {
     render(App)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Budi Santoso')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Aditya Prayoga')
   })
 
   it('restores a stored document instead of the sample', () => {

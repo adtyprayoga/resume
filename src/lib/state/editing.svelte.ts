@@ -156,6 +156,21 @@ class EditingSession {
     return changed.length ? 'applied' : 'unchanged'
   }
 
+  /**
+   * Closing without choosing Apply or Cancel (an outside click): keeps what was
+   * typed, but a new entry nobody typed into is dropped rather than added blank.
+   */
+  dismiss(): CommitResult {
+    const active = this.active
+    if (!active) return 'none'
+    const untouched = active.refs.every((ref) => sameDraft(active.draft[refKey(ref)], active.original[refKey(ref)]))
+    if (active.staged && untouched) {
+      this.cancel()
+      return 'unchanged'
+    }
+    return this.commit()
+  }
+
   cancel(): void {
     this.active = null
     this.suspended = false

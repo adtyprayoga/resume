@@ -45,9 +45,9 @@ describe('apply and cancel', () => {
 
   it('keeps the draft out of the document until it is applied', () => {
     editing.begin({ kind: 'field', ref: name })
-    expect(editing.active?.original['profile.name']).toBe('Budi Santoso')
+    expect(editing.active?.original['profile.name']).toBe('Aditya Prayoga')
     editing.setDraft('profile.name', 'Siti')
-    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
     expect(editing.commit()).toBe('applied')
     expect(resumeDoc.current.profile.text.en.name).toBe('Siti')
     expect(editing.active).toBeNull()
@@ -139,7 +139,7 @@ describe('settings', () => {
     editing.setDraft('profile.name', 'Suspended')
     editing.suspend()
     expect(editing.suspended).toBe(true)
-    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
     editing.resume()
     expect(editing.suspended).toBe(false)
     expect(editing.active?.draft['profile.name']).toBe('Suspended')
@@ -162,7 +162,7 @@ describe('stale targets and document replacement', () => {
     editing.setDraft('profile.name', 'Stale')
     resumeDoc.replace(sampleDocument())
     expect(editing.commit()).toBe('stale')
-    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
   })
 
   it('drops stale sessions when told the document was replaced', () => {

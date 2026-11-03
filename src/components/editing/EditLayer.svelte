@@ -100,7 +100,7 @@
     {:else if phone}
       <EditSheet title={title(target)} refs={active.refs} onApply={apply} onCancel={cancel} />
     {:else}
-      <FormPopover title={title(target)} refs={active.refs} anchor={() => find(target)} onApply={apply} onCancel={cancel} />
+      <FormPopover title={title(target)} refs={active.refs} anchor={() => find(target)} onApply={apply} onCancel={cancel} onDismiss={() => editing.dismiss()} />
     {/if}
   {/key}
 {/if}

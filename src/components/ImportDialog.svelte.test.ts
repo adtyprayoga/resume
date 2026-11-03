@@ -73,7 +73,7 @@ describe('import review', () => {
     expect(input).toHaveFocus()
     await userEvent.click(screen.getByRole('button', { name: 'Review selected file' }))
     expect(await screen.findByText('Imported Person')).toBeInTheDocument()
-    expect(resumeDoc.current.profile.text.en.name).toBe('Budi Santoso')
+    expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
   })
 
   it('shows the imported name in the selected document language', async () => {
