@@ -12,6 +12,12 @@ export default defineConfig({
       $components: fileURLToPath(new URL('./src/components', import.meta.url)),
     },
   },
+  server: {
+    // Local PDF import: `VITE_PDF_IMPORT=1 bun run dev` with the backend on :8000.
+    proxy: {
+      '/api/pdf-import': process.env.PDF_IMPORT_DEV_URL ?? 'http://127.0.0.1:8000',
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

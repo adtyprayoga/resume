@@ -16,7 +16,10 @@ bun run type-check          # svelte-check
 bun run build               # type-check + vite build
 bun run verify:print        # needs `bun run dev` running, plus chromium + poppler-utils
 bun run verify:ats          # starts its own dev server; needs chromium + poppler-utils
+bun run verify:pdf-import URL [--backend-down|--static]  # against a running deployment
 ```
+
+Optional PDF import: `services/pdf-import` is a FastAPI + Docling service tested inside its Docker image (`docker build --target test -t pdf-import:test services/pdf-import`, then pytest in that image; see README "PDF import backend"). The frontend side is `src/lib/io/pdf` (contract validation, client, deterministic mapper, review draft) and `src/components/importing`; it is enabled only by the build flag `VITE_PDF_IMPORT=1` (compose.yaml). Contract fixtures in `services/pdf-import/tests/fixtures/contract` are read by both pytest and Vitest; `extraction_*.json` there is real Docling output and must be regenerated if the extractor changes.
 
 jsdom has no layout engine (`offsetHeight` is 0, rects are zeros) and Vitest does not process CSS (`?raw` CSS imports come back empty; tests use `readFileSync`, see `src/lib/themes/ats.test.ts`). Anything about page geometry, print output, or text-extraction order is only verified by `verify:print` / `verify:ats`. Run them after any change that could affect the printed page.
 

@@ -5,3 +5,14 @@ coverage/
 *.local
 .vite/
 docs/
+
+# Local deployment settings
+.env
+
+# PDF import backend (Python)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+services/pdf-import/bench-results/
+services/pdf-import/uploads/

@@ -8,10 +8,15 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY . .
-RUN bun run build
+# "1" shows the PDF import option; it needs the pdf-import backend behind the
+# same origin (compose.yaml). The default static-only build leaves it off.
+ARG VITE_PDF_IMPORT=0
+RUN VITE_PDF_IMPORT=$VITE_PDF_IMPORT bun run build
 
 FROM nginx:1.30.6-alpine AS runtime
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# nginx.pdf-import.conf adds the /api/pdf-import proxy for the combined deployment.
+ARG NGINX_CONF=nginx.conf
+COPY ${NGINX_CONF} /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

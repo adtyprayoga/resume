@@ -4,6 +4,11 @@ Run inside the backend image under the production limits, e.g.
     docker run --rm --memory=2750000000 --memory-swap=2750000000 --cpus=2 \
       -v $PWD:/app/src -w /app/src pdf-import:test python scripts/benchmark.py
 
+Or, against a running deployment (from the host; stdlib only):
+    python3 scripts/benchmark.py --api http://127.0.0.1:8080 --container <pdf-import container>
+which adds retained-result expiry and post-cancellation memory, read from the
+container's own cgroup.
+
 Every conversion is a cold child process, exactly as the API runs it, so model
 loading is part of every timing. The container's cgroup peak covers the parent
 and all children. The gate fails on a peak >= 2.3 GB, any OOM kill, any
@@ -100,11 +105,128 @@ def tesseract_version() -> str:
         return "unavailable"
 
 
+def container_value(container: str, name: str) -> str:
+    return subprocess.run(["docker", "exec", container, "cat", f"/sys/fs/cgroup/{name}"], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def api(base: str, method: str, path: str, body: bytes | None = None, headers: dict[str, str] | None = None) -> tuple[int, dict]:
+    import urllib.error
+    import urllib.request
+
+    request = urllib.request.Request(f"{base}/api/pdf-import{path}", data=body, method=method, headers=headers or {})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            raw = response.read()
+            return response.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as error:
+        raw = error.read()
+        try:
+            return error.code, json.loads(raw)
+        except ValueError:
+            return error.code, {}
+
+
+def upload(base: str, pdf: Path) -> tuple[int, dict]:
+    boundary = "benchmark-boundary"
+    body = (
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"cv.pdf\"\r\nContent-Type: application/pdf\r\n\r\n".encode()
+        + pdf.read_bytes()
+        + f"\r\n--{boundary}--\r\n".encode()
+    )
+    return api(base, "POST", "/jobs", body, {"Content-Type": f"multipart/form-data; boundary={boundary}"})
+
+
+def api_convert(base: str, pdf: Path, delete: bool = True) -> dict:
+    start = time.monotonic()
+    status, job = upload(base, pdf)
+    if status != 202:
+        return {"fixture": pdf.stem, "http": status, "error": job.get("error")}
+    while job.get("status") == "processing" and time.monotonic() - start < TIMEOUT + 10:
+        time.sleep(0.5)
+        status, job = api(base, "GET", f"/jobs/{job['id']}")
+    run = {
+        "fixture": pdf.stem,
+        "seconds": round(time.monotonic() - start, 2),
+        "status": job.get("status"),
+        "error": job.get("error"),
+        "blocks": len((job.get("result") or {}).get("blocks", [])),
+        "id": job.get("id"),
+    }
+    if delete and run["id"]:
+        api(base, "DELETE", f"/jobs/{run['id']}")
+    return run
+
+
+def api_main(base: str, container: str, repeat: int, out: Path) -> int:
+    ttl = None
+    runs = []
+    for round_ in range(repeat):
+        for name in CV_FIXTURES:
+            run = api_convert(base, FIXTURES / f"{name}.pdf")
+            run.pop("id", None)
+            run["round"] = round_ + 1
+            run["memory_current_after"] = int(container_value(container, "memory.current"))
+            runs.append(run)
+            print(json.dumps(run), flush=True)
+
+    # Retained result: not deleted, so only the TTL removes it.
+    kept = api_convert(base, FIXTURES / "en_single.pdf", delete=False)
+    done_at = time.monotonic()
+    expired_after = None
+    while time.monotonic() - done_at < 700:
+        status, _ = api(base, "GET", f"/jobs/{kept['id']}")
+        if status == 404:
+            expired_after = round(time.monotonic() - done_at, 1)
+            break
+        time.sleep(1)
+    print(json.dumps({"retained_result_expired_after_seconds": expired_after}), flush=True)
+
+    # Cancellation mid-conversion.
+    status, job = upload(base, FIXTURES / "five_page.pdf")
+    time.sleep(4)
+    cancel_status, _ = api(base, "DELETE", f"/jobs/{job['id']}")
+    time.sleep(1)
+    _, health = api(base, "GET", "/health")
+    after_cancel = int(container_value(container, "memory.current"))
+    print(json.dumps({"cancel_http": cancel_status, "busy_after_cancel": health.get("busy"), "memory_after_cancel": after_cancel}), flush=True)
+
+    events = dict(line.split(" ", 1) for line in container_value(container, "memory.events").splitlines())
+    peak = int(container_value(container, "memory.peak"))
+    failures = [r for r in runs if r.get("status") != "completed" or not r.get("blocks")]
+    report = {
+        "limits": {
+            "memory_max": container_value(container, "memory.max"),
+            "swap_max": container_value(container, "memory.swap.max"),
+            "cpu_max": container_value(container, "cpu.max"),
+        },
+        "cgroup_peak_bytes": peak,
+        "peak_limit_bytes": PEAK_LIMIT,
+        "oom_kills": int(events.get("oom_kill", "0")),
+        "slowest_seconds": max(r.get("seconds", 0) for r in runs),
+        "retained_result_expired_after_seconds": expired_after,
+        "busy_after_cancel": health.get("busy"),
+        "memory_after_cancel_bytes": after_cancel,
+        "runs": runs,
+        "passed": peak < PEAK_LIMIT and int(events.get("oom_kill", "0")) == 0 and not failures
+        and expired_after is not None and health.get("busy") is False and cancel_status == 204,
+    }
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=2))
+    print(json.dumps({k: v for k, v in report.items() if k != "runs"}, indent=2))
+    return 0 if report["passed"] else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repeat", type=int, default=2, help="cold conversions per fixture")
     parser.add_argument("--out", type=Path, default=ROOT / "bench-results" / "benchmark.json")
+    parser.add_argument("--api", help="base URL of a running deployment")
+    parser.add_argument("--container", help="pdf-import container name (with --api)")
     args = parser.parse_args()
+    if args.api:
+        if not args.container:
+            parser.error("--api needs --container")
+        return api_main(args.api.rstrip("/"), args.container, args.repeat, args.out)
 
     runs = []
     for round_ in range(args.repeat):

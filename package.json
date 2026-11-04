@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify:print": "bash scripts/verify-print.sh",
-    "verify:ats": "bun scripts/verify-ats.ts"
+    "verify:ats": "bun scripts/verify-ats.ts",
+    "verify:pdf-import": "bun scripts/verify-pdf-import.ts"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "7.3.1",
