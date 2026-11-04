@@ -11,7 +11,7 @@ import type {
   ResumeDocument,
   SkillGroup,
 } from '$lib/model/types'
-import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isRoleTitle, matchHeading, projectMetadata, splitList, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
+import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, projectMetadata, sectionHeading, splitList, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
 import { associateDateRows, joinSourceLines, partsOf, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
 import type { Extraction } from './types'
 
@@ -139,12 +139,7 @@ class Usage {
 
 // Helpers ----------------------------------------------------------------------
 
-const HEADER_LABELS = new Set(['title', 'section_header'])
-const isHeaderLabel = (block: SourceBlock) => HEADER_LABELS.has(block.label)
-/** Document titles, not names: "CURRICULUM VITAE", "Daftar Riwayat Hidup". */
-const DOCUMENT_TITLE = /^\s*(?:curriculum vitae|cv|resume|résumé|daftar riwayat hidup|riwayat hidup)\s*$/i
-const NAME_LIKE = /^[\p{Lu}][\p{L}.'’-]*(?:\s+[\p{L}][\p{L}.'’-]*){0,4}$/u
-const LOCATION_LIKE = /^[\p{L}][\p{L} .'’-]*(?:,\s*[\p{L}][\p{L} .'’-]*){1,2}$/u
+const isHeaderLabel = (block: SourceBlock) => isHeadingLabel(block.label)
 const TECH_LINE = /^(?:tech(?:nolog(?:y|ies))?(?:\s+stack)?|stack|tools|built with|teknologi|alat)\s*:\s*(.+)$/i
 const GPA = /\b(?:gpa|ipk)\s*:?\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+(?:[.,]\d+)?)?)/i
 
@@ -163,6 +158,9 @@ const isDateLine = (block: SourceBlock) => {
 
 type RegionKind = HeadingKind | 'header'
 
+/** Recognised but not imported yet: their heading and content stay visible as unmatched. */
+const unmapped = (kind: RegionKind) => kind === 'unsupported' || kind === 'certifications' || kind === 'references'
+
 interface Region {
   kind: RegionKind
   heading: SourceBlock | null
@@ -172,10 +170,7 @@ interface Region {
 const regionsOf = (blocks: SourceBlock[]): Region[] => {
   const regions: Region[] = [{ kind: 'header', heading: null, blocks: [] }]
   for (const block of blocks) {
-    const matched = matchHeading(block.text)
-    // "Languages:" inside a skills list is a label; only a layout heading opens an unsupported section.
-    const unknownSection = isHeaderLabel(block) && /\b(activities|memberships|involvement|kegiatan|keanggotaan)\b/i.test(block.text)
-    const kind = matched === 'unsupported' && !isHeaderLabel(block) ? null : matched ?? (unknownSection ? 'unsupported' : null)
+    const kind = sectionHeading(block.text, block.label)
     if (kind) regions.push({ kind, heading: block, blocks: [] })
     else regions.at(-1)!.blocks.push(block)
   }
@@ -233,7 +228,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
     else for (const id of ids) if (!existing.blocks.includes(id)) existing.blocks.push(id)
   }
 
-  for (const region of regions) if (region.heading && region.kind !== 'unsupported') usage.take(region.heading)
+  for (const region of regions) if (region.heading && !unmapped(region.kind)) usage.take(region.heading)
 
   // Contacts: only from the header and explicit contact sections, so a project
   // link is never mistaken for the person's website.
@@ -251,8 +246,8 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
 
   const profile = document.profile.text[locale]
   const header = regions[0]!.blocks
-  for (const block of header) if (DOCUMENT_TITLE.test(block.text)) usage.take(block)
-  const nameBlock = header.find((block) => isHeaderLabel(block) && !usage.used(block) && NAME_LIKE.test(block.text.trim()))
+  for (const block of header) if (isDocumentTitle(block.text)) usage.take(block)
+  const nameBlock = header.find((block) => isHeaderLabel(block) && !usage.used(block) && isNameLike(block.text.trim()))
   if (nameBlock) {
     profile.name = nameBlock.text.trim()
     usage.take(nameBlock)
@@ -267,7 +262,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
       for (const [piece, offset] of usage.pieces(block)) {
         for (const line of piece.matchAll(/[^\n]+/g)) {
           const intact = trimPiece(line[0])
-          if (LOCATION_LIKE.test(intact) && intact.split(/\s+/).length <= 6) {
+          if (isLocation(intact)) {
             profile.location = intact
             usage.take(block, offset + line.index, offset + line.index + line[0].length)
             ref('profile.location', block)
@@ -289,7 +284,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         const text = trimPiece(line[0])
         const words = text.split(/\s+/).length
         let field: 'location' | 'headline' | null = null
-        if (!profile.location && LOCATION_LIKE.test(text) && words <= 6) field = 'location'
+        if (!profile.location && isLocation(text)) field = 'location'
         else if (!profile.headline && !/[@\d]/.test(text) && (isRoleTitle(text) || (!usage.used(block) && text.length <= 80 && words <= 10))) field = 'headline'
         if (field) {
           profile[field] = text
@@ -319,6 +314,8 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         break
       }
       case 'unsupported':
+      case 'certifications':
+      case 'references':
         warnings.push({ code: 'unsupported_section', blocks: [region.heading!.id] })
         break
       case 'skills':

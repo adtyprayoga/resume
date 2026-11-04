@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findContacts, findDateRange, matchHeading, parseDate, splitRoleCompany, stripBullet } from './rules'
+import { findContacts, findDateRange, isLocation, matchHeading, parseDate, splitRoleCompany, stripBullet } from './rules'
 
 describe('matchHeading', () => {
   it.each([
@@ -25,11 +25,8 @@ describe('matchHeading', () => {
     ['Tentang Saya', 'summary'],
     ['Contact', 'contact'],
     ['Kontak', 'contact'],
-    ['Certifications', 'unsupported'],
-    ['Sertifikasi', 'unsupported'],
     ['Languages', 'unsupported'],
     ['Bahasa', 'unsupported'],
-    ['References', 'unsupported'],
   ])('%s → %s', (text, kind) => {
     expect(matchHeading(text)).toBe(kind)
   })
@@ -40,6 +37,30 @@ describe('matchHeading', () => {
       expect(matchHeading(text)).toBeNull()
     },
   )
+})
+
+describe('matchHeading aliases from the resume guide', () => {
+  it.each([
+    ['Profile Summary', 'summary'], ['Personal Summary', 'summary'], ['Personal Profile', 'summary'], ['Career Profile', 'summary'],
+    ['Competencies & Abilities', 'skills'], ['Skills & Abilities', 'skills'], ['Skills and Competencies', 'skills'],
+    ['Competencies & Skills', 'skills'], ['Abilities', 'skills'],
+    ['Working Experience', 'experience'], ['Working Experiences', 'experience'], ['Work Experiences', 'experience'],
+    ['Professional Experiences', 'experience'], ['Experiences', 'experience'], ['Pengalaman Bekerja', 'experience'],
+    ['Education Background', 'education'], ['Education History', 'education'], ['Educational History', 'education'],
+    ['Course', 'certifications'], ['Courses', 'certifications'], ['Courses & Certifications', 'certifications'],
+    ['Certifications', 'certifications'], ['Certification', 'certifications'], ['Certificates', 'certifications'],
+    ['Certificate', 'certifications'], ['Licenses & Certifications', 'certifications'], ['Licences and Certifications', 'certifications'],
+    ['Training', 'certifications'], ['Trainings', 'certifications'], ['Kursus', 'certifications'], ['Pelatihan', 'certifications'],
+    ['Sertifikasi', 'certifications'], ['Sertifikat', 'certifications'], ['Lisensi dan Sertifikasi', 'certifications'],
+    ['References', 'references'], ['Reference', 'references'], ['Referees', 'references'], ['Referensi', 'references'],
+    ['Rekomendasi', 'references'],
+    ['Hobbies', 'unsupported'], ['Languages', 'unsupported'],
+  ] as const)('matches %s', (text, kind) => expect(matchHeading(text)).toBe(kind))
+})
+
+describe('isLocation', () => {
+  it.each(['Bandung, Indonesia', 'Jakarta Selatan, DKI Jakarta, Indonesia'])('accepts %s', (text) => expect(isLocation(text)).toBe(true))
+  it.each(['Bandung', 'Bachelor of Computer Science, 2013 - 2017', 'A B C D E F, G'])('rejects %s', (text) => expect(isLocation(text)).toBe(false))
 })
 
 describe('parseDate', () => {
@@ -149,6 +170,9 @@ describe('stripBullet', () => {
   ])('%s', (text, expected) => {
     expect(stripBullet(text).text).toBe(expected)
   })
+
+  it.each(['➔ ', '→ ', '➜ ', '➤ ', '➣ ', '✓ ', '✔ ', '■ ', '□ ', '◆ ', '◇ ', '❖ ', '○ '])('strips %s', (g) =>
+    expect(stripBullet(`${g}Soft Skills: X`).text).toBe('Soft Skills: X'))
 })
 
 describe('splitRoleCompany', () => {

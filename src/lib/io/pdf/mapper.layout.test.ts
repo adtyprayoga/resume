@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { stripStyles } from './accuracy'
 import { parseExtraction } from './validate'
-import { mapExtraction } from './mapper'
+import { mapExtraction, type Proposal } from './mapper'
 import type { BBox, Extraction, SourceBlock } from './types'
 
 const b = (id: string, text: string, label = 'text', options: Partial<Pick<SourceBlock, 'page' | 'group' | 'bbox'>> = {}): SourceBlock => ({
@@ -281,5 +282,55 @@ describe('PDF layout mapping regressions', () => {
     expect(leftovers(proposal)).toContain('Bahasa Indonesia (Native); English (Conversational)')
     expect(proposal.refs).toContainEqual({ path: `experience.${doc.content.experience[0]!.id}.dates`, blocks: ['b26'] })
   })
+})
 
+// The guard for the outline: a document whose blocks all share one style has no
+// establishable heading class, so the mapper must produce exactly the rules-path
+// proposal. Ids are random, so they are normalised wherever they appear.
+describe('outline fallback equivalence', () => {
+  const root = resolve(__dirname, '../../../../services/pdf-import/tests/fixtures/contract/valid')
+  const FIXTURES = readdirSync(root).filter((file) => /^extraction_.+\.json$/.test(file)).map((file) => file.slice('extraction_'.length, -'.json'.length))
+  const loadFixture = (name: string): Extraction => {
+    const parsed = parseExtraction(JSON.parse(readFileSync(resolve(root, `extraction_${name}.json`), 'utf8')))
+    if (!parsed.ok) throw new Error(parsed.error)
+    return parsed.value
+  }
+  const normalise = (p: Proposal) => JSON.parse(JSON.stringify(p).replace(/(?<=[".])(?:exp|edu|prj|skl|awd|crt|ref)_[a-z0-9]+(?=[".])/g, 'ID'))
+  const singleStyle = (e: Extraction): Extraction => ({ ...e, blocks: e.blocks.map((block) => ({ ...block, style: { font: 'f1', size: 10, bold: null, italic: null } })) })
+
+  it('covers every extraction fixture', () => {
+    expect(FIXTURES).toEqual(expect.arrayContaining(['en_single', 'id_single', 'two_column', 'five_page', 'progression', 'scanned', 'mixed', 'guide_template']))
+  })
+
+  it.each(FIXTURES)('fallback mapping equals the rules path for %s', (name) => {
+    const e = loadFixture(name)
+    expect(normalise(mapExtraction(singleStyle(e), 'en'))).toEqual(normalise(mapExtraction(stripStyles(e), 'en')))
+  })
+
+  it('maps the mixed native/scanned fixture', () => {
+    const e = loadFixture('mixed')
+    const scanned = new Set(e.blocks.filter((block) => block.style == null).map((block) => block.id))
+    expect([...scanned]).toEqual(expect.arrayContaining(['b21', 'b24', 'b26', 'b29']))
+    // Every field filled from unstyled (scanned) blocks, with its value, plus the scanned leftovers and warnings.
+    const scannedPart = (proposal: Proposal) => {
+      const { document, locale } = proposal
+      const valueAt = (path: string): unknown => {
+        const [head, id, field] = path.split('.') as [string, string, string | undefined]
+        if (head === 'profile') return document.profile.text[locale][id as keyof (typeof document.profile.text)['en']]
+        if (head === 'contact') return document.contact[id as keyof typeof document.contact]
+        const item = (document.content[head as keyof typeof document.content] as unknown as { id: string; text: Record<string, Record<string, unknown>> }[]).find((entry) => entry.id === id)!
+        return field! in item ? (item as unknown as Record<string, unknown>)[field!] : item.text[locale]![field!]
+      }
+      return normalise({
+        ...proposal,
+        document: undefined as never,
+        refs: proposal.refs.filter((ref) => ref.blocks.some((id) => scanned.has(id))).map((ref) => ({ ...ref, value: valueAt(ref.path) })),
+        warnings: proposal.warnings.filter((warning) => warning.blocks.some((id) => scanned.has(id))),
+        unmatched: proposal.unmatched.filter((item) => scanned.has(item.block)),
+      })
+    }
+    const styled = scannedPart(mapExtraction(e, 'en'))
+    expect(styled.refs.map((ref: { path: string }) => ref.path)).toEqual(expect.arrayContaining(['experience.ID.role', 'experience.ID.bullets', 'education.ID.school']))
+    expect(styled).toEqual(scannedPart(mapExtraction(stripStyles(e), 'en')))
+  })
 })

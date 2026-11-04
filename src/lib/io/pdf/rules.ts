@@ -7,38 +7,50 @@ import type { ContactInfo } from '$lib/model/types'
  * returns null so the mapper leaves the field blank and the text unmatched.
  */
 
-export type HeadingKind = 'summary' | 'highlights' | 'experience' | 'education' | 'projects' | 'skills' | 'awards' | 'mixed_awards' | 'contact' | 'unsupported'
+export type HeadingKind =
+  | 'summary' | 'highlights' | 'experience' | 'education' | 'projects' | 'skills' | 'awards' | 'mixed_awards' | 'certifications'
+  | 'references' | 'contact' | 'unsupported'
 
 const HEADINGS: Record<HeadingKind, string[]> = {
   summary: [
     'summary', 'professional summary', 'career summary', 'profile', 'professional profile', 'about', 'about me',
     'objective', 'career objective', 'ringkasan', 'ringkasan profesional', 'profil', 'profil singkat', 'tentang saya',
-    'tujuan karir', 'tujuan karier',
+    'tujuan karir', 'tujuan karier', 'profile summary', 'personal summary', 'personal profile', 'career profile',
   ],
   highlights: ['impact highlights', 'career highlights', 'sorotan dampak', 'sorotan pencapaian'],
   experience: [
     'experience', 'work experience', 'professional experience', 'employment', 'employment history', 'work history',
     'career history', 'pengalaman', 'pengalaman kerja', 'pengalaman profesional', 'pengalaman pekerjaan', 'riwayat pekerjaan',
     'riwayat kerja', 'additional experience', 'other experience', 'pengalaman tambahan', 'pengalaman lainnya',
+    'working experience', 'working experiences', 'work experiences', 'professional experiences', 'experiences', 'pengalaman bekerja',
   ],
-  education: ['education', 'academic background', 'educational background', 'pendidikan', 'riwayat pendidikan', 'latar belakang pendidikan'],
+  education: [
+    'education', 'academic background', 'educational background', 'pendidikan', 'riwayat pendidikan', 'latar belakang pendidikan',
+    'education background', 'education history', 'educational history',
+  ],
   projects: ['projects', 'personal projects', 'selected projects', 'side projects', 'proyek', 'projek', 'portofolio proyek'],
   skills: [
     'skills', 'technical skills', 'core skills', 'key skills', 'skills and tools', 'keahlian', 'keterampilan', 'kemampuan',
     'keahlian teknis', 'core competencies', 'core competences', 'competencies', 'kompetensi inti', 'kompetensi utama',
+    'competencies and abilities', 'skills and abilities', 'skills and competencies', 'competencies and skills', 'abilities',
   ],
   awards: [
     'awards', 'honors', 'honours', 'achievements', 'awards and honors', 'awards and achievements', 'honors and awards',
     'penghargaan', 'prestasi', 'penghargaan dan prestasi',
   ],
   mixed_awards: ['certifications and awards', 'certificates and awards', 'awards and certifications', 'sertifikasi dan penghargaan', 'penghargaan dan sertifikasi'],
+  certifications: [
+    'courses and certifications', 'certifications', 'certification', 'certificates', 'certificate', 'licenses and certifications',
+    'licences and certifications', 'course', 'courses', 'training', 'trainings', 'kursus', 'pelatihan', 'sertifikasi', 'sertifikat',
+    'lisensi dan sertifikasi',
+  ],
+  references: ['references', 'reference', 'referees', 'referensi', 'rekomendasi'],
   contact: ['contact', 'contacts', 'contact information', 'contact info', 'kontak', 'informasi kontak', 'hubungi saya'],
   // Recognised so their content is not swallowed by the previous section.
   unsupported: [
-    'certifications', 'certificates', 'licenses and certifications', 'languages', 'references', 'volunteer',
-    'volunteering', 'volunteer experience', 'interests', 'hobbies', 'publications', 'organizations', 'organisations',
-    'courses', 'training', 'sertifikasi', 'sertifikat', 'bahasa', 'referensi', 'organisasi', 'pengalaman organisasi',
-    'minat', 'hobi', 'publikasi', 'pelatihan', 'kursus', 'relawan', 'kegiatan sukarela', 'professional memberships', 'memberships', 'community involvement', 'open source contributions', 'kontribusi sumber terbuka',
+    'languages', 'volunteer', 'volunteering', 'volunteer experience', 'interests', 'hobbies', 'publications', 'organizations',
+    'organisations', 'bahasa', 'organisasi', 'pengalaman organisasi', 'minat', 'hobi', 'publikasi', 'relawan', 'kegiatan sukarela',
+    'professional memberships', 'memberships', 'community involvement', 'open source contributions', 'kontribusi sumber terbuka',
   ],
 }
 
@@ -56,6 +68,35 @@ const normalizeHeading = (text: string): string =>
     .trim()
 
 export const matchHeading = (text: string): HeadingKind | null => HEADING_INDEX.get(normalizeHeading(text)) ?? null
+
+/** Docling labels for layout headings (document title and section headers). */
+export const isHeadingLabel = (label: string): boolean => label === 'title' || label === 'section_header'
+
+const UNKNOWN_SECTION = /\b(activities|memberships|involvement|kegiatan|keanggotaan)\b/i
+
+/**
+ * The section a line opens on the rules path. "Languages:" inside a skills list
+ * is a label, so an unsupported heading needs a layout heading label; so does
+ * an unknown section named by activity/membership wording.
+ */
+export const sectionHeading = (text: string, label: string): HeadingKind | null => {
+  const matched = matchHeading(text)
+  if (matched === 'unsupported' || (!matched && UNKNOWN_SECTION.test(text))) return isHeadingLabel(label) ? 'unsupported' : null
+  return matched
+}
+
+// People and places ---------------------------------------------------------------
+
+const NAME_LIKE = /^[\p{Lu}][\p{L}.'’-]*(?:\s+[\p{L}][\p{L}.'’-]*){0,4}$/u
+/** Document titles, not names: "CURRICULUM VITAE", "Daftar Riwayat Hidup". */
+const DOCUMENT_TITLE = /^\s*(?:curriculum vitae|cv|resume|résumé|daftar riwayat hidup|riwayat hidup)\s*$/i
+const LOCATION_LIKE = /^[\p{L}][\p{L} .'’-]*(?:,\s*[\p{L}][\p{L} .'’-]*){1,2}$/u
+
+/** One to five words, starting with a capital; no digits or punctuation beyond . ' ’ -. */
+export const isNameLike = (text: string): boolean => NAME_LIKE.test(text)
+export const isDocumentTitle = (text: string): boolean => DOCUMENT_TITLE.test(text)
+/** "City, Country" or "City, Region, Country", at most six words. */
+export const isLocation = (text: string): boolean => LOCATION_LIKE.test(text) && text.split(/\s+/).length <= 6
 
 // Dates -----------------------------------------------------------------------
 
@@ -214,7 +255,7 @@ export const findContacts = (text: string): FoundContact[] => {
 
 // Entries ---------------------------------------------------------------------
 
-const BULLET = /^\s*(?:[•●▪◦‣∙·¢*➢►]|[-–](?=\s))\s*/
+const BULLET = /^\s*(?:[•●▪◦‣∙·¢*➢►➔→➜➤➣✓✔■□◆◇❖○]|[-–](?=\s))\s*/
 
 /** Text without a leading bullet glyph, and where the kept text starts. */
 export const stripBullet = (text: string): { text: string; from: number } => {
