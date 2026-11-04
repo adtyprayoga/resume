@@ -78,6 +78,10 @@ it('provides bilingual narration for every key', () => {
     en: 'And so the story of {name} was written.',
     id: 'Dan begitulah kisah {name} dituliskan.',
   })
+  expect(NARRATION.endingCounts).toEqual({
+    en: 'You filled {filled} blanks and skipped {skipped}.',
+    id: 'Kamu mengisi {filled} bagian dan melewati {skipped}.',
+  })
 })
 
 it('fills named placeholders', () => {

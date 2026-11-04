@@ -30,8 +30,8 @@ export const NARRATION = {
     id: 'Dan begitulah kisah {name} dituliskan.',
   },
   endingCounts: {
-    en: 'You visited {chapters} chapters and wrote {answers} answers.',
-    id: 'Kamu mengunjungi {chapters} bab dan menulis {answers} jawaban.',
+    en: 'You filled {filled} blanks and skipped {skipped}.',
+    id: 'Kamu mengisi {filled} bagian dan melewati {skipped}.',
   },
 } satisfies Record<string, Bilingual>
 
