@@ -28,6 +28,13 @@ class BBox(Strict):
     b: float
 
 
+class BlockStyle(Strict):
+    font: str = Field(pattern=r"^f[1-9][0-9]*$")
+    size: float = Field(gt=0, allow_inf_nan=False)
+    bold: bool | None
+    italic: bool | None
+
+
 class SourceBlock(Strict):
     id: str = Field(pattern=r"^b[1-9][0-9]*$")
     page: int = Field(ge=1)
@@ -35,6 +42,7 @@ class SourceBlock(Strict):
     group: str | None = Field(default=None, pattern=r"^g[1-9][0-9]*$")
     text: str = Field(min_length=1, max_length=MAX_BLOCK_TEXT)
     bbox: BBox | None = None
+    style: BlockStyle | None = None
 
 
 class Extraction(Strict):

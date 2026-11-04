@@ -13,6 +13,7 @@ from pathlib import Path
 from docling_core.types.doc import DocItemLabel, DoclingDocument, GroupItem, ProvenanceItem, TableItem, TextItem
 
 from .models import EXIT, EXIT_CODES, MAX_BLOCK_TEXT, MAX_BLOCKS, BBox, Extraction, SourceBlock
+from .typography import style_blocks
 
 __all__ = ["EXIT_CODES", "blocks_from_document", "extract_pdf", "main"]
 
@@ -143,7 +144,7 @@ def extract_pdf(path: Path, max_pages: int = 5, progress_path: Path | None = Non
     callback = ProgressWriter(progress_path, total_pages) if progress_path is not None and total_pages is not None else None
     result = build_converter().convert(path, raises_on_error=True, max_num_pages=max_pages, progress_callback=callback)
     doc = result.document
-    return Extraction(pages=max(1, len(doc.pages)), blocks=blocks_from_document(doc))
+    return Extraction(pages=max(1, len(doc.pages)), blocks=style_blocks(path, blocks_from_document(doc)))
 
 
 def pdf_page_count(path: Path, max_pages: int) -> int:
