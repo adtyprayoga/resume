@@ -169,10 +169,10 @@ export const findContacts = (text: string): FoundContact[] => {
     const from = match.index + match[0].indexOf(raw)
     const to = from + raw.length
     const digits = raw.replace(/\D/g, '').length
-    // Reject only a candidate that is entirely a date or range ("2013 - 2017"),
-    // not a number whose last group happens to look like a year.
+    // Reject any candidate holding a start–end range, or that is a lone date;
+    // keep a number whose last group merely looks like a year.
     const date = findDateRange(raw)
-    const isDate = date !== null && date.from === 0 && date.to === raw.length
+    const isDate = date !== null && (date.end !== null || date.current || (date.from === 0 && date.to === raw.length))
     if (digits < 9 || digits > 15 || overlaps(from, to, found) || isDate) continue
     found.push({ field: 'phone', value: raw, raw, from, to })
   }

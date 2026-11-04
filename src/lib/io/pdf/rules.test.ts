@@ -129,7 +129,7 @@ describe('findContacts', () => {
     expect(findContacts(text).map((c) => [c.field, c.value])).toEqual([['phone', text]])
   })
 
-  it.each(['2013 - 2017', '2019 – 2020', 'Jan 2019 - Dec 2020'])('still ignores the date range %j', (text) => {
+  it.each(['2013 - 2017', '2019 – 2020', 'Jan 2019 - Dec 2020', '2019 - 2021 (2 years)', 'Jakarta, 2013 - 2017 2019'])('still ignores the date range %j', (text) => {
     expect(findContacts(text)).toEqual([])
   })
 
