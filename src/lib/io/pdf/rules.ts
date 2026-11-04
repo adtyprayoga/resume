@@ -7,7 +7,7 @@ import type { ContactInfo } from '$lib/model/types'
  * returns null so the mapper leaves the field blank and the text unmatched.
  */
 
-export type HeadingKind = 'summary' | 'experience' | 'education' | 'projects' | 'skills' | 'awards' | 'contact' | 'unsupported'
+export type HeadingKind = 'summary' | 'highlights' | 'experience' | 'education' | 'projects' | 'skills' | 'awards' | 'mixed_awards' | 'contact' | 'unsupported'
 
 const HEADINGS: Record<HeadingKind, string[]> = {
   summary: [
@@ -15,28 +15,30 @@ const HEADINGS: Record<HeadingKind, string[]> = {
     'objective', 'career objective', 'ringkasan', 'ringkasan profesional', 'profil', 'profil singkat', 'tentang saya',
     'tujuan karir', 'tujuan karier',
   ],
+  highlights: ['impact highlights', 'career highlights', 'sorotan dampak', 'sorotan pencapaian'],
   experience: [
     'experience', 'work experience', 'professional experience', 'employment', 'employment history', 'work history',
     'career history', 'pengalaman', 'pengalaman kerja', 'pengalaman profesional', 'pengalaman pekerjaan', 'riwayat pekerjaan',
-    'riwayat kerja',
+    'riwayat kerja', 'additional experience', 'other experience', 'pengalaman tambahan', 'pengalaman lainnya',
   ],
   education: ['education', 'academic background', 'educational background', 'pendidikan', 'riwayat pendidikan', 'latar belakang pendidikan'],
   projects: ['projects', 'personal projects', 'selected projects', 'side projects', 'proyek', 'projek', 'portofolio proyek'],
   skills: [
     'skills', 'technical skills', 'core skills', 'key skills', 'skills and tools', 'keahlian', 'keterampilan', 'kemampuan',
-    'keahlian teknis',
+    'keahlian teknis', 'core competencies', 'core competences', 'competencies', 'kompetensi inti', 'kompetensi utama',
   ],
   awards: [
     'awards', 'honors', 'honours', 'achievements', 'awards and honors', 'awards and achievements', 'honors and awards',
     'penghargaan', 'prestasi', 'penghargaan dan prestasi',
   ],
+  mixed_awards: ['certifications and awards', 'certificates and awards', 'awards and certifications', 'sertifikasi dan penghargaan', 'penghargaan dan sertifikasi'],
   contact: ['contact', 'contacts', 'contact information', 'contact info', 'kontak', 'informasi kontak', 'hubungi saya'],
   // Recognised so their content is not swallowed by the previous section.
   unsupported: [
     'certifications', 'certificates', 'licenses and certifications', 'languages', 'references', 'volunteer',
     'volunteering', 'volunteer experience', 'interests', 'hobbies', 'publications', 'organizations', 'organisations',
     'courses', 'training', 'sertifikasi', 'sertifikat', 'bahasa', 'referensi', 'organisasi', 'pengalaman organisasi',
-    'minat', 'hobi', 'publikasi', 'pelatihan', 'kursus', 'relawan', 'kegiatan sukarela',
+    'minat', 'hobi', 'publikasi', 'pelatihan', 'kursus', 'relawan', 'kegiatan sukarela', 'professional memberships', 'memberships', 'community involvement', 'open source contributions', 'kontribusi sumber terbuka',
   ],
 }
 
@@ -129,6 +131,37 @@ export const findDateRange = (text: string): FoundRange | null => {
   return null
 }
 
+/** All explicit ranges; callers must not choose the first of conflicting periods. */
+export const findDateRanges = (text: string): FoundRange[] => {
+  const ranges: FoundRange[] = []
+  for (const match of text.matchAll(new RegExp(RANGE.source, 'giu'))) {
+    const start = parseDate(match[1]!)
+    const current = PRESENT_ONLY.test(match[2]!.trim())
+    const end = current ? null : parseDate(match[2]!)
+    if (start && (current || end)) ranges.push({ start, end, current, from: match.index, to: match.index + match[0].length })
+  }
+  return ranges
+}
+
+/** A year after explicit project metadata may precede its inline description. */
+export const findProjectDate = (text: string): FoundRange | null => {
+  for (const end of text.matchAll(/\)\s+/g)) {
+    if (!projectMetadata(text.slice(0, end.index + 1))) continue
+    const from = end.index + end[0].length
+    const tail = text.slice(from)
+    const range = findDateRange(tail)
+    if (range?.from === 0) return { ...range, from, to: from + range.to }
+    const year = /^((?:19|20)\d{2})(?=\s|$)/.exec(tail)
+    if (year) return { start: year[1]!, end: null, current: false, from, to: from + 4 }
+  }
+  const range = findDateRange(text)
+  if (range) return range
+  const year = /\)\s+((?:19|20)\d{2})(?=\s|$)/u.exec(text)
+  if (!year) return null
+  const from = year.index + year[0].lastIndexOf(year[1]!)
+  return { start: year[1]!, end: null, current: false, from, to: from + 4 }
+}
+
 // Contacts --------------------------------------------------------------------
 
 export type ContactField = Exclude<keyof ContactInfo, 'avatar'>
@@ -190,7 +223,45 @@ export const stripBullet = (text: string): { text: string; from: number } => {
 }
 
 const ROLE_WORDS =
-  /\b(engineer|developer|programmer|manager|analyst|designer|intern|internship|consultant|lead|director|officer|specialist|administrator|architect|scientist|assistant|coordinator|head|executive|associate|supervisor|staff|teacher|lecturer|researcher|accountant|founder|co-founder|cto|ceo|cfo|vp|president|technician|writer|editor|marketer|representative|trainee|freelancer|analis|insinyur|manajer|pengembang|desainer|konsultan|magang|kepala|direktur|staf|asisten|koordinator|pengajar|guru|dosen|peneliti|akuntan|pendiri|teknisi|penulis|sekretaris|petugas|pegawai|karyawan|pemrogram)\b/i
+  /\b(engineer|developer|programmer|manager|analyst|designer|instructor|intern|internship|consultant|lead|director|officer|specialist|administrator|architect|scientist|assistant|coordinator|head|executive|associate|supervisor|staff|teacher|lecturer|researcher|accountant|founder|co-founder|cto|ceo|cfo|vp|president|technician|writer|editor|marketer|representative|trainee|freelancer|analis|insinyur|manajer|pengembang|desainer|konsultan|magang|kepala|direktur|staf|asisten|koordinator|pengajar|instruktur|guru|dosen|peneliti|akuntan|pendiri|teknisi|penulis|sekretaris|petugas|pegawai|karyawan|pemrogram)\b/i
+
+export const isRoleTitle = (text: string): boolean =>
+  text.length <= 160 && ROLE_WORDS.test(text) && !/[.!?:]$/.test(text.trim()) && !/[:\n]/.test(text) && text.split(/\s+/).length <= 16
+
+export const splitList = (text: string): string[] => {
+  const items: string[] = []
+  let start = 0
+  let depth = 0
+  for (let i = 0; i < text.length; i++) {
+    if ('(['.includes(text[i]!)) depth++
+    else if (')]'.includes(text[i]!)) depth = Math.max(0, depth - 1)
+    else if (depth === 0 && /[,;|•·]/.test(text[i]!)) {
+      items.push(text.slice(start, i).trim())
+      start = i + 1
+    }
+  }
+  items.push(text.slice(start).trim())
+  return items.filter(Boolean)
+}
+
+export const projectMetadata = (text: string): { name: string; role: string; techStack: string[] } | null => {
+  let depth = 0
+  let start = -1
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '(') { if (depth++ === 0) start = i }
+    else if (text[i] === ')' && depth > 0 && --depth === 0) {
+      const metadata = text.slice(start + 1, i)
+      const match = /^(.+?)\s+[—–-]\s+(.+)$/.exec(metadata)
+      if (match && isRoleTitle(match[1]!) && !text.slice(i + 1).trim()) {
+        return { name: text.slice(0, start).trim(), role: match[1]!.trim(), techStack: splitList(match[2]!) }
+      }
+    }
+  }
+  return null
+}
+
+export const isAward = (text: string): boolean =>
+  !/\b(certified|certificate|certification|sertifik\p{L}*)\b/iu.test(text) && /\b(award|medal|gold pin|honou?r|prize|juara|penghargaan|medali|pemenang)\b/i.test(text)
 
 /**
  * "Role at Company" is explicit. "A, B" / "A | B" / "A – B" is split only when

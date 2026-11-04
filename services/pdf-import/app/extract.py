@@ -10,7 +10,7 @@ import argparse
 import os
 from pathlib import Path
 
-from docling_core.types.doc import DoclingDocument, GroupItem, TableItem, TextItem
+from docling_core.types.doc import DocItemLabel, DoclingDocument, GroupItem, ProvenanceItem, TableItem, TextItem
 
 from .models import EXIT, EXIT_CODES, MAX_BLOCK_TEXT, MAX_BLOCKS, BBox, Extraction, SourceBlock
 
@@ -31,44 +31,77 @@ def item_text(item: object) -> str:
     return ""
 
 
+def text_fragments(item: object) -> list[tuple[str, ProvenanceItem | None]]:
+    """Split text only when provenance covers every meaningful character once.
+
+    List items remain semantic bullets. Invalid/overlapping spans fall back to
+    the full item, rather than silently discarding source text.
+    """
+    text = item_text(item)
+    provenance = getattr(item, "prov", [])
+    fallback = [(text, provenance[0] if provenance else None)]
+    if (
+        not isinstance(item, TextItem)
+        or item.label not in {DocItemLabel.TEXT, DocItemLabel.SECTION_HEADER}
+        or len(provenance) < 2
+    ):
+        return fallback
+    raw = item.text
+    previous = 0
+    fragments = []
+    for source in provenance:
+        start, end = source.charspan
+        if not (previous <= start < end <= len(raw)) or raw[previous:start].strip():
+            return fallback
+        fragment = raw[start:end].strip()
+        if fragment:
+            fragments.append((fragment, source))
+        previous = end
+    if raw[previous:].strip() or len(fragments) < 2:
+        return fallback
+    return fragments
+
+
 def blocks_from_document(doc: DoclingDocument) -> list[SourceBlock]:
-    """Text items in Docling's reading order. IDs are positional, so the same
-    document always yields the same IDs; list/inline groups get a shared ref."""
+    """Ordered blocks with stable positional IDs and geometry per source span.
+
+    Fragments of the same item share a group for frontend prose reassembly;
+    unsplit items retain their existing parent-group semantics.
+    """
     blocks: list[SourceBlock] = []
     groups: dict[str, str] = {}
 
     for item, _level in doc.iterate_items():
-        text = item_text(item)
-        if not text:
+        if not item_text(item):
             continue
-
+        fragments = text_fragments(item)
         group = None
         parent = item.parent.resolve(doc) if item.parent else None
-        if isinstance(parent, GroupItem) and parent.self_ref != doc.body.self_ref:
+        if len(fragments) > 1:
+            group = groups.setdefault(item.self_ref, f"g{len(groups) + 1}")
+        elif isinstance(parent, GroupItem) and parent.self_ref != doc.body.self_ref:
             group = groups.setdefault(parent.self_ref, f"g{len(groups) + 1}")
 
-        page, bbox = 1, None
-        if item.prov:
-            first = item.prov[0]
-            page = first.page_no
-            size = doc.pages.get(page)
-            if size is not None:
-                box = first.bbox.to_top_left_origin(page_height=size.size.height)
-                bbox = BBox(l=box.l, t=box.t, r=box.r, b=box.b)
-
-        blocks.append(
-            SourceBlock(
-                id=f"b{len(blocks) + 1}",
-                page=page,
-                label=str(item.label.value),
-                group=group,
-                text=text[:MAX_BLOCK_TEXT],
-                bbox=bbox,
+        for text, source in fragments:
+            page, bbox = 1, None
+            if source is not None:
+                page = source.page_no
+                size = doc.pages.get(page)
+                if size is not None:
+                    box = source.bbox.to_top_left_origin(page_height=size.size.height)
+                    bbox = BBox(l=box.l, t=box.t, r=box.r, b=box.b)
+            blocks.append(
+                SourceBlock(
+                    id=f"b{len(blocks) + 1}",
+                    page=page,
+                    label=str(item.label.value),
+                    group=group,
+                    text=text[:MAX_BLOCK_TEXT],
+                    bbox=bbox,
+                )
             )
-        )
-        if len(blocks) >= MAX_BLOCKS:
-            break
-
+            if len(blocks) >= MAX_BLOCKS:
+                return blocks
     return blocks
 
 
@@ -106,8 +139,6 @@ def extract_pdf(path: Path, max_pages: int = 5) -> Extraction:
     result = build_converter().convert(path, raises_on_error=True, max_num_pages=max_pages)
     doc = result.document
     return Extraction(pages=max(1, len(doc.pages)), blocks=blocks_from_document(doc))
-
-
 
 
 def check_pdf(path: Path, max_pages: int) -> int | None:

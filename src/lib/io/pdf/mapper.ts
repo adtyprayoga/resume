@@ -11,8 +11,9 @@ import type {
   ResumeDocument,
   SkillGroup,
 } from '$lib/model/types'
-import { findContacts, findDateRange, matchHeading, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
-import type { Extraction, SourceBlock } from './types'
+import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isRoleTitle, matchHeading, projectMetadata, splitList, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
+import { associateDateRows, joinSourceLines, partsOf, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
+import type { Extraction } from './types'
 
 /**
  * Deterministic mapping of extracted blocks into a resume proposal. It only
@@ -27,7 +28,7 @@ export interface FieldRef {
   blocks: string[]
 }
 
-export type WarningCode = 'no_name' | 'ambiguous_title' | 'ambiguous_entries' | 'unsupported_section' | 'nothing_recognised'
+export type WarningCode = 'no_name' | 'ambiguous_title' | 'ambiguous_entries' | 'ambiguous_dates' | 'unsupported_section' | 'nothing_recognised'
 
 export interface MapWarning {
   code: WarningCode
@@ -82,18 +83,25 @@ class Usage {
 
   take(block: SourceBlock, from = 0, to = block.text.length) {
     if (to <= from) return
-    const list = this.spans.get(block.id) ?? []
-    list.push([from, to])
-    this.spans.set(block.id, list)
+    for (const part of partsOf(block)) {
+      const start = Math.max(from, part.at)
+      const end = Math.min(to, part.at + part.to - part.from)
+      if (start >= end) continue
+      const list = this.spans.get(part.block.id) ?? []
+      list.push([start - part.at + part.from, end - part.at + part.from])
+      this.spans.set(part.block.id, list)
+    }
   }
 
   used(block: SourceBlock): boolean {
-    return this.spans.has(block.id)
+    return partsOf(block).some(part => this.spans.has(part.block.id))
   }
 
   /** The block's text with consumed spans removed, as [text, offset] pieces. */
   pieces(block: SourceBlock): [string, number][] {
-    const taken = [...(this.spans.get(block.id) ?? [])].sort((a, b) => a[0] - b[0])
+    const taken = partsOf(block).flatMap(part => (this.spans.get(part.block.id) ?? [])
+      .map(([from, to]): [number, number] => [Math.max(part.from, from) - part.from + part.at, Math.min(part.to, to) - part.from + part.at]))
+      .filter(([from, to]) => from < to).sort((a, b) => a[0] - b[0])
     const out: [string, number][] = []
     let cursor = 0
     for (const [from, to] of taken) {
@@ -137,7 +145,6 @@ const isHeaderLabel = (block: SourceBlock) => HEADER_LABELS.has(block.label)
 const DOCUMENT_TITLE = /^\s*(?:curriculum vitae|cv|resume|résumé|daftar riwayat hidup|riwayat hidup)\s*$/i
 const NAME_LIKE = /^[\p{Lu}][\p{L}.'’-]*(?:\s+[\p{L}][\p{L}.'’-]*){0,4}$/u
 const LOCATION_LIKE = /^[\p{L}][\p{L} .'’-]*(?:,\s*[\p{L}][\p{L} .'’-]*){1,2}$/u
-const SKILL_SPLIT = /\s*[,;|•·]\s*/
 const TECH_LINE = /^(?:tech(?:nolog(?:y|ies))?(?:\s+stack)?|stack|tools|built with|teknologi|alat)\s*:\s*(.+)$/i
 const GPA = /\b(?:gpa|ipk)\s*:?\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+(?:[.,]\d+)?)?)/i
 
@@ -167,7 +174,8 @@ const regionsOf = (blocks: SourceBlock[]): Region[] => {
   for (const block of blocks) {
     const matched = matchHeading(block.text)
     // "Languages:" inside a skills list is a label; only a layout heading opens an unsupported section.
-    const kind = matched === 'unsupported' && !isHeaderLabel(block) ? null : matched
+    const unknownSection = isHeaderLabel(block) && /\b(activities|memberships|involvement|kegiatan|keanggotaan)\b/i.test(block.text)
+    const kind = matched === 'unsupported' && !isHeaderLabel(block) ? null : matched ?? (unknownSection ? 'unsupported' : null)
     if (kind) regions.push({ kind, heading: block, blocks: [] })
     else regions.at(-1)!.blocks.push(block)
   }
@@ -184,13 +192,19 @@ type EntryKind = (typeof ENTRY_KINDS)[number]
  * followed by a location and then its dates stays one entry. Blocks before the
  * first entry are returned separately; null means no boundary was found.
  */
-const splitEntries = (blocks: SourceBlock[]): { lead: SourceBlock[]; entries: SourceBlock[][] } | null => {
+const splitEntries = (blocks: SourceBlock[], kind: EntryKind): { lead: SourceBlock[]; entries: SourceBlock[][] } | null => {
   const starts: number[] = []
   let content = false
   blocks.forEach((block, i) => {
     const next = blocks[i + 1]
     const titleBeforeDate = next !== undefined && isDateLine(next) && !isDateLine(block) && !isBullet(block)
-    if (isHeaderLabel(block) || (titleBeforeDate && (!starts.length || content))) {
+    const date = kind === 'projects' ? findProjectDate(block.text) : findDateRange(block.text)
+    const titleText = date ? trimPiece(block.text.slice(0, date.from)) : block.text.trim()
+    const inlineEntry = !isBullet(block) && (
+      (kind === 'experience' && isRoleTitle(titleText)) ||
+      (kind === 'projects' && projectMetadata(titleText) !== null) ||
+      (kind === 'education' && date !== null && /\s[–—-]\s/.test(titleText)))
+    if ((!isDateLine(block) && isHeaderLabel(block)) || inlineEntry || (titleBeforeDate && (!starts.length || content))) {
       starts.push(i)
       content = false
     }
@@ -210,12 +224,13 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   const usage = new Usage()
   const refs: FieldRef[] = []
   const warnings: MapWarning[] = []
-  const regions = regionsOf(extraction.blocks)
+  const regions = regionsOf(associateDateRows(joinSourceLines(extraction.blocks)))
 
   const ref = (path: string, block: SourceBlock) => {
+    const ids = partsOf(block).map(part => part.block.id)
     const existing = refs.find((r) => r.path === path)
-    if (!existing) refs.push({ path, blocks: [block.id] })
-    else if (!existing.blocks.includes(block.id)) existing.blocks.push(block.id)
+    if (!existing) refs.push({ path, blocks: [...new Set(ids)] })
+    else for (const id of ids) if (!existing.blocks.includes(id)) existing.blocks.push(id)
   }
 
   for (const region of regions) if (region.heading && region.kind !== 'unsupported') usage.take(region.heading)
@@ -228,6 +243,8 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
       if (document.contact[found.field]) continue
       document.contact[found.field] = found.value
       usage.take(block, found.from, found.to)
+      const label = /(?:e-?mail|phone|telephone|tel|telepon|ponsel|portfolio|portofolio|website|github|linkedin)\s*:?\s*$/i.exec(block.text.slice(0, found.from))
+      if (label) usage.take(block, label.index, found.from)
       ref(`contact.${found.field}`, block)
     }
   }
@@ -245,17 +262,41 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   }
   const afterName = nameBlock ? header.slice(header.indexOf(nameBlock) + 1) : []
   for (const block of afterName) {
-    if (usage.used(block) || isHeaderLabel(block)) continue
-    const text = block.text.trim()
-    const words = text.split(/\s+/).length
-    if (!profile.location && LOCATION_LIKE.test(text) && words <= 6) {
-      profile.location = text
-      usage.take(block)
-      ref('profile.location', block)
-    } else if (!profile.headline && !/[,\d@]/.test(text) && text.length <= 80 && words <= 10) {
-      profile.headline = text
-      usage.take(block)
-      ref('profile.headline', block)
+    if (isHeaderLabel(block)) continue
+    if (!profile.location) {
+      for (const [piece, offset] of usage.pieces(block)) {
+        for (const line of piece.matchAll(/[^\n]+/g)) {
+          const intact = trimPiece(line[0])
+          if (LOCATION_LIKE.test(intact) && intact.split(/\s+/).length <= 6) {
+            profile.location = intact
+            usage.take(block, offset + line.index, offset + line.index + line[0].length)
+            ref('profile.location', block)
+            break
+          }
+        }
+        if (profile.location) break
+        // A flattened header can lose its newline immediately before the city.
+        const location = /([\p{Lu}][\p{Ll}.'’-]+,\s*[\p{Lu}][\p{L} .'’-]+)\s*[—–|\-]*\s*$/u.exec(piece)
+        if (!location) continue
+        profile.location = trimPiece(location[1]!)
+        usage.take(block, offset + location.index, offset + location.index + location[0].length)
+        ref('profile.location', block)
+        break
+      }
+    }
+    for (const [piece, offset] of usage.pieces(block)) {
+      for (const line of piece.matchAll(/[^\n]+/g)) {
+        const text = trimPiece(line[0])
+        const words = text.split(/\s+/).length
+        let field: 'location' | 'headline' | null = null
+        if (!profile.location && LOCATION_LIKE.test(text) && words <= 6) field = 'location'
+        else if (!profile.headline && !/[@\d]/.test(text) && (isRoleTitle(text) || (!usage.used(block) && text.length <= 80 && words <= 10))) field = 'headline'
+        if (field) {
+          profile[field] = text
+          usage.take(block, offset + line.index, offset + line.index + line[0].length)
+          ref(`profile.${field}`, block)
+        }
+      }
     }
   }
 
@@ -266,12 +307,14 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
 
   for (const region of regions) {
     switch (region.kind) {
-      case 'summary': {
+      case 'summary':
+      case 'highlights': {
         const lines = region.blocks.map((block) => {
           usage.take(block)
           ref('profile.summary', block)
           return block.text.trim()
         })
+        if (region.kind === 'highlights') lines.unshift(region.heading!.text)
         if (lines.length) profile.summary = [profile.summary, ...lines].filter(Boolean).join('\n')
         break
       }
@@ -282,13 +325,21 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         seen('skills')
         mapSkills(region.blocks, document, locale, usage, ref)
         break
+      case 'mixed_awards':
+        seen('awards')
+        for (const block of region.blocks) {
+          if (isAward(block.text)) mapEntry('awards', [block], document, locale, usage, ref, warnings)
+          else warnings.push({ code: 'unsupported_section', blocks: [block.id] })
+        }
+        break
       case 'experience':
       case 'education':
       case 'projects':
       case 'awards': {
         seen(region.kind)
         const kind: EntryKind = region.kind
-        const split = splitEntries(region.blocks)
+        const blocks = kind === 'education' ? splitEducationRows(region.blocks) : region.blocks
+        const split = splitEntries(blocks, kind)
         if (!split) {
           if (kind === 'awards') {
             for (const block of region.blocks) mapEntry(kind, [block], document, locale, usage, ref, warnings)
@@ -298,7 +349,20 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
           break
         }
         if (split.lead.length) warnings.push({ code: 'ambiguous_entries', blocks: split.lead.map((b) => b.id) })
-        for (const entry of split.entries) mapEntry(kind, entry, document, locale, usage, ref, warnings)
+        let employer: SourceBlock | undefined
+        for (let index = 0; index < split.entries.length; index++) {
+          const entry = split.entries[index]!
+          const title = entry[0]!
+          const titleText = usage.rest(title)
+          const next = split.entries[index + 1]?.[0]
+          if (kind === 'experience' && isHeaderLabel(title) && !isRoleTitle(titleText) && !splitRoleCompany(titleText) && next && isRoleTitle(next.text)) {
+            employer = title
+            usage.take(title)
+            continue
+          }
+          mapEntry(kind, entry, document, locale, usage, ref, warnings, employer)
+          if (kind === 'experience' && splitRoleCompany(titleText)) employer = undefined
+        }
         break
       }
       default:
@@ -340,18 +404,18 @@ const mapSkills = (blocks: SourceBlock[], document: ResumeDocument, locale: Loca
       loose = null
       continue
     }
-    const items = (labelled ? labelled[2]! : text).split(SKILL_SPLIT).map((s) => s.trim()).filter(Boolean)
+    const items = splitList(labelled ? labelled[2]! : text)
     if (!items.length) continue
     let group: SkillGroup
     if (labelled) {
       group = add(labelled[1]!.trim())
-      loose = null
+      loose = group
     } else if (pending) {
       group = add(pending.title)
       usage.take(pending.block)
       ref(`skills.${group.id}.title`, pending.block)
       pending = null
-      loose = null
+      loose = group
     } else {
       group = loose ?? add('')
       loose = group
@@ -371,15 +435,28 @@ const mapEntry = (
   usage: Usage,
   ref: Ref,
   warnings: MapWarning[],
+  employer?: SourceBlock,
 ) => {
   const item = getSectionModule(kind).emptyItem() as ExperienceItem & EducationItem & ProjectItem & AwardItem
   const text = item.text[locale] as unknown as Record<string, string | string[]>
   const path = (field: string) => `${kind}.${item.id}.${field}`
   let dated = false
 
+  const dateCandidates = blocks.filter(b => !isBullet(b)).flatMap(block => {
+    if (kind === 'projects') {
+      const found = findProjectDate(block.text)
+      return found ? [{ block, found }] : []
+    }
+    const ranges = findDateRanges(block.text)
+    const single = findDateRange(block.text)
+    return (ranges.length ? ranges : single ? [single] : []).map(found => ({ block, found }))
+  })
+  const ambiguous = dateCandidates.length > 1 && (kind === 'experience' || dateCandidates.some(c => c.block === blocks[0]))
+  if (ambiguous) warnings.push({ code: 'ambiguous_dates', blocks: [...new Set(dateCandidates.map(c => c.block.id))] })
   const takeDates = (block: SourceBlock) => {
+    if (ambiguous) return
     if (dated) return
-    const found = findDateRange(block.text)
+    const found = kind === 'projects' ? findProjectDate(block.text) : findDateRange(block.text)
     if (!found || usage.rest(block) === '') return
     dated = true
     usage.take(block, found.from, found.to)
@@ -394,30 +471,70 @@ const mapEntry = (
 
   const [title, ...rest] = blocks as [SourceBlock, ...SourceBlock[]]
   takeDates(title)
-  const titleText = stripBullet(usage.rest(title)).text.trim()
+  let titleText = stripBullet(usage.rest(title)).text.trim()
+  const titleLimit = ambiguous ? Math.min(...dateCandidates.filter(c => c.block === title).map(c => c.found.from), title.text.length) : title.text.length
+  if (ambiguous) titleText = trimPiece(title.text.slice(0, titleLimit))
+  let inlineDescription = ''
+  if (kind === 'projects') {
+    const date = findProjectDate(title.text)
+    if (date && !ambiguous) {
+      titleText = trimPiece(title.text.slice(0, date.from))
+      inlineDescription = trimPiece(title.text.slice(date.to))
+    }
+  }
 
   if (kind === 'experience') {
     const split = splitRoleCompany(titleText)
     if (split) {
       item.company = split.company
       text.role = split.role
-      usage.takeRest(title)
+      if (ambiguous) usage.take(title, 0, titleLimit)
+      else usage.takeRest(title)
       ref(path('company'), title)
       ref(path('role'), title)
+    } else if (isRoleTitle(titleText)) {
+      text.role = titleText
+      if (ambiguous) usage.take(title, 0, titleLimit)
+      else usage.takeRest(title)
+      ref(path('role'), title)
+      if (employer) {
+        item.company = employer.text.trim()
+        ref(path('company'), employer)
+      }
     } else if (titleText) {
       warnings.push({ code: 'ambiguous_title', blocks: [title.id] })
     }
   } else if (titleText) {
     const field = { education: 'school', projects: 'name', awards: 'title' }[kind]
-    text[field] = stripBullet(usage.takeRest(title)).text
+    const metadata = kind === 'projects' ? projectMetadata(titleText) : null
+    const school = kind === 'education' ? /^(.+?)\s+[–—-]\s+(.+)$/.exec(titleText) : null
+    if (metadata) {
+      text.name = metadata.name
+      text.role = metadata.role
+      item.techStack = metadata.techStack
+      ref(path('role'), title)
+      ref(path('techStack'), title)
+    } else if (school) {
+      text.school = school[1]!.trim()
+      const qualification = school[2]!.trim()
+      const degree = /^(B\.Sc\.|M\.Sc\.|B\.A\.|M\.A\.|Ph\.D\.|S[123]|D[1234])(?:\s+(.+))?$/i.exec(qualification)
+      text.degree = degree?.[1] ?? ''
+      text.field = degree ? degree[2] ?? '' : qualification
+      if (text.degree) ref(path('degree'), title)
+      if (text.field) ref(path('field'), title)
+    } else text[field] = titleText
+    if (ambiguous) usage.take(title, 0, titleLimit)
+    else usage.takeRest(title)
     ref(path(field), title)
   }
 
-  const description: string[] = []
+  const description: string[] = inlineDescription ? [inlineDescription] : []
+  if (inlineDescription) ref(path('description'), title)
   for (const block of rest) {
     // A year inside an achievement ("…by 30% in 2019") is not the entry's period.
     if (!isBullet(block)) takeDates(block)
     if (usage.rest(block) === '') continue
+    if (ambiguous && dateCandidates.some(c => c.block === block)) continue
 
     if (isBullet(block) && kind !== 'education' && kind !== 'awards') {
       const bullets = text.bullets as string[]
@@ -447,7 +564,7 @@ const mapEntry = (
     if (kind === 'projects') {
       const tech = TECH_LINE.exec(block.text.trim())
       if (tech && !item.techStack.length) {
-        item.techStack = tech[1]!.split(SKILL_SPLIT).map((s) => s.trim()).filter(Boolean)
+        item.techStack = splitList(tech[1]!)
         usage.take(block)
         ref(path('techStack'), block)
         continue

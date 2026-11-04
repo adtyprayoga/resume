@@ -1,0 +1,773 @@
+{
+ "contract_version": 1,
+ "pages": 2,
+ "blocks": [
+  {
+   "id": "b1",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "MAYA NUSANTARA",
+   "bbox": {
+    "l": 57.518001556396484,
+    "t": 39.7860107421875,
+    "r": 265.7480163574219,
+    "b": 56.39599609375
+   }
+  },
+  {
+   "id": "b2",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Technical Lead/Senior Engineer (Python & TypeScript) - IT Instructor Bandung, Indonesia - Email maya@example.com - Phone +62 811 0000 1234 Portfolio https://example.com/maya",
+   "bbox": {
+    "l": 56.13999938964844,
+    "t": 74.6300048828125,
+    "r": 367.7509460449219,
+    "b": 112.9169921875
+   }
+  },
+  {
+   "id": "b3",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Summary",
+   "bbox": {
+    "l": 56.50699996948242,
+    "t": 125.41900634765625,
+    "r": 115.0199966430664,
+    "b": 137.76898193359375
+   }
+  },
+  {
+   "id": "b4",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Technical leader delivering public-service software and engineering training.",
+   "bbox": {
+    "l": 56.13999938964844,
+    "t": 145.719970703125,
+    "r": 391.36993408203125,
+    "b": 155.19000244140625
+   }
+  },
+  {
+   "id": "b5",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Impact Highlights",
+   "bbox": {
+    "l": 56.832000732421875,
+    "t": 168.57501220703125,
+    "r": 164.5889892578125,
+    "b": 180.8079833984375
+   }
+  },
+  {
+   "id": "b6",
+   "page": 1,
+   "label": "list_item",
+   "group": "g1",
+   "text": "Reduced reporting turnaround while mentoring delivery teams.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 188.82000732421875,
+    "r": 349.3499450683594,
+    "b": 198.19000244140625
+   }
+  },
+  {
+   "id": "b7",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Core Competencies",
+   "bbox": {
+    "l": 56.571998596191406,
+    "t": 211.41900634765625,
+    "r": 177.60198974609375,
+    "b": 223.677978515625
+   }
+  },
+  {
+   "id": "b8",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Backend: Python, Django, REST APIs",
+   "bbox": {
+    "l": 56.66600036621094,
+    "t": 232.36700439453125,
+    "r": 207.74899291992188,
+    "b": 240.97100830078125
+   }
+  },
+  {
+   "id": "b9",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Frontend: TypeScript, Vue",
+   "bbox": {
+    "l": 56.77399826049805,
+    "t": 246.36700439453125,
+    "r": 160.68798828125,
+    "b": 254.9169921875
+   }
+  },
+  {
+   "id": "b10",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Database: PostgreSQL, MySQL",
+   "bbox": {
+    "l": 56.729000091552734,
+    "t": 260.36700439453125,
+    "r": 183.385986328125,
+    "b": 268.97100830078125
+   }
+  },
+  {
+   "id": "b11",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Infrastructure: Docker, Linux",
+   "bbox": {
+    "l": 56.819000244140625,
+    "t": 274.447998046875,
+    "r": 168.9499969482422,
+    "b": 282.31402587890625
+   }
+  },
+  {
+   "id": "b12",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Quality: Testing, Code Review",
+   "bbox": {
+    "l": 56.35100173950195,
+    "t": 288.36700439453125,
+    "r": 176.9239959716797,
+    "b": 296.97100830078125
+   }
+  },
+  {
+   "id": "b13",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Leadership: Mentoring, Planning",
+   "bbox": {
+    "l": 56.683998107910156,
+    "t": 302.53802490234375,
+    "r": 185.05099487304688,
+    "b": 310.97100830078125
+   }
+  },
+  {
+   "id": "b14",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Domain: Public services, Education (training, coaching),",
+   "bbox": {
+    "l": 56.729000091552734,
+    "t": 316.40301513671875,
+    "r": 277.7869567871094,
+    "b": 324.97100830078125
+   }
+  },
+  {
+   "id": "b15",
+   "page": 1,
+   "label": "text",
+   "group": "g2",
+   "text": "Workflow modernization",
+   "bbox": {
+    "l": 56.14400100708008,
+    "t": 330.4479675292969,
+    "r": 151.43600463867188,
+    "b": 337.1259765625
+   }
+  },
+  {
+   "id": "b16",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Experience",
+   "bbox": {
+    "l": 56.987998962402344,
+    "t": 351.5749816894531,
+    "r": 125.00399780273438,
+    "b": 363.677978515625
+   }
+  },
+  {
+   "id": "b17",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Contoh Learning / PT Contoh Teknologi",
+   "bbox": {
+    "l": 56.439998626708984,
+    "t": 371.6299743652344,
+    "r": 244.20999145507812,
+    "b": 381.15997314453125
+   }
+  },
+  {
+   "id": "b18",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Role Progression: Training Staff, Software Staff, Engineering Lead",
+   "bbox": {
+    "l": 56.79199981689453,
+    "t": 387.3669738769531,
+    "r": 320.11395263671875,
+    "b": 395.9709777832031
+   }
+  },
+  {
+   "id": "b19",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Engineering Lead / Software Manager",
+   "bbox": {
+    "l": 56.7599983215332,
+    "t": 400.6299743652344,
+    "r": 234.21998596191406,
+    "b": 410.15997314453125
+   }
+  },
+  {
+   "id": "b20",
+   "page": 1,
+   "label": "list_item",
+   "group": "g3",
+   "text": "Led a multidisciplinary engineering team.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 415.8199768066406,
+    "r": 254.3099822998047,
+    "b": 425.1899719238281
+   }
+  },
+  {
+   "id": "b21",
+   "page": 1,
+   "label": "list_item",
+   "group": "g3",
+   "text": "Established service reliability practices.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 430.8199768066406,
+    "r": 246.50999450683594,
+    "b": 440.1299743652344
+   }
+  },
+  {
+   "id": "b22",
+   "page": 1,
+   "label": "list_item",
+   "group": "g3",
+   "text": "Reviewed architecture and delivery plans.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 445.8199768066406,
+    "r": 258.1999816894531,
+    "b": 455.1299743652344
+   }
+  },
+  {
+   "id": "b23",
+   "page": 1,
+   "label": "list_item",
+   "group": "g3",
+   "text": "Mentored developers across teams.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 460.8199768066406,
+    "r": 232.0800018310547,
+    "b": 470.0599670410156
+   }
+  },
+  {
+   "id": "b24",
+   "page": 2,
+   "label": "list_item",
+   "group": "g3",
+   "text": "Coordinated delivery with public-sector stakeholders.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 48.6300048828125,
+    "r": 307.0999755859375,
+    "b": 58.1300048828125
+   }
+  },
+  {
+   "id": "b25",
+   "page": 1,
+   "label": "text",
+   "group": "g4",
+   "text": "Mar 2018 - Present",
+   "bbox": {
+    "l": 462.901611328125,
+    "t": 371.5379638671875,
+    "r": 539.0866088867188,
+    "b": 378.1619567871094
+   }
+  },
+  {
+   "id": "b26",
+   "page": 1,
+   "label": "text",
+   "group": "g4",
+   "text": "Jan 2022 - Present",
+   "bbox": {
+    "l": 463.3876037597656,
+    "t": 401.5379638671875,
+    "r": 539.0866088867188,
+    "b": 408.1619567871094
+   }
+  },
+  {
+   "id": "b27",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "Software Staff (Full Stack Developer)",
+   "bbox": {
+    "l": 56.38999938964844,
+    "t": 63.6300048828125,
+    "r": 230.68997192382812,
+    "b": 73.07000732421875
+   }
+  },
+  {
+   "id": "b28",
+   "page": 2,
+   "label": "list_item",
+   "group": "g5",
+   "text": "Built online application workflows.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 78.719970703125,
+    "r": 222.07000732421875,
+    "b": 88.05999755859375
+   }
+  },
+  {
+   "id": "b29",
+   "page": 2,
+   "label": "list_item",
+   "group": "g5",
+   "text": "Integrated external service APIs.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 93.82000732421875,
+    "r": 217.63999938964844,
+    "b": 103.19000244140625
+   }
+  },
+  {
+   "id": "b30",
+   "page": 2,
+   "label": "list_item",
+   "group": "g5",
+   "text": "Optimized database performance.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 108.6300048828125,
+    "r": 223.74998474121094,
+    "b": 118.05999755859375
+   }
+  },
+  {
+   "id": "b31",
+   "page": 2,
+   "label": "list_item",
+   "group": "g5",
+   "text": "Maintained deployment tooling.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 123.82000732421875,
+    "r": 211.52999877929688,
+    "b": 133.19000244140625
+   }
+  },
+  {
+   "id": "b32",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "Training Staff (Software Engineer Focus)",
+   "bbox": {
+    "l": 56.13999938964844,
+    "t": 138.6300048828125,
+    "r": 249.56997680664062,
+    "b": 148.15997314453125
+   }
+  },
+  {
+   "id": "b33",
+   "page": 2,
+   "label": "list_item",
+   "group": "g6",
+   "text": "Prepared engineering course materials.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 153.82000732421875,
+    "r": 248.1999969482422,
+    "b": 163.19000244140625
+   }
+  },
+  {
+   "id": "b34",
+   "page": 2,
+   "label": "list_item",
+   "group": "g6",
+   "text": "Supported practical learning sessions.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 168.6300048828125,
+    "r": 242.08998107910156,
+    "b": 178.19000244140625
+   }
+  },
+  {
+   "id": "b35",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "Additional Experience",
+   "bbox": {
+    "l": 56.2599983215332,
+    "t": 191.57501220703125,
+    "r": 192.17498779296875,
+    "b": 203.677978515625
+   }
+  },
+  {
+   "id": "b36",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "IT Course Instructor",
+   "bbox": {
+    "l": 56.63999938964844,
+    "t": 211.6300048828125,
+    "r": 151.41000366210938,
+    "b": 219.17999267578125
+   }
+  },
+  {
+   "id": "b37",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Mar 2018 - Jan 2022",
+   "bbox": {
+    "l": 456.8896179199219,
+    "t": 64.53802490234375,
+    "r": 538.8345947265625,
+    "b": 71.1619873046875
+   }
+  },
+  {
+   "id": "b38",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Mar 2018 - Dec 2018",
+   "bbox": {
+    "l": 455.3955993652344,
+    "t": 139.53802490234375,
+    "r": 538.924560546875,
+    "b": 146.1619873046875
+   }
+  },
+  {
+   "id": "b39",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Feb 2022 - Present",
+   "bbox": {
+    "l": 463.00958251953125,
+    "t": 212.53802490234375,
+    "r": 539.0866088867188,
+    "b": 219.1619873046875
+   }
+  },
+  {
+   "id": "b40",
+   "page": 2,
+   "label": "list_item",
+   "group": "g7",
+   "text": "Taught practical backend engineering.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 226.82000732421875,
+    "r": 242.6599884033203,
+    "b": 236.19000244140625
+   }
+  },
+  {
+   "id": "b41",
+   "page": 2,
+   "label": "list_item",
+   "group": "g7",
+   "text": "Developed hands-on programming exercises.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 241.82000732421875,
+    "r": 274.8699951171875,
+    "b": 251.19000244140625
+   }
+  },
+  {
+   "id": "b42",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "Selected Projects",
+   "bbox": {
+    "l": 56.50699996948242,
+    "t": 264.41900634765625,
+    "r": 163.89999389648438,
+    "b": 276.76898193359375
+   }
+  },
+  {
+   "id": "b43",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Personnel Portal (CIVIC) (Programmer - Django, Vue, PostgreSQL) 2020-2021",
+   "bbox": {
+    "l": 56.6879997253418,
+    "t": 286.10400390625,
+    "r": 334.0799560546875,
+    "b": 293.75201416015625
+   }
+  },
+  {
+   "id": "b44",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Modernized personnel workflows.",
+   "bbox": {
+    "l": 56.58399963378906,
+    "t": 299.176025390625,
+    "r": 174.00799560546875,
+    "b": 306.64801025390625
+   }
+  },
+  {
+   "id": "b45",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Storm Tracker (METEO) (Programmer - Python, PostgreSQL) 2021",
+   "bbox": {
+    "l": 56.391998291015625,
+    "t": 312.10400390625,
+    "r": 293.1519775390625,
+    "b": 319.75201416015625
+   }
+  },
+  {
+   "id": "b46",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Computed nearby lightning coordinates.",
+   "bbox": {
+    "l": 56.35200119018555,
+    "t": 325.10394287109375,
+    "r": 196.7039794921875,
+    "b": 332.7519836425781
+   }
+  },
+  {
+   "id": "b47",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Submission Hub (CIVIC) (Senior Programmer - REST APIs) 2021-2023",
+   "bbox": {
+    "l": 56.391998291015625,
+    "t": 338.1039733886719,
+    "r": 308.239990234375,
+    "b": 345.7519836425781
+   }
+  },
+  {
+   "id": "b48",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Reduced submission processing time.",
+   "bbox": {
+    "l": 56.70399856567383,
+    "t": 351.2559814453125,
+    "r": 190.01597595214844,
+    "b": 358.7519836425781
+   }
+  },
+  {
+   "id": "b49",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Lake Atlas (RESEARCH) (Tech Lead - Django, Vue) 2023",
+   "bbox": {
+    "l": 56.608001708984375,
+    "t": 364.1039733886719,
+    "r": 261.583984375,
+    "b": 371.7519836425781
+   }
+  },
+  {
+   "id": "b50",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Centralized environmental records.",
+   "bbox": {
+    "l": 56.35200119018555,
+    "t": 377.1039733886719,
+    "r": 179.343994140625,
+    "b": 383.14398193359375
+   }
+  },
+  {
+   "id": "b51",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Certificate System (SKILLS) (Tech Lead - Django, MySQL) 2024-Present",
+   "bbox": {
+    "l": 56.35200119018555,
+    "t": 390.1039733886719,
+    "r": 314.59197998046875,
+    "b": 397.7519836425781
+   }
+  },
+  {
+   "id": "b52",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Directed digital signing delivery.",
+   "bbox": {
+    "l": 56.64799880981445,
+    "t": 403.2559814453125,
+    "r": 167.78399658203125,
+    "b": 410.7519836425781
+   }
+  },
+  {
+   "id": "b53",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "Education",
+   "bbox": {
+    "l": 56.987998962402344,
+    "t": 422.5749816894531,
+    "r": 117.99699401855469,
+    "b": 432.1689758300781
+   }
+  },
+  {
+   "id": "b54",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Universitas Contoh - B.Sc. Information Technology 2019 - 2025 SMK Contoh - Computer & Information Sciences 2015 - 2018",
+   "bbox": {
+    "l": 56.441001892089844,
+    "t": 443.3669738769531,
+    "r": 308.23394775390625,
+    "b": 465.8539733886719
+   }
+  },
+  {
+   "id": "b55",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "Certifications & Awards",
+   "bbox": {
+    "l": 56.571998596191406,
+    "t": 478.4189758300781,
+    "r": 202.1589813232422,
+    "b": 488.2339782714844
+   }
+  },
+  {
+   "id": "b56",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Foundation Testing Certificate, Example Board, 2024",
+   "bbox": {
+    "l": 56.77399826049805,
+    "t": 499.3669738769531,
+    "r": 267.3019714355469,
+    "b": 507.9709777832031
+   }
+  },
+  {
+   "id": "b57",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "National Service Gold Pin, Civic Agency, 2021",
+   "bbox": {
+    "l": 56.683998107910156,
+    "t": 513.3669738769531,
+    "r": 238.7989959716797,
+    "b": 521.9709777832031
+   }
+  },
+  {
+   "id": "b58",
+   "page": 2,
+   "label": "section_header",
+   "group": null,
+   "text": "Languages",
+   "bbox": {
+    "l": 56.987998962402344,
+    "t": 534.6659545898438,
+    "r": 124.14600372314453,
+    "b": 546.8079833984375
+   }
+  },
+  {
+   "id": "b59",
+   "page": 2,
+   "label": "text",
+   "group": null,
+   "text": "Bahasa Indonesia (Native); English (Conversational)",
+   "bbox": {
+    "l": 56.66600036621094,
+    "t": 555.3669738769531,
+    "r": 264.46697998046875,
+    "b": 563.9709777832031
+   }
+  }
+ ]
+}

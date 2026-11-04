@@ -325,6 +325,15 @@ rewords or translates anything. Uncertain fields stay blank, and any text it
 could not place is listed separately. Conversion will not be perfect for every
 CV layout.
 
+The mapper also recognises core competencies, additional experience, multiple
+roles under one employer, and inline project and education entries. Where the
+PDF provides usable geometry, dates are matched to their title row rather than
+chosen from reading order alone. Wrapped text retains its source references.
+Conflicting dates stay blank for review. In a mixed certifications-and-awards
+section, explicit awards can be imported; certificates and spoken-language
+sections remain listed as unplaced text. No translation or qualification is
+inferred.
+
 The review lets you correct every field, add or remove entries, choose which
 language the text is in (the other language stays blank and falls back as
 usual), see the PDF text behind each entry, and read all extracted text. If any
