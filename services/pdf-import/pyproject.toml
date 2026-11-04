@@ -1,0 +1,37 @@
+[project]
+name = "pdf-import"
+version = "0.1.0"
+description = "Local PDF extraction for the resume builder's optional PDF import."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "docling==2.146.0",
+  "fastapi==0.162.0",
+  "uvicorn==0.54.0",
+  "python-multipart==0.0.33",
+  "pypdfium2==5.14.0",
+  "torch==2.15.0",
+  "torchvision",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.2.0",
+  "httpx==0.28.1",
+  "reportlab==5.1.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["docling: runs the real Docling/Tesseract extractor (slow; needs models)"]
