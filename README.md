@@ -325,6 +325,10 @@ rewords or translates anything. Uncertain fields stay blank, and any text it
 could not place is listed separately. Conversion will not be perfect for every
 CV layout.
 
+PDF import keeps your selected Classic or ATS layout, font size, and existing
+photo. It imports text into that layout; photos are not extracted from the PDF.
+The photo remains visible in Classic and stays stored when using ATS.
+
 The mapper also recognises core competencies, additional experience, multiple
 roles under one employer, and inline project and education entries. Where the
 PDF provides usable geometry, dates are matched to their title row rather than

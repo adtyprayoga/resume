@@ -110,7 +110,10 @@
       if (!closed) convertButton?.focus()
       return
     }
-    pdfReview = { proposal: mapExtraction(result.value, prefs.documentLocale), extraction: result.value }
+    const proposal = mapExtraction(result.value, prefs.documentLocale)
+    // Text extraction cannot supply a photo; retain the one already in the resume.
+    proposal.document.contact.avatar = resumeDoc.current.contact.avatar
+    pdfReview = { proposal, extraction: result.value }
     await tick()
     if (!closed) titleElement?.focus()
   }

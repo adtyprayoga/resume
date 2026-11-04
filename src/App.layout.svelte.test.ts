@@ -51,6 +51,7 @@ describe('resume layout selection', () => {
     render(App)
     await openLayout()
     expect(screen.getByText('Resume layout')).toBeInTheDocument()
+    await fireEvent.click(screen.getByRole('button', { name: 'Resume layout: ATS' }))
     expect(screen.getByRole('group', { name: 'Resume layout' })).toHaveAccessibleDescription(
       'Plain single column that job portals read reliably',
     )
