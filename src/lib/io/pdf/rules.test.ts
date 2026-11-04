@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findContacts, findDateRange, isLocation, matchHeading, parseDate, splitRoleCompany, splitTrailingLocation, stripBullet } from './rules'
+import { findContacts, findDateRange, isCertificate, isLocation, matchHeading, parseDate, sectionHeading, splitRoleCompany, splitTitleIssuer, splitTrailingLocation, stripBullet } from './rules'
 
 describe('matchHeading', () => {
   it.each([
@@ -208,5 +208,62 @@ describe('splitRoleCompany', () => {
     expect(splitRoleCompany('Example Payments, Sample Logistics')).toBeNull()
     expect(splitRoleCompany('Product Designer')).toBeNull()
     expect(splitRoleCompany('Lead Engineer, Engineering Manager')).toBeNull()
+  })
+})
+
+describe('splitTitleIssuer', () => {
+  it('splits a course row at the last spaced dash and reads a trailing "| date"', () => {
+    const text = 'Business English Training - Contoh Language Centre | Jun 2025'
+    const row = splitTitleIssuer(text)
+    expect(row).toMatchObject({ title: 'Business English Training', issuer: 'Contoh Language Centre', date: { start: '2025-06' } })
+    expect(text.slice(row!.date!.from, row!.date!.to)).toBe('Jun 2025')
+  })
+
+  it('splits at the last dash and leaves the date null without one', () => {
+    expect(splitTitleIssuer('Hanyu Shuiping Kaoshi / Mandarin Test - Contoh Institute')).toEqual({
+      title: 'Hanyu Shuiping Kaoshi / Mandarin Test', issuer: 'Contoh Institute', date: null,
+    })
+    expect(splitTitleIssuer('Cloud - Data - Example Academy')).toMatchObject({ title: 'Cloud - Data', issuer: 'Example Academy' })
+  })
+
+  it('reads a date after a dash or comma, and splits "Title, Issuer, year"', () => {
+    expect(splitTitleIssuer('Professional Testing Certificate — Example Institute — 2023')).toMatchObject({
+      title: 'Professional Testing Certificate', issuer: 'Example Institute', date: { start: '2023' },
+    })
+    expect(splitTitleIssuer('Foundation Testing Certificate, Example Board, 2024')).toMatchObject({
+      title: 'Foundation Testing Certificate', issuer: 'Example Board', date: { start: '2024' },
+    })
+  })
+
+  it('keeps a dated row without an issuer whole', () => {
+    expect(splitTitleIssuer('AWS Certified Cloud Practitioner | Mar 2023')).toMatchObject({
+      title: 'AWS Certified Cloud Practitioner', issuer: '', date: { start: '2023-03' },
+    })
+  })
+
+  it.each([
+    'Presentation, negotiation, and business writing',
+    'Dashboards, Power Query, 2024 and data modelling',
+    'Business English Training - Contoh Language Centre | Jun 2025 Presentation, negotiation',
+    'Data Analysis',
+  ])('returns null for %j', (text) => expect(splitTitleIssuer(text)).toBeNull())
+})
+
+describe('isCertificate', () => {
+  it.each(['Foundation Testing Certificate', 'AWS Certified Developer', 'Business English Training', 'Data Analysis Course',
+    'Driving Licence', 'Sertifikasi BNSP', 'Kursus Bahasa Inggris', 'Pelatihan Kepemimpinan', 'Lisensi Ahli K3'])('%s is a certificate', (text) => {
+    expect(isCertificate(text)).toBe(true)
+  })
+  it.each(['National Service Gold Pin, Civic Agency, 2021', 'Bahasa Indonesia (Native); English (Conversational)'])('%s is not', (text) => {
+    expect(isCertificate(text)).toBe(false)
+  })
+})
+
+describe('sectionHeading for certifications and references', () => {
+  it('reads a plain-text "Certifications:" or "References:" label as content, not a section', () => {
+    expect(sectionHeading('Certifications:', 'text')).toBeNull()
+    expect(sectionHeading('References:', 'list_item')).toBeNull()
+    expect(sectionHeading('Certifications:', 'section_header')).toBe('certifications')
+    expect(sectionHeading('Certifications', 'text')).toBe('certifications')
   })
 })

@@ -8,12 +8,13 @@ import type {
   ExperienceItem,
   Locale,
   ProjectItem,
+  ReferenceItem,
   ResumeDocument,
   SkillGroup,
 } from '$lib/model/types'
-import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, splitTrailingLocation, stripBullet, type FoundRange, type HeadingKind } from './rules'
+import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isCertificate, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, splitTitleIssuer, splitTrailingLocation, stripBullet, type FoundRange, type HeadingKind } from './rules'
 import { buildOutline, type Outline, type OutlineRole } from './outline'
-import { associateDateRows, joinListContinuations, joinSourceLines, partsOf, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
+import { associateDateRows, joinListContinuations, joinSourceLines, partsOf, sliceSegment, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
 import type { Extraction } from './types'
 
 /**
@@ -160,11 +161,8 @@ const isDateLine = (block: SourceBlock) => {
 /** `outside`: a section that is not part of the recommended resume structure. */
 type RegionKind = Exclude<HeadingKind, 'unsupported'> | 'header' | 'outside'
 
-/**
- * Their heading and content stay visible as unmatched: outside sections, and
- * the recommended certifications and references sections, not imported yet.
- */
-const unmapped = (kind: RegionKind) => kind === 'outside' || kind === 'certifications' || kind === 'references'
+/** An outside section's heading and content stay visible as unmatched. */
+const unmapped = (kind: RegionKind) => kind === 'outside'
 
 interface Region {
   kind: RegionKind
@@ -203,15 +201,19 @@ const contactRowLocation = (piece: string): RegExpMatchArray | undefined =>
     return isLocation(text) && wordCount(text.split(',')[0]!) <= 2
   })
 
-const ENTRY_KINDS = ['experience', 'education', 'projects', 'awards'] as const
+const ENTRY_KINDS = ['experience', 'education', 'projects', 'awards', 'certifications', 'references'] as const
 type EntryKind = (typeof ENTRY_KINDS)[number]
+
+/** A course row with its own date: "Title - Issuer | Jun 2025". */
+const datedRow = (block: SourceBlock) => !isBullet(block) && !!splitTitleIssuer(block.text)?.date
 
 /**
  * Splits a section into entries. A block starts an entry when the layout calls
  * it a heading, or when it is a plain line directly before a date-only line and
  * the current entry already has content (a date or a bullet), so a title
- * followed by a location and then its dates stays one entry. Blocks before the
- * first entry are returned separately; null means no boundary was found.
+ * followed by a location and then its dates stays one entry. In courses, a row
+ * carrying its own date starts one too. Blocks before the first entry are
+ * returned separately; null means no boundary was found.
  */
 const splitEntries = (blocks: SourceBlock[], kind: EntryKind): { lead: SourceBlock[]; entries: SourceBlock[][] } | null => {
   const starts: number[] = []
@@ -225,11 +227,12 @@ const splitEntries = (blocks: SourceBlock[], kind: EntryKind): { lead: SourceBlo
       (kind === 'experience' && isRoleTitle(titleText)) ||
       (kind === 'projects' && projectMetadata(titleText) !== null) ||
       (kind === 'education' && date !== null && /\s[–—-]\s/.test(titleText)))
-    if ((!isDateLine(block) && isHeaderLabel(block)) || inlineEntry || (titleBeforeDate && (!starts.length || content))) {
+    const courseRow = kind === 'certifications' && datedRow(block)
+    if ((!isDateLine(block) && isHeaderLabel(block)) || inlineEntry || courseRow || (titleBeforeDate && (!starts.length || content))) {
       starts.push(i)
       content = false
     }
-    if (isDateLine(block) || isBullet(block)) content = true
+    if (isDateLine(block) || isBullet(block) || courseRow) content = true
   })
   if (!starts.length) return null
   return {
@@ -340,6 +343,83 @@ const outlineUnits = (blocks: SourceBlock[], kind: EntryKind, roleOf: Map<Source
     else units.at(-1)!.blocks.push(block)
   }
   return { lead, units: linkEmployers(units, kind, () => true) }
+}
+
+/** Where a dated "Title - Issuer | <date>" row ends inside a longer line, or null. */
+const rowEnd = (text: string): number | null => {
+  for (const space of text.matchAll(/\s+/g)) {
+    const head = text.slice(0, space.index)
+    const row = splitTitleIssuer(head)
+    if (row?.date && /\|\s*$/.test(head.slice(0, row.date.from)) && /[\p{L}\p{N}]/u.test(text.slice(space.index))) return space.index
+  }
+  return null
+}
+
+/**
+ * A course row that runs on into more text (Docling merged it with the lines
+ * below) ends at its date, and the rest is the entry's next line. When the rest
+ * holds another dated row, where one description ends and the next title
+ * begins is not in the text, so the rest stays unplaced.
+ */
+const courseRows = (blocks: SourceBlock[], roleOf: Map<SourceBlock, OutlineRole>, warnings: MapWarning[]): SourceBlock[] =>
+  blocks.flatMap((block) => {
+    const end = isBullet(block) ? null : rowEnd(block.text)
+    if (end === null) return [block]
+    const start = end + /^\s*/.exec(block.text.slice(end))![0].length
+    const row = sliceSegment(block, 0, end)
+    const rest = sliceSegment(block, start, block.text.length)
+    const role = roleOf.get(block)
+    if (role) roleOf.set(row, role)
+    roleOf.set(rest, 'body')
+    if (rowEnd(rest.text) === null && !datedRow(rest)) return [row, rest]
+    warnings.push({ code: 'ambiguous_entries', blocks: [...new Set(partsOf(rest).map((part) => part.block.id))] })
+    return [row]
+  })
+
+/**
+ * References: a name line starts an entry (an h3, or on the rules path a
+ * name-like line whose next line has a contact), and that next line gives the
+ * position and the first phone and email. Any other line is a note entry.
+ */
+const mapReferences = (blocks: SourceBlock[], named: (index: number) => boolean, document: ResumeDocument, locale: Locale, usage: Usage, ref: Ref) => {
+  const module = getSectionModule('references')
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]!
+    const item = module.emptyItem() as ReferenceItem
+    const text = item.text[locale]
+    const path = (field: string) => `references.${item.id}.${field}`
+    if (named(i)) {
+      text.name = block.text.trim()
+      usage.take(block)
+      ref(path('name'), block)
+      const line = i + 1 < blocks.length && !named(i + 1) ? blocks[i + 1]! : undefined
+      if (line) {
+        i++
+        const contacts = findContacts(line.text)
+        for (const field of ['phone', 'email'] as const) {
+          const found = contacts.find((contact) => contact.field === field)
+          if (!found) continue
+          item[field] = found.value
+          usage.take(line, found.from, found.to)
+          ref(path(field), line)
+        }
+        const end = contacts[0]?.from ?? line.text.length
+        const position = trimPiece(stripBullet(line.text.slice(0, end)).text)
+        if (/[\p{L}\p{N}]/u.test(position)) {
+          text.position = position
+          usage.take(line, 0, end)
+          ref(path('position'), line)
+        }
+      }
+    } else {
+      const note = stripBullet(block.text).text.trim()
+      if (!note) continue
+      text.note = note
+      usage.take(block)
+      ref(path('note'), block)
+    }
+    document.content.references.push(item)
+  }
 }
 
 // Mapper -----------------------------------------------------------------------
@@ -467,29 +547,48 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         mapSkills(region.blocks, document, locale, usage, ref)
         break
       case 'mixed_awards':
-        seen('awards')
         for (const block of region.blocks) {
-          if (isAward(block.text)) mapEntry('awards', [block], document, locale, usage, ref, warnings)
-          else warnings.push({ code: 'outside_structure', blocks: [block.id] })
+          const kind = isAward(block.text) ? 'awards' : isCertificate(block.text) ? 'certifications' : null
+          if (!kind) {
+            warnings.push({ code: 'outside_structure', blocks: [block.id] })
+            continue
+          }
+          seen(kind)
+          mapEntry(kind, [block], document, locale, usage, ref, warnings)
         }
         break
+      case 'references': {
+        seen('references')
+        const blocks = region.blocks
+        const headed = outline.confidence === 'typography' && blocks.some((block) => roleOf.get(block) === 'h3')
+        const named = (i: number) => {
+          const block = blocks[i]!
+          if (headed) return roleOf.get(block) === 'h3'
+          const next = blocks[i + 1]
+          return !isBullet(block) && isNameLike(block.text.trim()) && next !== undefined && findContacts(next.text).length > 0
+        }
+        mapReferences(blocks, named, document, locale, usage, ref)
+        break
+      }
       case 'experience':
       case 'education':
       case 'projects':
-      case 'awards': {
+      case 'awards':
+      case 'certifications': {
         seen(region.kind)
-        const kind: EntryKind = region.kind
+        const kind: ListEntryKind = region.kind
+        const blocks = kind === 'certifications' ? courseRows(region.blocks, roleOf, warnings) : region.blocks
         let split: { lead: SourceBlock[]; units: Unit[] }
         // Typography decides per region: entry headings split it only where they exist.
-        if (outline.confidence === 'typography' && region.blocks.some((block) => roleOf.get(block) === 'h3')) {
-          split = outlineUnits(region.blocks, kind, roleOf)
+        if (outline.confidence === 'typography' && blocks.some((block) => roleOf.get(block) === 'h3')) {
+          split = outlineUnits(blocks, kind, roleOf)
         } else {
-          const rules = splitEntries(kind === 'education' ? splitEducationRows(region.blocks) : region.blocks, kind)
+          const rules = splitEntries(kind === 'education' ? splitEducationRows(blocks) : blocks, kind)
           if (!rules) {
-            if (kind === 'awards') {
-              for (const block of region.blocks) mapEntry(kind, [block], document, locale, usage, ref, warnings)
-            } else if (region.blocks.length) {
-              warnings.push({ code: 'ambiguous_entries', blocks: region.blocks.map((b) => b.id) })
+            if (kind === 'awards' || kind === 'certifications') {
+              for (const block of blocks) mapEntry(kind, [block], document, locale, usage, ref, warnings)
+            } else if (blocks.length) {
+              warnings.push({ code: 'ambiguous_entries', blocks: blocks.map((b) => b.id) })
             }
             break
           }
@@ -574,8 +673,11 @@ const mapSkills = (blocks: SourceBlock[], document: ResumeDocument, locale: Loca
   }
 }
 
+/** Entry kinds mapped field by field; references have their own reader. */
+type ListEntryKind = Exclude<EntryKind, 'references'>
+
 const mapEntry = (
-  kind: EntryKind,
+  kind: ListEntryKind,
   blocks: SourceBlock[],
   document: ResumeDocument,
   locale: Locale,
@@ -608,7 +710,7 @@ const mapEntry = (
     if (!found || usage.rest(block) === '') return
     dated = true
     usage.take(block, found.from, found.to)
-    if (kind === 'awards') {
+    if (kind === 'awards' || kind === 'certifications') {
       item.date = found.start
       ref(path('date'), block)
     } else {
@@ -665,8 +767,13 @@ const mapEntry = (
       warnings.push({ code: 'ambiguous_title', blocks: [title.id] })
     }
   } else if (titleText) {
-    const field = { education: 'school', projects: 'name', awards: 'title' }[kind]
+    const field = { education: 'school', projects: 'name', awards: 'title', certifications: 'title' }[kind]
     const metadata = kind === 'projects' ? projectMetadata(titleText) : null
+    // The title without its date, or else the whole row, whose date may be what
+    // separates "Title, Issuer, 2024".
+    const course = kind === 'certifications' && !ambiguous
+      ? splitTitleIssuer(titleText) ?? splitTitleIssuer(stripBullet(title.text).text)
+      : null
     // "School - City, Country" names the place, not a qualification: kept whole.
     const schoolSplit = kind === 'education' ? /^(.+?)\s+[–—-]\s+(.+)$/.exec(titleText) : null
     const school = schoolSplit && !isLocation(schoolSplit[2]!.trim()) ? schoolSplit : null
@@ -684,6 +791,12 @@ const mapEntry = (
       text.field = degree ? degree[2] ?? '' : qualification
       if (text.degree) ref(path('degree'), title)
       if (text.field) ref(path('field'), title)
+    } else if (course) {
+      text.title = course.title
+      if (course.issuer) {
+        text.issuer = course.issuer
+        ref(path('issuer'), title)
+      }
     } else text[field] = titleText
     if (ambiguous) usage.take(title, 0, titleLimit)
     else usage.takeRest(title)
@@ -698,7 +811,7 @@ const mapEntry = (
     if (usage.rest(block) === '') continue
     if (ambiguous && dateCandidates.some(c => c.block === block)) continue
 
-    if (isBullet(block) && kind !== 'education' && kind !== 'awards') {
+    if (isBullet(block) && kind !== 'education' && kind !== 'awards' && kind !== 'certifications') {
       const bullets = text.bullets as string[]
       bullets.push(stripBullet(block.text).text.trim())
       usage.take(block)

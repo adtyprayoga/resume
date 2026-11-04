@@ -77,11 +77,14 @@ const UNKNOWN_SECTION = /\b(activities|memberships|involvement|kegiatan|keanggot
 /**
  * The section a line opens on the rules path. "Languages:" inside a skills list
  * is a label, so an unsupported heading needs a layout heading label; so does
- * an unknown section named by activity/membership wording.
+ * an unknown section named by activity/membership wording. Course and
+ * reference wordings are common skill-group labels too ("Certifications:"),
+ * so with a colon they also need a heading label.
  */
 export const sectionHeading = (text: string, label: string): HeadingKind | null => {
   const matched = matchHeading(text)
   if (matched === 'unsupported' || (!matched && UNKNOWN_SECTION.test(text))) return isHeadingLabel(label) ? 'unsupported' : null
+  if ((matched === 'certifications' || matched === 'references') && /:\s*$/.test(text) && !isHeadingLabel(label)) return null
   return matched
 }
 
@@ -332,4 +335,42 @@ export const splitRoleCompany = (title: string): { role: string; company: string
   const rightRole = ROLE_WORDS.test(right)
   if (leftRole === rightRole) return null
   return leftRole ? { role: left, company: right } : { role: right, company: left }
+}
+
+const CERTIFICATE = /\b(certif\p{L}*|certificate|licen[cs]e|course|training|sertifik\p{L}*|lisensi|kursus|pelatihan)\b/iu
+
+/** Course, certificate, licence or training wording. */
+export const isCertificate = (text: string): boolean => CERTIFICATE.test(text)
+
+/**
+ * A course or certificate row: "Title - Issuer" split at the last spaced dash,
+ * or "Title, Issuer, <date>" with exactly those two commas. A date that ends
+ * the row after "|", a comma or a spaced dash is the row's `date` (offsets
+ * into `text`). A dated row without an issuer keeps its title whole; anything
+ * else is null.
+ */
+export const splitTitleIssuer = (text: string): { title: string; issuer: string; date: FoundRange | null } | null => {
+  let head = text
+  let date: FoundRange | null = null
+  let separator = ''
+  const found = findDateRange(text)
+  if (found && !/[\p{L}\p{N}]/u.test(text.slice(found.to))) {
+    const before = /\s*([|,]|\s[-–—])\s*$/.exec(text.slice(0, found.from))
+    if (before) {
+      date = found
+      head = text.slice(0, before.index)
+      separator = before[1]!.trim()
+    }
+  }
+  const dash = [...head.matchAll(/\s+[-–—]\s+/g)].at(-1)
+  let title = head.trim()
+  let issuer = ''
+  if (dash) {
+    title = head.slice(0, dash.index).trim()
+    issuer = head.slice(dash.index + dash[0].length).trim()
+  } else if (separator === ',' && head.split(',').length === 2) {
+    [title, issuer] = head.split(',').map((part) => part.trim()) as [string, string]
+  } else if (!date) return null
+  if (!title || (dash && !issuer) || /\|/.test(issuer)) return null
+  return { title, issuer, date }
 }

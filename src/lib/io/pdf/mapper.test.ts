@@ -257,7 +257,7 @@ describe('mapExtraction: conservative rules', () => {
     expect(proposal.warnings).toContainEqual({ code: 'ambiguous_title', blocks: ['b2'] })
   })
 
-  it('leaves unsupported sections unmatched instead of folding them into the previous one', () => {
+  it('keeps a following section out of the previous one', () => {
     const proposal = mapExtraction(
       extraction(
         block('Experience', 'section_header'),
@@ -271,8 +271,8 @@ describe('mapExtraction: conservative rules', () => {
     expect(proposal.document.content.experience).toHaveLength(1)
     expect(proposal.document.content.experience[0]!.text.en.bullets).toEqual([])
     expect(proposal.document.content.awards).toEqual([])
-    expect(unmatchedText(proposal)).toEqual(['Certifications', 'AWS Solutions Architect, 2021'])
-    // Certifications belong to the recommended structure; they are only not imported yet.
+    expect(proposal.document.content.certifications.map((item) => [item.text.en.title, item.date])).toEqual([['AWS Solutions Architect', '2021']])
+    expect(unmatchedText(proposal)).toEqual([])
     expect(proposal.warnings.map((w) => w.code)).not.toContain('outside_structure')
   })
 

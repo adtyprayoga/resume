@@ -597,8 +597,8 @@
     "progression": {
       "typography": {
         "expected": 100,
-        "filled": 93,
-        "correct": 92,
+        "filled": 96,
+        "correct": 95,
         "bySection": {
           "profile": {
             "expected": 4,
@@ -637,8 +637,8 @@
           },
           "certifications": {
             "expected": 3,
-            "filled": 0,
-            "correct": 0
+            "filled": 3,
+            "correct": 3
           }
         },
         "outcomes": {
@@ -739,16 +739,16 @@
           "awards.0.title": "wrong",
           "awards.0.issuer": "missing",
           "awards.0.date": "correct",
-          "certifications.0.title": "missing",
-          "certifications.0.issuer": "missing",
-          "certifications.0.date": "missing"
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct"
         },
-        "unplaced": 5
+        "unplaced": 4
       },
       "rules": {
         "expected": 100,
-        "filled": 93,
-        "correct": 92,
+        "filled": 96,
+        "correct": 95,
         "bySection": {
           "profile": {
             "expected": 4,
@@ -787,8 +787,8 @@
           },
           "certifications": {
             "expected": 3,
-            "filled": 0,
-            "correct": 0
+            "filled": 3,
+            "correct": 3
           }
         },
         "outcomes": {
@@ -889,11 +889,11 @@
           "awards.0.title": "wrong",
           "awards.0.issuer": "missing",
           "awards.0.date": "correct",
-          "certifications.0.title": "missing",
-          "certifications.0.issuer": "missing",
-          "certifications.0.date": "missing"
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct"
         },
-        "unplaced": 5
+        "unplaced": 4
       }
     },
     "scanned": {
@@ -1197,8 +1197,8 @@
     "guide_template": {
       "typography": {
         "expected": 54,
-        "filled": 36,
-        "correct": 36,
+        "filled": 43,
+        "correct": 43,
         "bySection": {
           "profile": {
             "expected": 4,
@@ -1227,13 +1227,13 @@
           },
           "certifications": {
             "expected": 8,
-            "filled": 0,
-            "correct": 0
+            "filled": 3,
+            "correct": 3
           },
           "references": {
             "expected": 4,
-            "filled": 0,
-            "correct": 0
+            "filled": 4,
+            "correct": 4
           }
         },
         "outcomes": {
@@ -1279,25 +1279,25 @@
           "skills.3.title": "correct",
           "skills.3.items.0": "correct",
           "skills.3.items.1": "correct",
-          "certifications.0.title": "missing",
-          "certifications.0.issuer": "missing",
-          "certifications.0.date": "missing",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct",
           "certifications.0.description": "missing",
           "certifications.1.title": "missing",
           "certifications.1.issuer": "missing",
           "certifications.1.date": "missing",
           "certifications.1.description": "missing",
-          "references.0.name": "missing",
-          "references.0.position": "missing",
-          "references.0.phone": "missing",
-          "references.0.email": "missing"
+          "references.0.name": "correct",
+          "references.0.position": "correct",
+          "references.0.phone": "correct",
+          "references.0.email": "correct"
         },
-        "unplaced": 10
+        "unplaced": 6
       },
       "rules": {
         "expected": 54,
-        "filled": 36,
-        "correct": 36,
+        "filled": 43,
+        "correct": 43,
         "bySection": {
           "profile": {
             "expected": 4,
@@ -1326,13 +1326,13 @@
           },
           "certifications": {
             "expected": 8,
-            "filled": 0,
-            "correct": 0
+            "filled": 3,
+            "correct": 3
           },
           "references": {
             "expected": 4,
-            "filled": 0,
-            "correct": 0
+            "filled": 4,
+            "correct": 4
           }
         },
         "outcomes": {
@@ -1378,20 +1378,20 @@
           "skills.3.title": "correct",
           "skills.3.items.0": "correct",
           "skills.3.items.1": "correct",
-          "certifications.0.title": "missing",
-          "certifications.0.issuer": "missing",
-          "certifications.0.date": "missing",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct",
           "certifications.0.description": "missing",
           "certifications.1.title": "missing",
           "certifications.1.issuer": "missing",
           "certifications.1.date": "missing",
           "certifications.1.description": "missing",
-          "references.0.name": "missing",
-          "references.0.position": "missing",
-          "references.0.phone": "missing",
-          "references.0.email": "missing"
+          "references.0.name": "correct",
+          "references.0.position": "correct",
+          "references.0.phone": "correct",
+          "references.0.email": "correct"
         },
-        "unplaced": 10
+        "unplaced": 6
       }
     }
   }

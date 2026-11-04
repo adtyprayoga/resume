@@ -65,15 +65,18 @@ export const splitEducationRows = (blocks: SourceBlock[]): SourceSegment[] => bl
   const rows = starts.map((from, i) => ({ from, to: i === dates.length - 1 ? block.text.length : dates[i]!.to }))
   if (!rows.every(({ from, to }) => /\s[–—-]\s/.test(block.text.slice(from, to)) &&
     /\b(universit\p{L}*|institut\p{L}*|school|college|sekolah|smk|sma)\b/iu.test(block.text.slice(from, to)))) return [block]
-  return rows.map(({ from, to }) => ({
-    ...block,
-    parts: partsOf(block).flatMap(part => {
-      const start = Math.max(from, part.at)
-      const end = Math.min(to, part.at + part.to - part.from)
-      return start < end ? [{ block: part.block, from: part.from + start - part.at, to: part.from + end - part.at, at: start - from }] : []
-    }),
-    text: block.text.slice(from, to),
-  }))
+  return rows.map(({ from, to }) => sliceSegment(block, from, to))
+})
+
+/** The part of a segment between two of its offsets, keeping its source parts. */
+export const sliceSegment = (block: SourceSegment, from: number, to: number): SourceSegment => ({
+  ...block,
+  parts: partsOf(block).flatMap(part => {
+    const start = Math.max(from, part.at)
+    const end = Math.min(to, part.at + part.to - part.from)
+    return start < end ? [{ block: part.block, from: part.from + start - part.at, to: part.from + end - part.at, at: start - from }] : []
+  }),
+  text: block.text.slice(from, to),
 })
 
 export const sameRow = (a: SourceBlock, b: SourceBlock): boolean => {
