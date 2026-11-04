@@ -17,6 +17,8 @@ pids = [os.getpid()]
 
 BLOCK = {"id": "b1", "page": 1, "label": "title", "group": None, "text": "Jane Doe", "bbox": {"l": 1, "t": 2, "r": 3, "b": 4}}
 
+BLOCK["style"] = {"font": "f1", "size": 12.0, "bold": True, "italic": None}
+
 if mode == "hang":
     child = subprocess.Popen(["sleep", "1000"])
     pids.append(child.pid)

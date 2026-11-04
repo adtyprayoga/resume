@@ -441,11 +441,11 @@ describe('PDF review', () => {
 
   it('shows recognition warnings', async () => {
     const extraction = english()
-    extraction.blocks.push({ id: 'b21', page: 1, label: 'section_header', group: null, text: 'Certifications', bbox: null })
-    extraction.blocks.push({ id: 'b22', page: 1, label: 'text', group: null, text: 'Cloud Practitioner, 2022', bbox: null })
+    extraction.blocks.push({ id: 'b21', page: 1, label: 'section_header', group: null, text: 'Languages', bbox: null })
+    extraction.blocks.push({ id: 'b22', page: 1, label: 'text', group: null, text: 'English (fluent)', bbox: null })
     service(extraction)
     mount()
     await review()
-    expect(screen.getByText(/certifications or languages, are not supported/)).toBeInTheDocument()
+    expect(screen.getByText(/not part of the recommended resume structure/)).toBeInTheDocument()
   })
 })

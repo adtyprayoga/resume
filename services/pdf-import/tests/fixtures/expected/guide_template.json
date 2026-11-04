@@ -1,0 +1,134 @@
+{
+  "locale": "en",
+  "profile": {
+    "name": "Rina Wulandari",
+    "headline": "People Development | Learning & Development | Bilingual Facilitator",
+    "location": "Bandung, Indonesia",
+    "summary": "I have 4 years of experience in the field of Learning & Development across diverse industries, including banking, retail, and education. My expertise involves needs analysis, curriculum design, and training delivery. I am known for being structured, adaptable, and detail-oriented."
+  },
+  "contact": {
+    "email": "rina.w@example.com",
+    "phone": "+62 811 0000 5678",
+    "website": "",
+    "github": "",
+    "linkedin": "",
+    "avatar": ""
+  },
+  "sections": {
+    "experience": [
+      {
+        "company": "Contoh Consulting",
+        "role": "Training Consultant",
+        "team": "",
+        "location": "Bandung, Indonesia",
+        "dates": {
+          "start": "2024-09",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Designed 12 training modules for banking clients.",
+          "Facilitated 40 workshops with an average score of 4.7 out of 5."
+        ]
+      },
+      {
+        "company": "Contoh Edu",
+        "role": "Curriculum Designer",
+        "team": "",
+        "location": "Surabaya, Indonesia",
+        "dates": {
+          "start": "2022-09",
+          "end": "2024-09"
+        },
+        "bullets": [
+          "Mapped 30 courses to national competency standards.",
+          "Reviewed curriculum drafts before submission to the programme office for further review."
+        ]
+      },
+      {
+        "company": "Contoh Retail",
+        "role": "People Development Officer",
+        "team": "",
+        "location": "Semarang, Indonesia",
+        "dates": {
+          "start": "2021-08",
+          "end": "2022-08"
+        },
+        "bullets": [
+          "Ran onboarding for 120 new store staff."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Universitas Contoh - Semarang, Indonesia",
+        "degree": "Bachelor Degree",
+        "field": "English Literature",
+        "gpa": "3.60/4.00",
+        "description": "",
+        "dates": {
+          "start": "2017",
+          "end": "2021"
+        }
+      }
+    ],
+    "projects": [],
+    "skills": [
+      {
+        "title": "Training Skills",
+        "items": [
+          "Needs Analysis",
+          "Curriculum Design",
+          "Facilitation"
+        ]
+      },
+      {
+        "title": "Support Technical Skills",
+        "items": [
+          "Office 365",
+          "Google Suites",
+          "Power BI"
+        ]
+      },
+      {
+        "title": "Soft Skills",
+        "items": [
+          "Communication",
+          "Problem Solving"
+        ]
+      },
+      {
+        "title": "Languages",
+        "items": [
+          "English (IELTS 7.0)",
+          "Mandarin (HSK 3)"
+        ]
+      }
+    ],
+    "awards": [],
+    "certifications": [
+      {
+        "title": "Business English Training",
+        "issuer": "Contoh Language Centre",
+        "date": "2025-06",
+        "description": "Presentation, negotiation, and business writing"
+      },
+      {
+        "title": "Data Analysis with Power BI",
+        "issuer": "Coursera",
+        "date": "2024-03",
+        "description": "Dashboards, Power Query, and data modelling"
+      }
+    ],
+    "references": [
+      {
+        "name": "Anggi Pratiwi",
+        "position": "HR Manager at PT Contoh Abadi",
+        "phone": "+62 812 0000 1111",
+        "email": "anggi@example.com",
+        "note": ""
+      }
+    ]
+  },
+  "unplaced": 3
+}

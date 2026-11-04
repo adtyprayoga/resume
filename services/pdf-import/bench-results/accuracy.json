@@ -1,0 +1,2783 @@
+{
+  "fixtures": {
+    "en_single": {
+      "typography": {
+        "expected": 27,
+        "filled": 27,
+        "correct": 27,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules": {
+        "expected": 27,
+        "filled": 27,
+        "correct": 27,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "typography, labels flattened": {
+        "expected": 27,
+        "filled": 27,
+        "correct": 27,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules, labels flattened": {
+        "expected": 27,
+        "filled": 21,
+        "correct": 21,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "profile.headline": "missing",
+          "profile.location": "missing",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 5
+      }
+    },
+    "id_single": {
+      "typography": {
+        "expected": 20,
+        "filled": 20,
+        "correct": 20,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 5,
+            "filled": 5,
+            "correct": 5
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.0.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules": {
+        "expected": 20,
+        "filled": 20,
+        "correct": 20,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 5,
+            "filled": 5,
+            "correct": 5
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.0.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 0
+      },
+      "typography, labels flattened": {
+        "expected": 20,
+        "filled": 20,
+        "correct": 20,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 5,
+            "filled": 5,
+            "correct": 5
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.0.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules, labels flattened": {
+        "expected": 20,
+        "filled": 14,
+        "correct": 14,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 5,
+            "filled": 5,
+            "correct": 5
+          },
+          "education": {
+            "expected": 3,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "profile.headline": "missing",
+          "profile.location": "missing",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.dates": "missing",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.0.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 5
+      }
+    },
+    "two_column": {
+      "typography": {
+        "expected": 19,
+        "filled": 19,
+        "correct": 19,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.linkedin": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules": {
+        "expected": 19,
+        "filled": 19,
+        "correct": 19,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.linkedin": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "typography, labels flattened": {
+        "expected": 19,
+        "filled": 19,
+        "correct": 19,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.linkedin": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules, labels flattened": {
+        "expected": 19,
+        "filled": 15,
+        "correct": 15,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 0,
+            "correct": 0
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.linkedin": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.dates": "missing",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct"
+        },
+        "unplaced": 3
+      }
+    },
+    "five_page": {
+      "typography": {
+        "expected": 92,
+        "filled": 92,
+        "correct": 92,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "experience": {
+            "expected": 90,
+            "filled": 90,
+            "correct": 90
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "contact.email": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.0.bullets.2": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.1.bullets.2": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "experience.2.bullets.2": "correct",
+          "experience.3.company": "correct",
+          "experience.3.role": "correct",
+          "experience.3.dates": "correct",
+          "experience.3.bullets.0": "correct",
+          "experience.3.bullets.1": "correct",
+          "experience.3.bullets.2": "correct",
+          "experience.4.company": "correct",
+          "experience.4.role": "correct",
+          "experience.4.dates": "correct",
+          "experience.4.bullets.0": "correct",
+          "experience.4.bullets.1": "correct",
+          "experience.4.bullets.2": "correct",
+          "experience.5.company": "correct",
+          "experience.5.role": "correct",
+          "experience.5.dates": "correct",
+          "experience.5.bullets.0": "correct",
+          "experience.5.bullets.1": "correct",
+          "experience.5.bullets.2": "correct",
+          "experience.6.company": "correct",
+          "experience.6.role": "correct",
+          "experience.6.dates": "correct",
+          "experience.6.bullets.0": "correct",
+          "experience.6.bullets.1": "correct",
+          "experience.6.bullets.2": "correct",
+          "experience.7.company": "correct",
+          "experience.7.role": "correct",
+          "experience.7.dates": "correct",
+          "experience.7.bullets.0": "correct",
+          "experience.7.bullets.1": "correct",
+          "experience.7.bullets.2": "correct",
+          "experience.8.company": "correct",
+          "experience.8.role": "correct",
+          "experience.8.dates": "correct",
+          "experience.8.bullets.0": "correct",
+          "experience.8.bullets.1": "correct",
+          "experience.8.bullets.2": "correct",
+          "experience.9.company": "correct",
+          "experience.9.role": "correct",
+          "experience.9.dates": "correct",
+          "experience.9.bullets.0": "correct",
+          "experience.9.bullets.1": "correct",
+          "experience.9.bullets.2": "correct",
+          "experience.10.company": "correct",
+          "experience.10.role": "correct",
+          "experience.10.dates": "correct",
+          "experience.10.bullets.0": "correct",
+          "experience.10.bullets.1": "correct",
+          "experience.10.bullets.2": "correct",
+          "experience.11.company": "correct",
+          "experience.11.role": "correct",
+          "experience.11.dates": "correct",
+          "experience.11.bullets.0": "correct",
+          "experience.11.bullets.1": "correct",
+          "experience.11.bullets.2": "correct",
+          "experience.12.company": "correct",
+          "experience.12.role": "correct",
+          "experience.12.dates": "correct",
+          "experience.12.bullets.0": "correct",
+          "experience.12.bullets.1": "correct",
+          "experience.12.bullets.2": "correct",
+          "experience.13.company": "correct",
+          "experience.13.role": "correct",
+          "experience.13.dates": "correct",
+          "experience.13.bullets.0": "correct",
+          "experience.13.bullets.1": "correct",
+          "experience.13.bullets.2": "correct",
+          "experience.14.company": "correct",
+          "experience.14.role": "correct",
+          "experience.14.dates": "correct",
+          "experience.14.bullets.0": "correct",
+          "experience.14.bullets.1": "correct",
+          "experience.14.bullets.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules": {
+        "expected": 92,
+        "filled": 92,
+        "correct": 92,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "experience": {
+            "expected": 90,
+            "filled": 90,
+            "correct": 90
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "contact.email": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.0.bullets.2": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.1.bullets.2": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "experience.2.bullets.2": "correct",
+          "experience.3.company": "correct",
+          "experience.3.role": "correct",
+          "experience.3.dates": "correct",
+          "experience.3.bullets.0": "correct",
+          "experience.3.bullets.1": "correct",
+          "experience.3.bullets.2": "correct",
+          "experience.4.company": "correct",
+          "experience.4.role": "correct",
+          "experience.4.dates": "correct",
+          "experience.4.bullets.0": "correct",
+          "experience.4.bullets.1": "correct",
+          "experience.4.bullets.2": "correct",
+          "experience.5.company": "correct",
+          "experience.5.role": "correct",
+          "experience.5.dates": "correct",
+          "experience.5.bullets.0": "correct",
+          "experience.5.bullets.1": "correct",
+          "experience.5.bullets.2": "correct",
+          "experience.6.company": "correct",
+          "experience.6.role": "correct",
+          "experience.6.dates": "correct",
+          "experience.6.bullets.0": "correct",
+          "experience.6.bullets.1": "correct",
+          "experience.6.bullets.2": "correct",
+          "experience.7.company": "correct",
+          "experience.7.role": "correct",
+          "experience.7.dates": "correct",
+          "experience.7.bullets.0": "correct",
+          "experience.7.bullets.1": "correct",
+          "experience.7.bullets.2": "correct",
+          "experience.8.company": "correct",
+          "experience.8.role": "correct",
+          "experience.8.dates": "correct",
+          "experience.8.bullets.0": "correct",
+          "experience.8.bullets.1": "correct",
+          "experience.8.bullets.2": "correct",
+          "experience.9.company": "correct",
+          "experience.9.role": "correct",
+          "experience.9.dates": "correct",
+          "experience.9.bullets.0": "correct",
+          "experience.9.bullets.1": "correct",
+          "experience.9.bullets.2": "correct",
+          "experience.10.company": "correct",
+          "experience.10.role": "correct",
+          "experience.10.dates": "correct",
+          "experience.10.bullets.0": "correct",
+          "experience.10.bullets.1": "correct",
+          "experience.10.bullets.2": "correct",
+          "experience.11.company": "correct",
+          "experience.11.role": "correct",
+          "experience.11.dates": "correct",
+          "experience.11.bullets.0": "correct",
+          "experience.11.bullets.1": "correct",
+          "experience.11.bullets.2": "correct",
+          "experience.12.company": "correct",
+          "experience.12.role": "correct",
+          "experience.12.dates": "correct",
+          "experience.12.bullets.0": "correct",
+          "experience.12.bullets.1": "correct",
+          "experience.12.bullets.2": "correct",
+          "experience.13.company": "correct",
+          "experience.13.role": "correct",
+          "experience.13.dates": "correct",
+          "experience.13.bullets.0": "correct",
+          "experience.13.bullets.1": "correct",
+          "experience.13.bullets.2": "correct",
+          "experience.14.company": "correct",
+          "experience.14.role": "correct",
+          "experience.14.dates": "correct",
+          "experience.14.bullets.0": "correct",
+          "experience.14.bullets.1": "correct",
+          "experience.14.bullets.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "typography, labels flattened": {
+        "expected": 92,
+        "filled": 92,
+        "correct": 92,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "experience": {
+            "expected": 90,
+            "filled": 90,
+            "correct": 90
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "contact.email": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.0.bullets.2": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.1.bullets.2": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "experience.2.bullets.2": "correct",
+          "experience.3.company": "correct",
+          "experience.3.role": "correct",
+          "experience.3.dates": "correct",
+          "experience.3.bullets.0": "correct",
+          "experience.3.bullets.1": "correct",
+          "experience.3.bullets.2": "correct",
+          "experience.4.company": "correct",
+          "experience.4.role": "correct",
+          "experience.4.dates": "correct",
+          "experience.4.bullets.0": "correct",
+          "experience.4.bullets.1": "correct",
+          "experience.4.bullets.2": "correct",
+          "experience.5.company": "correct",
+          "experience.5.role": "correct",
+          "experience.5.dates": "correct",
+          "experience.5.bullets.0": "correct",
+          "experience.5.bullets.1": "correct",
+          "experience.5.bullets.2": "correct",
+          "experience.6.company": "correct",
+          "experience.6.role": "correct",
+          "experience.6.dates": "correct",
+          "experience.6.bullets.0": "correct",
+          "experience.6.bullets.1": "correct",
+          "experience.6.bullets.2": "correct",
+          "experience.7.company": "correct",
+          "experience.7.role": "correct",
+          "experience.7.dates": "correct",
+          "experience.7.bullets.0": "correct",
+          "experience.7.bullets.1": "correct",
+          "experience.7.bullets.2": "correct",
+          "experience.8.company": "correct",
+          "experience.8.role": "correct",
+          "experience.8.dates": "correct",
+          "experience.8.bullets.0": "correct",
+          "experience.8.bullets.1": "correct",
+          "experience.8.bullets.2": "correct",
+          "experience.9.company": "correct",
+          "experience.9.role": "correct",
+          "experience.9.dates": "correct",
+          "experience.9.bullets.0": "correct",
+          "experience.9.bullets.1": "correct",
+          "experience.9.bullets.2": "correct",
+          "experience.10.company": "correct",
+          "experience.10.role": "correct",
+          "experience.10.dates": "correct",
+          "experience.10.bullets.0": "correct",
+          "experience.10.bullets.1": "correct",
+          "experience.10.bullets.2": "correct",
+          "experience.11.company": "correct",
+          "experience.11.role": "correct",
+          "experience.11.dates": "correct",
+          "experience.11.bullets.0": "correct",
+          "experience.11.bullets.1": "correct",
+          "experience.11.bullets.2": "correct",
+          "experience.12.company": "correct",
+          "experience.12.role": "correct",
+          "experience.12.dates": "correct",
+          "experience.12.bullets.0": "correct",
+          "experience.12.bullets.1": "correct",
+          "experience.12.bullets.2": "correct",
+          "experience.13.company": "correct",
+          "experience.13.role": "correct",
+          "experience.13.dates": "correct",
+          "experience.13.bullets.0": "correct",
+          "experience.13.bullets.1": "correct",
+          "experience.13.bullets.2": "correct",
+          "experience.14.company": "correct",
+          "experience.14.role": "correct",
+          "experience.14.dates": "correct",
+          "experience.14.bullets.0": "correct",
+          "experience.14.bullets.1": "correct",
+          "experience.14.bullets.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules, labels flattened": {
+        "expected": 92,
+        "filled": 91,
+        "correct": 91,
+        "bySection": {
+          "profile": {
+            "expected": 1,
+            "filled": 0,
+            "correct": 0
+          },
+          "contact": {
+            "expected": 1,
+            "filled": 1,
+            "correct": 1
+          },
+          "experience": {
+            "expected": 90,
+            "filled": 90,
+            "correct": 90
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "contact.email": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.0.bullets.2": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.1.bullets.2": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "experience.2.bullets.2": "correct",
+          "experience.3.company": "correct",
+          "experience.3.role": "correct",
+          "experience.3.dates": "correct",
+          "experience.3.bullets.0": "correct",
+          "experience.3.bullets.1": "correct",
+          "experience.3.bullets.2": "correct",
+          "experience.4.company": "correct",
+          "experience.4.role": "correct",
+          "experience.4.dates": "correct",
+          "experience.4.bullets.0": "correct",
+          "experience.4.bullets.1": "correct",
+          "experience.4.bullets.2": "correct",
+          "experience.5.company": "correct",
+          "experience.5.role": "correct",
+          "experience.5.dates": "correct",
+          "experience.5.bullets.0": "correct",
+          "experience.5.bullets.1": "correct",
+          "experience.5.bullets.2": "correct",
+          "experience.6.company": "correct",
+          "experience.6.role": "correct",
+          "experience.6.dates": "correct",
+          "experience.6.bullets.0": "correct",
+          "experience.6.bullets.1": "correct",
+          "experience.6.bullets.2": "correct",
+          "experience.7.company": "correct",
+          "experience.7.role": "correct",
+          "experience.7.dates": "correct",
+          "experience.7.bullets.0": "correct",
+          "experience.7.bullets.1": "correct",
+          "experience.7.bullets.2": "correct",
+          "experience.8.company": "correct",
+          "experience.8.role": "correct",
+          "experience.8.dates": "correct",
+          "experience.8.bullets.0": "correct",
+          "experience.8.bullets.1": "correct",
+          "experience.8.bullets.2": "correct",
+          "experience.9.company": "correct",
+          "experience.9.role": "correct",
+          "experience.9.dates": "correct",
+          "experience.9.bullets.0": "correct",
+          "experience.9.bullets.1": "correct",
+          "experience.9.bullets.2": "correct",
+          "experience.10.company": "correct",
+          "experience.10.role": "correct",
+          "experience.10.dates": "correct",
+          "experience.10.bullets.0": "correct",
+          "experience.10.bullets.1": "correct",
+          "experience.10.bullets.2": "correct",
+          "experience.11.company": "correct",
+          "experience.11.role": "correct",
+          "experience.11.dates": "correct",
+          "experience.11.bullets.0": "correct",
+          "experience.11.bullets.1": "correct",
+          "experience.11.bullets.2": "correct",
+          "experience.12.company": "correct",
+          "experience.12.role": "correct",
+          "experience.12.dates": "correct",
+          "experience.12.bullets.0": "correct",
+          "experience.12.bullets.1": "correct",
+          "experience.12.bullets.2": "correct",
+          "experience.13.company": "correct",
+          "experience.13.role": "correct",
+          "experience.13.dates": "correct",
+          "experience.13.bullets.0": "correct",
+          "experience.13.bullets.1": "correct",
+          "experience.13.bullets.2": "correct",
+          "experience.14.company": "correct",
+          "experience.14.role": "correct",
+          "experience.14.dates": "correct",
+          "experience.14.bullets.0": "correct",
+          "experience.14.bullets.1": "correct",
+          "experience.14.bullets.2": "correct"
+        },
+        "unplaced": 1
+      }
+    },
+    "progression": {
+      "typography": {
+        "expected": 100,
+        "filled": 96,
+        "correct": 95,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 24,
+            "filled": 24,
+            "correct": 24
+          },
+          "education": {
+            "expected": 7,
+            "filled": 7,
+            "correct": 7
+          },
+          "projects": {
+            "expected": 30,
+            "filled": 30,
+            "correct": 30
+          },
+          "skills": {
+            "expected": 26,
+            "filled": 23,
+            "correct": 23
+          },
+          "awards": {
+            "expected": 3,
+            "filled": 2,
+            "correct": 1
+          },
+          "certifications": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.website": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.0.bullets.2": "correct",
+          "experience.0.bullets.3": "correct",
+          "experience.0.bullets.4": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.1.bullets.2": "correct",
+          "experience.1.bullets.3": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "experience.3.role": "correct",
+          "experience.3.dates": "correct",
+          "experience.3.bullets.0": "correct",
+          "experience.3.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.field": "correct",
+          "education.0.dates": "correct",
+          "education.1.school": "correct",
+          "education.1.field": "correct",
+          "education.1.dates": "correct",
+          "projects.0.name": "correct",
+          "projects.0.role": "correct",
+          "projects.0.description": "correct",
+          "projects.0.techStack.0": "correct",
+          "projects.0.techStack.1": "correct",
+          "projects.0.techStack.2": "correct",
+          "projects.0.dates": "correct",
+          "projects.1.name": "correct",
+          "projects.1.role": "correct",
+          "projects.1.description": "correct",
+          "projects.1.techStack.0": "correct",
+          "projects.1.techStack.1": "correct",
+          "projects.1.dates": "correct",
+          "projects.2.name": "correct",
+          "projects.2.role": "correct",
+          "projects.2.description": "correct",
+          "projects.2.techStack.0": "correct",
+          "projects.2.dates": "correct",
+          "projects.3.name": "correct",
+          "projects.3.role": "correct",
+          "projects.3.description": "correct",
+          "projects.3.techStack.0": "correct",
+          "projects.3.techStack.1": "correct",
+          "projects.3.dates": "correct",
+          "projects.4.name": "correct",
+          "projects.4.role": "correct",
+          "projects.4.description": "correct",
+          "projects.4.techStack.0": "correct",
+          "projects.4.techStack.1": "correct",
+          "projects.4.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "skills.4.title": "correct",
+          "skills.4.items.0": "correct",
+          "skills.4.items.1": "correct",
+          "skills.5.title": "correct",
+          "skills.5.items.0": "correct",
+          "skills.5.items.1": "correct",
+          "skills.6.title": "correct",
+          "skills.6.items.0": "correct",
+          "skills.6.items.1": "correct",
+          "skills.6.items.2": "correct",
+          "skills.7.title": "missing",
+          "skills.7.items.0": "missing",
+          "skills.7.items.1": "missing",
+          "awards.0.title": "wrong",
+          "awards.0.issuer": "missing",
+          "awards.0.date": "correct",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct"
+        },
+        "unplaced": 4
+      },
+      "rules": {
+        "expected": 100,
+        "filled": 96,
+        "correct": 95,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 24,
+            "filled": 24,
+            "correct": 24
+          },
+          "education": {
+            "expected": 7,
+            "filled": 7,
+            "correct": 7
+          },
+          "projects": {
+            "expected": 30,
+            "filled": 30,
+            "correct": 30
+          },
+          "skills": {
+            "expected": 26,
+            "filled": 23,
+            "correct": 23
+          },
+          "awards": {
+            "expected": 3,
+            "filled": 2,
+            "correct": 1
+          },
+          "certifications": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.website": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.0.bullets.2": "correct",
+          "experience.0.bullets.3": "correct",
+          "experience.0.bullets.4": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.1.bullets.2": "correct",
+          "experience.1.bullets.3": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "experience.3.role": "correct",
+          "experience.3.dates": "correct",
+          "experience.3.bullets.0": "correct",
+          "experience.3.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.field": "correct",
+          "education.0.dates": "correct",
+          "education.1.school": "correct",
+          "education.1.field": "correct",
+          "education.1.dates": "correct",
+          "projects.0.name": "correct",
+          "projects.0.role": "correct",
+          "projects.0.description": "correct",
+          "projects.0.techStack.0": "correct",
+          "projects.0.techStack.1": "correct",
+          "projects.0.techStack.2": "correct",
+          "projects.0.dates": "correct",
+          "projects.1.name": "correct",
+          "projects.1.role": "correct",
+          "projects.1.description": "correct",
+          "projects.1.techStack.0": "correct",
+          "projects.1.techStack.1": "correct",
+          "projects.1.dates": "correct",
+          "projects.2.name": "correct",
+          "projects.2.role": "correct",
+          "projects.2.description": "correct",
+          "projects.2.techStack.0": "correct",
+          "projects.2.dates": "correct",
+          "projects.3.name": "correct",
+          "projects.3.role": "correct",
+          "projects.3.description": "correct",
+          "projects.3.techStack.0": "correct",
+          "projects.3.techStack.1": "correct",
+          "projects.3.dates": "correct",
+          "projects.4.name": "correct",
+          "projects.4.role": "correct",
+          "projects.4.description": "correct",
+          "projects.4.techStack.0": "correct",
+          "projects.4.techStack.1": "correct",
+          "projects.4.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "skills.4.title": "correct",
+          "skills.4.items.0": "correct",
+          "skills.4.items.1": "correct",
+          "skills.5.title": "correct",
+          "skills.5.items.0": "correct",
+          "skills.5.items.1": "correct",
+          "skills.6.title": "correct",
+          "skills.6.items.0": "correct",
+          "skills.6.items.1": "correct",
+          "skills.6.items.2": "correct",
+          "skills.7.title": "missing",
+          "skills.7.items.0": "missing",
+          "skills.7.items.1": "missing",
+          "awards.0.title": "wrong",
+          "awards.0.issuer": "missing",
+          "awards.0.date": "correct",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct"
+        },
+        "unplaced": 4
+      },
+      "typography, labels flattened": {
+        "expected": 100,
+        "filled": 96,
+        "correct": 95,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 24,
+            "filled": 24,
+            "correct": 24
+          },
+          "education": {
+            "expected": 7,
+            "filled": 7,
+            "correct": 7
+          },
+          "projects": {
+            "expected": 30,
+            "filled": 30,
+            "correct": 30
+          },
+          "skills": {
+            "expected": 26,
+            "filled": 23,
+            "correct": 23
+          },
+          "awards": {
+            "expected": 3,
+            "filled": 2,
+            "correct": 1
+          },
+          "certifications": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.website": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.0.bullets.2": "correct",
+          "experience.0.bullets.3": "correct",
+          "experience.0.bullets.4": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.1.bullets.2": "correct",
+          "experience.1.bullets.3": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "experience.3.role": "correct",
+          "experience.3.dates": "correct",
+          "experience.3.bullets.0": "correct",
+          "experience.3.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.field": "correct",
+          "education.0.dates": "correct",
+          "education.1.school": "correct",
+          "education.1.field": "correct",
+          "education.1.dates": "correct",
+          "projects.0.name": "correct",
+          "projects.0.role": "correct",
+          "projects.0.description": "correct",
+          "projects.0.techStack.0": "correct",
+          "projects.0.techStack.1": "correct",
+          "projects.0.techStack.2": "correct",
+          "projects.0.dates": "correct",
+          "projects.1.name": "correct",
+          "projects.1.role": "correct",
+          "projects.1.description": "correct",
+          "projects.1.techStack.0": "correct",
+          "projects.1.techStack.1": "correct",
+          "projects.1.dates": "correct",
+          "projects.2.name": "correct",
+          "projects.2.role": "correct",
+          "projects.2.description": "correct",
+          "projects.2.techStack.0": "correct",
+          "projects.2.dates": "correct",
+          "projects.3.name": "correct",
+          "projects.3.role": "correct",
+          "projects.3.description": "correct",
+          "projects.3.techStack.0": "correct",
+          "projects.3.techStack.1": "correct",
+          "projects.3.dates": "correct",
+          "projects.4.name": "correct",
+          "projects.4.role": "correct",
+          "projects.4.description": "correct",
+          "projects.4.techStack.0": "correct",
+          "projects.4.techStack.1": "correct",
+          "projects.4.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "skills.4.title": "correct",
+          "skills.4.items.0": "correct",
+          "skills.4.items.1": "correct",
+          "skills.5.title": "correct",
+          "skills.5.items.0": "correct",
+          "skills.5.items.1": "correct",
+          "skills.6.title": "correct",
+          "skills.6.items.0": "correct",
+          "skills.6.items.1": "correct",
+          "skills.6.items.2": "correct",
+          "skills.7.title": "missing",
+          "skills.7.items.0": "missing",
+          "skills.7.items.1": "missing",
+          "awards.0.title": "wrong",
+          "awards.0.issuer": "missing",
+          "awards.0.date": "correct",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct"
+        },
+        "unplaced": 4
+      },
+      "rules, labels flattened": {
+        "expected": 100,
+        "filled": 91,
+        "correct": 68,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 24,
+            "filled": 22,
+            "correct": 0
+          },
+          "education": {
+            "expected": 7,
+            "filled": 7,
+            "correct": 7
+          },
+          "projects": {
+            "expected": 30,
+            "filled": 30,
+            "correct": 30
+          },
+          "skills": {
+            "expected": 26,
+            "filled": 23,
+            "correct": 23
+          },
+          "awards": {
+            "expected": 3,
+            "filled": 2,
+            "correct": 1
+          },
+          "certifications": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "profile.headline": "missing",
+          "profile.location": "missing",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.website": "correct",
+          "experience.0.company": "missing",
+          "experience.0.role": "missing",
+          "experience.0.dates": "wrong",
+          "experience.0.bullets.0": "missing",
+          "experience.0.bullets.1": "missing",
+          "experience.0.bullets.2": "missing",
+          "experience.0.bullets.3": "missing",
+          "experience.0.bullets.4": "missing",
+          "experience.1.company": "missing",
+          "experience.1.role": "wrong",
+          "experience.1.dates": "wrong",
+          "experience.1.bullets.0": "wrong",
+          "experience.1.bullets.1": "wrong",
+          "experience.1.bullets.2": "wrong",
+          "experience.1.bullets.3": "wrong",
+          "experience.1.bullets.4": "extra",
+          "experience.2.company": "missing",
+          "experience.2.role": "wrong",
+          "experience.2.dates": "wrong",
+          "experience.2.bullets.0": "wrong",
+          "experience.2.bullets.1": "wrong",
+          "experience.2.bullets.2": "extra",
+          "experience.2.bullets.3": "extra",
+          "experience.3.role": "wrong",
+          "experience.3.dates": "wrong",
+          "experience.3.bullets.0": "wrong",
+          "experience.3.bullets.1": "wrong",
+          "experience.4.dates": "extra",
+          "experience.4.role": "extra",
+          "experience.4.bullets.0": "extra",
+          "experience.4.bullets.1": "extra",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.field": "correct",
+          "education.0.dates": "correct",
+          "education.1.school": "correct",
+          "education.1.field": "correct",
+          "education.1.dates": "correct",
+          "projects.0.name": "correct",
+          "projects.0.role": "correct",
+          "projects.0.description": "correct",
+          "projects.0.techStack.0": "correct",
+          "projects.0.techStack.1": "correct",
+          "projects.0.techStack.2": "correct",
+          "projects.0.dates": "correct",
+          "projects.1.name": "correct",
+          "projects.1.role": "correct",
+          "projects.1.description": "correct",
+          "projects.1.techStack.0": "correct",
+          "projects.1.techStack.1": "correct",
+          "projects.1.dates": "correct",
+          "projects.2.name": "correct",
+          "projects.2.role": "correct",
+          "projects.2.description": "correct",
+          "projects.2.techStack.0": "correct",
+          "projects.2.dates": "correct",
+          "projects.3.name": "correct",
+          "projects.3.role": "correct",
+          "projects.3.description": "correct",
+          "projects.3.techStack.0": "correct",
+          "projects.3.techStack.1": "correct",
+          "projects.3.dates": "correct",
+          "projects.4.name": "correct",
+          "projects.4.role": "correct",
+          "projects.4.description": "correct",
+          "projects.4.techStack.0": "correct",
+          "projects.4.techStack.1": "correct",
+          "projects.4.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "skills.4.title": "correct",
+          "skills.4.items.0": "correct",
+          "skills.4.items.1": "correct",
+          "skills.5.title": "correct",
+          "skills.5.items.0": "correct",
+          "skills.5.items.1": "correct",
+          "skills.6.title": "correct",
+          "skills.6.items.0": "correct",
+          "skills.6.items.1": "correct",
+          "skills.6.items.2": "correct",
+          "skills.7.title": "missing",
+          "skills.7.items.0": "missing",
+          "skills.7.items.1": "missing",
+          "awards.0.title": "wrong",
+          "awards.0.issuer": "missing",
+          "awards.0.date": "correct",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct"
+        },
+        "unplaced": 6
+      }
+    },
+    "scanned": {
+      "typography": {
+        "expected": 27,
+        "filled": 27,
+        "correct": 27,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules": {
+        "expected": 27,
+        "filled": 27,
+        "correct": 27,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 0
+      },
+      "typography, labels flattened": {
+        "expected": 27,
+        "filled": 21,
+        "correct": 21,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "profile.headline": "missing",
+          "profile.location": "missing",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 5
+      },
+      "rules, labels flattened": {
+        "expected": 27,
+        "filled": 21,
+        "correct": 21,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 9,
+            "filled": 9,
+            "correct": 9
+          },
+          "education": {
+            "expected": 3,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 8,
+            "filled": 8,
+            "correct": 8
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "profile.headline": "missing",
+          "profile.location": "missing",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct"
+        },
+        "unplaced": 5
+      }
+    },
+    "mixed": {
+      "typography": {
+        "expected": 41,
+        "filled": 45,
+        "correct": 39,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 3
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "education": {
+            "expected": 6,
+            "filled": 6,
+            "correct": 6
+          },
+          "skills": {
+            "expected": 12,
+            "filled": 16,
+            "correct": 11
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "wrong",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "education.1.school": "correct",
+          "education.1.degree": "correct",
+          "education.1.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.1.items.3": "extra",
+          "skills.1.items.4": "extra",
+          "skills.1.items.5": "extra",
+          "skills.1.items.6": "extra",
+          "skills.2.items.0": "wrong",
+          "skills.2.items.1": "correct",
+          "skills.2.items.2": "correct",
+          "skills.2.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 0
+      },
+      "rules": {
+        "expected": 41,
+        "filled": 45,
+        "correct": 39,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 3
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "education": {
+            "expected": 6,
+            "filled": 6,
+            "correct": 6
+          },
+          "skills": {
+            "expected": 12,
+            "filled": 16,
+            "correct": 11
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "wrong",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "education.1.school": "correct",
+          "education.1.degree": "correct",
+          "education.1.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.1.items.3": "extra",
+          "skills.1.items.4": "extra",
+          "skills.1.items.5": "extra",
+          "skills.1.items.6": "extra",
+          "skills.2.items.0": "wrong",
+          "skills.2.items.1": "correct",
+          "skills.2.items.2": "correct",
+          "skills.2.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 0
+      },
+      "typography, labels flattened": {
+        "expected": 41,
+        "filled": 42,
+        "correct": 36,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 3
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "education": {
+            "expected": 6,
+            "filled": 3,
+            "correct": 3
+          },
+          "skills": {
+            "expected": 12,
+            "filled": 16,
+            "correct": 11
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "correct",
+          "profile.location": "correct",
+          "profile.summary": "wrong",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "education.0.school": "correct",
+          "education.0.degree": "correct",
+          "education.0.dates": "correct",
+          "education.1.school": "missing",
+          "education.1.degree": "missing",
+          "education.1.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.1.items.3": "extra",
+          "skills.1.items.4": "extra",
+          "skills.1.items.5": "extra",
+          "skills.1.items.6": "extra",
+          "skills.2.items.0": "wrong",
+          "skills.2.items.1": "correct",
+          "skills.2.items.2": "correct",
+          "skills.2.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 2
+      },
+      "rules, labels flattened": {
+        "expected": 41,
+        "filled": 36,
+        "correct": 30,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 1,
+            "correct": 0
+          },
+          "contact": {
+            "expected": 3,
+            "filled": 3,
+            "correct": 3
+          },
+          "experience": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "education": {
+            "expected": 6,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 12,
+            "filled": 16,
+            "correct": 11
+          },
+          "awards": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "profile.headline": "missing",
+          "profile.location": "missing",
+          "profile.summary": "wrong",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "contact.github": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "experience.2.bullets.1": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.dates": "missing",
+          "education.1.school": "missing",
+          "education.1.degree": "missing",
+          "education.1.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.1.items.3": "extra",
+          "skills.1.items.4": "extra",
+          "skills.1.items.5": "extra",
+          "skills.1.items.6": "extra",
+          "skills.2.items.0": "wrong",
+          "skills.2.items.1": "correct",
+          "skills.2.items.2": "correct",
+          "skills.2.items.3": "correct",
+          "awards.0.title": "correct",
+          "awards.0.date": "correct"
+        },
+        "unplaced": 7
+      }
+    },
+    "guide_template": {
+      "typography": {
+        "expected": 54,
+        "filled": 43,
+        "correct": 43,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 3,
+            "correct": 3
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 17,
+            "filled": 17,
+            "correct": 17
+          },
+          "education": {
+            "expected": 5,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "certifications": {
+            "expected": 8,
+            "filled": 3,
+            "correct": 3
+          },
+          "references": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "missing",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.location": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.location": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.location": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.field": "missing",
+          "education.0.gpa": "missing",
+          "education.0.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct",
+          "certifications.0.description": "missing",
+          "certifications.1.title": "missing",
+          "certifications.1.issuer": "missing",
+          "certifications.1.date": "missing",
+          "certifications.1.description": "missing",
+          "references.0.name": "correct",
+          "references.0.position": "correct",
+          "references.0.phone": "correct",
+          "references.0.email": "correct"
+        },
+        "unplaced": 6
+      },
+      "rules": {
+        "expected": 54,
+        "filled": 43,
+        "correct": 43,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 3,
+            "correct": 3
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 17,
+            "filled": 17,
+            "correct": 17
+          },
+          "education": {
+            "expected": 5,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "certifications": {
+            "expected": 8,
+            "filled": 3,
+            "correct": 3
+          },
+          "references": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "missing",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.location": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.location": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.location": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.field": "missing",
+          "education.0.gpa": "missing",
+          "education.0.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct",
+          "certifications.0.description": "missing",
+          "certifications.1.title": "missing",
+          "certifications.1.issuer": "missing",
+          "certifications.1.date": "missing",
+          "certifications.1.description": "missing",
+          "references.0.name": "correct",
+          "references.0.position": "correct",
+          "references.0.phone": "correct",
+          "references.0.email": "correct"
+        },
+        "unplaced": 6
+      },
+      "typography, labels flattened": {
+        "expected": 54,
+        "filled": 43,
+        "correct": 43,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 3,
+            "correct": 3
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 17,
+            "filled": 17,
+            "correct": 17
+          },
+          "education": {
+            "expected": 5,
+            "filled": 0,
+            "correct": 0
+          },
+          "skills": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "certifications": {
+            "expected": 8,
+            "filled": 3,
+            "correct": 3
+          },
+          "references": {
+            "expected": 4,
+            "filled": 4,
+            "correct": 4
+          }
+        },
+        "outcomes": {
+          "profile.name": "correct",
+          "profile.headline": "missing",
+          "profile.location": "correct",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.location": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.location": "correct",
+          "experience.1.dates": "correct",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.2.company": "correct",
+          "experience.2.role": "correct",
+          "experience.2.location": "correct",
+          "experience.2.dates": "correct",
+          "experience.2.bullets.0": "correct",
+          "education.0.school": "missing",
+          "education.0.degree": "missing",
+          "education.0.field": "missing",
+          "education.0.gpa": "missing",
+          "education.0.dates": "missing",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "certifications.0.title": "correct",
+          "certifications.0.issuer": "correct",
+          "certifications.0.date": "correct",
+          "certifications.0.description": "missing",
+          "certifications.1.title": "missing",
+          "certifications.1.issuer": "missing",
+          "certifications.1.date": "missing",
+          "certifications.1.description": "missing",
+          "references.0.name": "correct",
+          "references.0.position": "correct",
+          "references.0.phone": "correct",
+          "references.0.email": "correct"
+        },
+        "unplaced": 6
+      },
+      "rules, labels flattened": {
+        "expected": 54,
+        "filled": 35,
+        "correct": 31,
+        "bySection": {
+          "profile": {
+            "expected": 4,
+            "filled": 1,
+            "correct": 1
+          },
+          "contact": {
+            "expected": 2,
+            "filled": 2,
+            "correct": 2
+          },
+          "experience": {
+            "expected": 17,
+            "filled": 16,
+            "correct": 13
+          },
+          "education": {
+            "expected": 5,
+            "filled": 2,
+            "correct": 1
+          },
+          "skills": {
+            "expected": 14,
+            "filled": 14,
+            "correct": 14
+          },
+          "certifications": {
+            "expected": 8,
+            "filled": 0,
+            "correct": 0
+          },
+          "references": {
+            "expected": 4,
+            "filled": 0,
+            "correct": 0
+          }
+        },
+        "outcomes": {
+          "profile.name": "missing",
+          "profile.headline": "missing",
+          "profile.location": "missing",
+          "profile.summary": "correct",
+          "contact.email": "correct",
+          "contact.phone": "correct",
+          "experience.0.company": "correct",
+          "experience.0.role": "correct",
+          "experience.0.location": "correct",
+          "experience.0.dates": "correct",
+          "experience.0.bullets.0": "correct",
+          "experience.0.bullets.1": "correct",
+          "experience.1.company": "correct",
+          "experience.1.role": "correct",
+          "experience.1.location": "correct",
+          "experience.1.dates": "wrong",
+          "experience.1.bullets.0": "correct",
+          "experience.1.bullets.1": "correct",
+          "experience.2.company": "wrong",
+          "experience.2.role": "correct",
+          "experience.2.location": "wrong",
+          "experience.2.dates": "missing",
+          "experience.2.bullets.0": "correct",
+          "education.0.school": "wrong",
+          "education.0.degree": "missing",
+          "education.0.field": "missing",
+          "education.0.gpa": "missing",
+          "education.0.dates": "correct",
+          "skills.0.title": "correct",
+          "skills.0.items.0": "correct",
+          "skills.0.items.1": "correct",
+          "skills.0.items.2": "correct",
+          "skills.1.title": "correct",
+          "skills.1.items.0": "correct",
+          "skills.1.items.1": "correct",
+          "skills.1.items.2": "correct",
+          "skills.2.title": "correct",
+          "skills.2.items.0": "correct",
+          "skills.2.items.1": "correct",
+          "skills.3.title": "correct",
+          "skills.3.items.0": "correct",
+          "skills.3.items.1": "correct",
+          "certifications.0.title": "missing",
+          "certifications.0.issuer": "missing",
+          "certifications.0.date": "missing",
+          "certifications.0.description": "missing",
+          "certifications.1.title": "missing",
+          "certifications.1.issuer": "missing",
+          "certifications.1.date": "missing",
+          "certifications.1.description": "missing",
+          "references.0.name": "missing",
+          "references.0.position": "missing",
+          "references.0.phone": "missing",
+          "references.0.email": "missing"
+        },
+        "unplaced": 11
+      }
+    }
+  }
+}

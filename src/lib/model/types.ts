@@ -4,7 +4,7 @@ export type Locale = 'id' | 'en'
 
 export const LOCALES = ['id', 'en'] as const satisfies readonly Locale[]
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /**
  * Per-locale text on a shared core. The locale union sits on one `text` node per
@@ -107,7 +107,22 @@ export interface AwardText {
 }
 export type AwardItem = Localized<AwardCore, AwardText>
 export type ResolvedAwardItem = Resolved<AwardCore, AwardText>
+export type CertificationItem = AwardItem
+export type ResolvedCertificationItem = ResolvedAwardItem
 
+
+interface ReferenceCore {
+  id: string
+  phone: string
+  email: string
+}
+export interface ReferenceText {
+  name: string
+  position: string
+  note: string
+}
+export type ReferenceItem = Localized<ReferenceCore, ReferenceText>
+export type ResolvedReferenceItem = Resolved<ReferenceCore, ReferenceText>
 
 export interface SectionState {
   kind: ListSectionKind
@@ -120,6 +135,8 @@ export interface ResumeSections {
   projects: ProjectItem[]
   skills: SkillGroup[]
   awards: AwardItem[]
+  certifications: CertificationItem[]
+  references: ReferenceItem[]
 }
 
 /** One structure shared across locales, so the language versions cannot drift in shape. */
@@ -141,4 +158,6 @@ export interface ResolvedResume {
   projects: ResolvedProjectItem[]
   skills: ResolvedSkillGroup[]
   awards: ResolvedAwardItem[]
+  certifications: ResolvedCertificationItem[]
+  references: ResolvedReferenceItem[]
 }

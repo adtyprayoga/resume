@@ -1,0 +1,72 @@
+{
+  "locale": "id",
+  "profile": {
+    "name": "Budi Santoso",
+    "headline": "Analis Data",
+    "location": "Bandung, Jawa Barat",
+    "summary": "Analis data dengan pengalaman lima tahun di bidang ritel dan logistik."
+  },
+  "contact": {
+    "email": "budi.santoso@example.com",
+    "phone": "0812-9876-5432",
+    "website": "",
+    "github": "",
+    "linkedin": "",
+    "avatar": ""
+  },
+  "sections": {
+    "experience": [
+      {
+        "company": "Toko Contoh",
+        "role": "Analis Data Senior",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2022-03",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Membangun dasbor penjualan harian untuk tiga ratus cabang.",
+          "Menurunkan waktu pembuatan laporan bulanan dari tiga hari menjadi empat jam."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Institut Teknologi Contoh",
+        "degree": "Sarjana Statistika",
+        "field": "",
+        "gpa": "",
+        "description": "",
+        "dates": {
+          "start": "2015",
+          "end": "2019"
+        }
+      }
+    ],
+    "projects": [],
+    "skills": [
+      {
+        "title": "",
+        "items": [
+          "SQL",
+          "Python",
+          "Tableau",
+          "Statistik Inferensial"
+        ]
+      }
+    ],
+    "awards": [
+      {
+        "title": "Juara 1 Kompetisi Analitik Nasional",
+        "issuer": "",
+        "date": "2018",
+        "description": ""
+      }
+    ],
+    "certifications": [],
+    "references": []
+  },
+  "unplaced": 0
+}

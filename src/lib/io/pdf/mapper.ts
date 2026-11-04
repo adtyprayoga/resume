@@ -8,11 +8,13 @@ import type {
   ExperienceItem,
   Locale,
   ProjectItem,
+  ReferenceItem,
   ResumeDocument,
   SkillGroup,
 } from '$lib/model/types'
-import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isRoleTitle, matchHeading, projectMetadata, splitList, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
-import { associateDateRows, joinSourceLines, partsOf, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
+import { CONTACT_LABEL, findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isCertificate, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, splitTitleIssuer, splitTrailingLocation, stripBullet, type FoundRange, type HeadingKind } from './rules'
+import { buildOutline, type Outline, type OutlineRole } from './outline'
+import { associateDateRows, joinListContinuations, joinSourceLines, partsOf, sliceSegment, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
 import type { Extraction } from './types'
 
 /**
@@ -28,7 +30,7 @@ export interface FieldRef {
   blocks: string[]
 }
 
-export type WarningCode = 'no_name' | 'ambiguous_title' | 'ambiguous_entries' | 'ambiguous_dates' | 'unsupported_section' | 'nothing_recognised'
+export type WarningCode = 'no_name' | 'ambiguous_title' | 'ambiguous_entries' | 'ambiguous_dates' | 'outside_structure' | 'nothing_recognised'
 
 export interface MapWarning {
   code: WarningCode
@@ -139,12 +141,7 @@ class Usage {
 
 // Helpers ----------------------------------------------------------------------
 
-const HEADER_LABELS = new Set(['title', 'section_header'])
-const isHeaderLabel = (block: SourceBlock) => HEADER_LABELS.has(block.label)
-/** Document titles, not names: "CURRICULUM VITAE", "Daftar Riwayat Hidup". */
-const DOCUMENT_TITLE = /^\s*(?:curriculum vitae|cv|resume|résumé|daftar riwayat hidup|riwayat hidup)\s*$/i
-const NAME_LIKE = /^[\p{Lu}][\p{L}.'’-]*(?:\s+[\p{L}][\p{L}.'’-]*){0,4}$/u
-const LOCATION_LIKE = /^[\p{L}][\p{L} .'’-]*(?:,\s*[\p{L}][\p{L} .'’-]*){1,2}$/u
+const isHeaderLabel = (block: SourceBlock) => isHeadingLabel(block.label)
 const TECH_LINE = /^(?:tech(?:nolog(?:y|ies))?(?:\s+stack)?|stack|tools|built with|teknologi|alat)\s*:\s*(.+)$/i
 const GPA = /\b(?:gpa|ipk)\s*:?\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+(?:[.,]\d+)?)?)/i
 
@@ -161,7 +158,11 @@ const isDateLine = (block: SourceBlock) => {
   return !/[\p{L}\p{N}]/u.test(rest)
 }
 
-type RegionKind = HeadingKind | 'header'
+/** `outside`: a section that is not part of the recommended resume structure. */
+type RegionKind = Exclude<HeadingKind, 'unsupported'> | 'header' | 'outside'
+
+/** An outside section's heading and content stay visible as unmatched. */
+const unmapped = (kind: RegionKind) => kind === 'outside'
 
 interface Region {
   kind: RegionKind
@@ -169,28 +170,63 @@ interface Region {
   blocks: SourceBlock[]
 }
 
-const regionsOf = (blocks: SourceBlock[]): Region[] => {
+/**
+ * With typography, every h2 opens a region, and one whose wording is not a
+ * known section is outside the structure. Before the first known heading, an
+ * h2 of unknown wording is a header line set in the heading style (a
+ * headline), so it stays in the header. Without typography, a region opens
+ * where `sectionHeading` reads one, as the rules path always has.
+ */
+const regionsOf = (outline: Outline): Region[] => {
   const regions: Region[] = [{ kind: 'header', heading: null, blocks: [] }]
-  for (const block of blocks) {
-    const matched = matchHeading(block.text)
-    // "Languages:" inside a skills list is a label; only a layout heading opens an unsupported section.
-    const unknownSection = isHeaderLabel(block) && /\b(activities|memberships|involvement|kegiatan|keanggotaan)\b/i.test(block.text)
-    const kind = matched === 'unsupported' && !isHeaderLabel(block) ? null : matched ?? (unknownSection ? 'unsupported' : null)
-    if (kind) regions.push({ kind, heading: block, blocks: [] })
+  let known = false
+  for (const { role, block } of outline.nodes) {
+    const matched = outline.confidence === 'typography' && role === 'h2' ? matchHeading(block.text) : null
+    if (matched) known = true
+    const kind = outline.confidence === 'typography'
+      ? role === 'h2' ? matched ?? (known ? 'outside' : null) : null
+      : sectionHeading(block.text, block.label)
+    if (kind) regions.push({ kind: kind === 'unsupported' ? 'outside' : kind, heading: block, blocks: [] })
     else regions.at(-1)!.blocks.push(block)
   }
   return regions
 }
 
-const ENTRY_KINDS = ['experience', 'education', 'projects', 'awards'] as const
+/** Letter-bearing tokens: "People Development | L&D" is three words. */
+const wordCount = (text: string) => text.split(/\s+/).filter((token) => /\p{L}/u.test(token)).length
+
+/**
+ * A `City, Country` piece between the separators of a contact row. A flattened
+ * row can glue a headline's last words onto the city ("Bilingual Facilitator
+ * Bandung, Indonesia"), so the city is at most two words.
+ */
+const contactRowLocation = (piece: string): RegExpMatchArray | undefined =>
+  [...piece.matchAll(/[^|\n•·]+/g)].find((part) => {
+    const text = trimPiece(part[0])
+    return isLocation(text) && wordCount(text.split(',')[0]!) <= 2
+  })
+
+const ENTRY_KINDS = ['experience', 'education', 'projects', 'awards', 'certifications', 'references'] as const
 type EntryKind = (typeof ENTRY_KINDS)[number]
+
+/**
+ * A course row with its own date: "Title - Issuer | Jun 2025". A year after a
+ * comma or dash ("…, 2024") ends many description lines too, so that form
+ * counts only when the title reads as a certificate.
+ */
+const datedRow = (block: SourceBlock) => {
+  if (isBullet(block)) return false
+  const row = splitTitleIssuer(block.text)
+  return !!row?.date && (/\|\s*$/.test(block.text.slice(0, row.date.from)) || isCertificate(row.title))
+}
 
 /**
  * Splits a section into entries. A block starts an entry when the layout calls
  * it a heading, or when it is a plain line directly before a date-only line and
  * the current entry already has content (a date or a bullet), so a title
- * followed by a location and then its dates stays one entry. Blocks before the
- * first entry are returned separately; null means no boundary was found.
+ * followed by a location and then its dates stays one entry. In courses, a row
+ * carrying its own date starts one too. Blocks before the first entry are
+ * returned separately; null means no boundary was found.
  */
 const splitEntries = (blocks: SourceBlock[], kind: EntryKind): { lead: SourceBlock[]; entries: SourceBlock[][] } | null => {
   const starts: number[] = []
@@ -204,16 +240,216 @@ const splitEntries = (blocks: SourceBlock[], kind: EntryKind): { lead: SourceBlo
       (kind === 'experience' && isRoleTitle(titleText)) ||
       (kind === 'projects' && projectMetadata(titleText) !== null) ||
       (kind === 'education' && date !== null && /\s[–—-]\s/.test(titleText)))
-    if ((!isDateLine(block) && isHeaderLabel(block)) || inlineEntry || (titleBeforeDate && (!starts.length || content))) {
+    const courseRow = kind === 'certifications' && datedRow(block)
+    if ((!isDateLine(block) && isHeaderLabel(block)) || inlineEntry || courseRow || (titleBeforeDate && (!starts.length || content))) {
       starts.push(i)
       content = false
     }
-    if (isDateLine(block) || isBullet(block)) content = true
+    if (isDateLine(block) || isBullet(block) || courseRow) content = true
   })
   if (!starts.length) return null
   return {
     lead: blocks.slice(0, starts[0]),
     entries: starts.map((start, i) => blocks.slice(start, starts[i + 1] ?? blocks.length)),
+  }
+}
+
+/**
+ * A company row whose roles follow as their own entries. Its tenure is copied
+ * to a role only when the row carries exactly one date and exactly one role
+ * follows, since several roles would each need their own period.
+ */
+interface Employer {
+  block: SourceBlock
+  company: string
+  location: string
+  date?: SourceBlock | undefined
+}
+
+/**
+ * An entry of a section, or an employer row (`employer`). `of` points at the
+ * employer unit an entry may share; `role` marks an entry whose title the
+ * typography reads as a role (an h4 under a company h3).
+ */
+interface Unit {
+  blocks: SourceBlock[]
+  employer?: boolean
+  of?: number | undefined
+  role?: boolean
+}
+
+/** A row's text without a date range that ends it, and that date. */
+const headOf = (block: SourceBlock): { text: string; date: FoundRange | null } => {
+  const date = findDateRange(block.text)
+  if (date && date.from > 0 && !/[\p{L}\p{N}]/u.test(block.text.slice(date.to))) return { text: trimPiece(block.text.slice(0, date.from)), date }
+  return { text: block.text.trim(), date: null }
+}
+
+/** A title the rules path reads as a role that may share an employer. */
+const sharesEmployer = (unit: Unit) => {
+  if (unit.role) return true
+  const text = headOf(unit.blocks[0]!).text
+  return !splitRoleCompany(text) && isRoleTitle(text)
+}
+
+/**
+ * Links entries to employer rows. A unit is an employer when typography puts
+ * a role under it, or when it is a heading (`headed`) that is not itself a
+ * role and the next title is one; later entries share it until an entry names
+ * its own company ("Role at Company"). An employer of typography roles is
+ * shared by those roles only.
+ */
+const linkEmployers = (units: Unit[], kind: EntryKind, headed: (unit: Unit) => boolean): Unit[] => {
+  if (kind !== 'experience') return units
+  let current: number | undefined
+  // An employer that typography puts roles under owns only those roles: its
+  // scope ends at the next h3 (or the region's end, at the next h2).
+  let scoped = false
+  units.forEach((unit, index) => {
+    if (unit.role) {
+      unit.of = current
+      return
+    }
+    if (scoped) current = undefined
+    scoped = false
+    const title = unit.blocks[0]!
+    const text = headOf(title).text
+    const next = units[index + 1]
+    if (next && (next.role || (headed(unit) && !isRoleTitle(text) && !splitRoleCompany(text) && isRoleTitle(next.blocks[0]!.text)))) {
+      unit.employer = true
+      current = index
+      scoped = !!next.role
+      return
+    }
+    unit.of = current
+    if (splitRoleCompany(title.text)) current = undefined
+  })
+  return units
+}
+
+/** Rules-path employer rows: a heading-labelled title, or a title followed only by date lines. */
+const rulesUnits = (entries: SourceBlock[][], kind: EntryKind): Unit[] =>
+  linkEmployers(entries.map((blocks) => ({ blocks })), kind, ({ blocks }) => isHeaderLabel(blocks[0]!) || blocks.slice(1).every(isDateLine))
+
+/**
+ * A short standalone line: the outline's h4 is every line of its class under
+ * an h3, so a paragraph that happens to share the class must not start a role.
+ */
+const roleLine = (block: SourceBlock) => {
+  const text = block.text.trim()
+  return !isBullet(block) && !isDateLine(block) && wordCount(text) <= 8 && !/[.!?:;]$/.test(text) && !isLocation(text)
+}
+
+/**
+ * Typography entries: each h3 starts an entry; in experience, each h4 under an
+ * h3 starts a role entry that shares that h3 as employer. An h3 company row
+ * followed by role h3s keeps the rules path's shared-employer reading.
+ */
+const outlineUnits = (blocks: SourceBlock[], kind: EntryKind, roleOf: Map<SourceBlock, OutlineRole>): { lead: SourceBlock[]; units: Unit[] } => {
+  const lead: SourceBlock[] = []
+  const units: Unit[] = []
+  for (const block of blocks) {
+    const role = roleOf.get(block)
+    if (role === 'h3') units.push({ blocks: [block] })
+    else if (!units.length) lead.push(block)
+    else if (kind === 'experience' && role === 'h4' && roleLine(block)) units.push({ blocks: [block], role: true })
+    else units.at(-1)!.blocks.push(block)
+  }
+  // Lines before the first entry heading that the rules path reads wholly as
+  // entries (a first course row set in another font, then its date line) are
+  // entries too; otherwise they stay the unplaced lead.
+  const early = lead.length ? splitEntries(kind === 'education' ? splitEducationRows(lead) : lead, kind) : null
+  if (early && !early.lead.length) return { lead: [], units: linkEmployers([...early.entries.map((blocks) => ({ blocks })), ...units], kind, () => true) }
+  return { lead, units: linkEmployers(units, kind, () => true) }
+}
+
+/** Where a dated "Title - Issuer | <date>" row ends inside a longer line, or null. */
+const rowEnd = (text: string): number | null => {
+  for (const space of text.matchAll(/\s+/g)) {
+    const head = text.slice(0, space.index)
+    const row = splitTitleIssuer(head)
+    if (row?.date && /\|\s*$/.test(head.slice(0, row.date.from)) && /[\p{L}\p{N}]/u.test(text.slice(space.index))) return space.index
+  }
+  return null
+}
+
+/**
+ * A course row that runs on into more text (Docling merged it with the lines
+ * below) ends at its date, and the rest is the entry's next line. When the rest
+ * holds another dated row, where one description ends and the next title
+ * begins is not in the text, so the rest stays unplaced.
+ */
+const courseRows = (blocks: SourceBlock[], roleOf: Map<SourceBlock, OutlineRole>, warnings: MapWarning[]): SourceBlock[] =>
+  blocks.flatMap((block) => {
+    const end = isBullet(block) ? null : rowEnd(block.text)
+    if (end === null) return [block]
+    const start = end + /^\s*/.exec(block.text.slice(end))![0].length
+    const row = sliceSegment(block, 0, end)
+    const rest = sliceSegment(block, start, block.text.length)
+    const role = roleOf.get(block)
+    if (role) roleOf.set(row, role)
+    roleOf.set(rest, 'body')
+    if (rowEnd(rest.text) === null && !datedRow(rest)) return [row, rest]
+    warnings.push({ code: 'ambiguous_entries', blocks: [...new Set(partsOf(rest).map((part) => part.block.id))] })
+    return [row]
+  })
+
+/**
+ * References: a name line starts an entry, and `lines(i)` says how many of the
+ * following lines belong to it. The first of them, up to its first contact
+ * and that contact's label ("Phone:"), is the position; the first phone and
+ * email in any of them fill those fields; another line without contacts is
+ * the note. A line outside an entry
+ * becomes a note entry, unless it holds contacts: then it stays unplaced.
+ */
+const mapReferences = (blocks: SourceBlock[], lines: (index: number) => number | null, document: ResumeDocument, locale: Locale, usage: Usage, ref: Ref) => {
+  const module = getSectionModule('references')
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]!
+    const item = module.emptyItem() as ReferenceItem
+    const text = item.text[locale]
+    const path = (field: string) => `references.${item.id}.${field}`
+    const count = lines(i)
+    if (count !== null) {
+      text.name = block.text.trim()
+      usage.take(block)
+      ref(path('name'), block)
+      const notes: string[] = []
+      blocks.slice(i + 1, i + 1 + count).forEach((line, index) => {
+        const contacts = findContacts(line.text)
+        for (const field of ['phone', 'email'] as const) {
+          const found = contacts.find((contact) => contact.field === field)
+          if (!found || item[field]) continue
+          item[field] = found.value
+          const label = CONTACT_LABEL.exec(line.text.slice(0, found.from))
+          usage.take(line, label ? label.index : found.from, found.to)
+          ref(path(field), line)
+        }
+        // A contact's label ("Phone:") is never the position.
+        const before = line.text.slice(0, contacts[0]?.from ?? line.text.length)
+        const end = contacts.length ? CONTACT_LABEL.exec(before)?.index ?? before.length : before.length
+        const lead = trimPiece(stripBullet(line.text.slice(0, end)).text)
+        if (!/[\p{L}\p{N}]/u.test(lead)) return
+        if (index === 0) {
+          text.position = lead
+          usage.take(line, 0, end)
+          ref(path('position'), line)
+        } else if (!contacts.length) {
+          notes.push(lead)
+          usage.take(line)
+          ref(path('note'), line)
+        }
+      })
+      if (notes.length) text.note = notes.join('\n')
+      i += count
+    } else {
+      const note = stripBullet(block.text).text.trim()
+      if (!note || findContacts(block.text).length) continue
+      text.note = note
+      usage.take(block)
+      ref(path('note'), block)
+    }
+    document.content.references.push(item)
   }
 }
 
@@ -224,7 +460,11 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   const usage = new Usage()
   const refs: FieldRef[] = []
   const warnings: MapWarning[] = []
-  const regions = regionsOf(associateDateRows(joinSourceLines(extraction.blocks)))
+  const outline = buildOutline(associateDateRows(joinListContinuations(joinSourceLines(extraction.blocks))))
+  const regions = regionsOf(outline)
+  // List items never fill header fields.
+  const lists = new Set(outline.nodes.filter((node) => node.role === 'list').map((node) => node.block))
+  const roleOf = new Map(outline.nodes.map((node) => [node.block, node.role]))
 
   const ref = (path: string, block: SourceBlock) => {
     const ids = partsOf(block).map(part => part.block.id)
@@ -233,7 +473,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
     else for (const id of ids) if (!existing.blocks.includes(id)) existing.blocks.push(id)
   }
 
-  for (const region of regions) if (region.heading && region.kind !== 'unsupported') usage.take(region.heading)
+  for (const region of regions) if (region.heading && !unmapped(region.kind)) usage.take(region.heading)
 
   // Contacts: only from the header and explicit contact sections, so a project
   // link is never mistaken for the person's website.
@@ -243,7 +483,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
       if (document.contact[found.field]) continue
       document.contact[found.field] = found.value
       usage.take(block, found.from, found.to)
-      const label = /(?:e-?mail|phone|telephone|tel|telepon|ponsel|portfolio|portofolio|website|github|linkedin)\s*:?\s*$/i.exec(block.text.slice(0, found.from))
+      const label = CONTACT_LABEL.exec(block.text.slice(0, found.from))
       if (label) usage.take(block, label.index, found.from)
       ref(`contact.${found.field}`, block)
     }
@@ -251,8 +491,10 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
 
   const profile = document.profile.text[locale]
   const header = regions[0]!.blocks
-  for (const block of header) if (DOCUMENT_TITLE.test(block.text)) usage.take(block)
-  const nameBlock = header.find((block) => isHeaderLabel(block) && !usage.used(block) && NAME_LIKE.test(block.text.trim()))
+  for (const block of header) if (isDocumentTitle(block.text)) usage.take(block)
+  const outlineName = outline.confidence === 'typography' ? outline.nodes.find((node) => node.role === 'name')?.block : undefined
+  const nameBlock = (outlineName && header.includes(outlineName) && !usage.used(outlineName) ? outlineName : undefined) ??
+    header.find((block) => isHeaderLabel(block) && !usage.used(block) && isNameLike(block.text.trim()))
   if (nameBlock) {
     profile.name = nameBlock.text.trim()
     usage.take(nameBlock)
@@ -260,14 +502,25 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   } else {
     warnings.push({ code: 'no_name', blocks: [] })
   }
-  const afterName = nameBlock ? header.slice(header.indexOf(nameBlock) + 1) : []
+  const afterName = (nameBlock ? header.slice(header.indexOf(nameBlock) + 1) : []).filter((block) => !isHeaderLabel(block) && !lists.has(block))
+  // The contact row's location comes before any other "A, B" line.
   for (const block of afterName) {
-    if (isHeaderLabel(block)) continue
+    if (profile.location || !findContacts(block.text).length) continue
+    for (const [piece, offset] of usage.pieces(block)) {
+      const part = contactRowLocation(piece)
+      if (!part) continue
+      profile.location = trimPiece(part[0])
+      usage.take(block, offset + part.index!, offset + part.index! + part[0].length)
+      ref('profile.location', block)
+      break
+    }
+  }
+  for (const block of afterName) {
     if (!profile.location) {
       for (const [piece, offset] of usage.pieces(block)) {
         for (const line of piece.matchAll(/[^\n]+/g)) {
           const intact = trimPiece(line[0])
-          if (LOCATION_LIKE.test(intact) && intact.split(/\s+/).length <= 6) {
+          if (isLocation(intact)) {
             profile.location = intact
             usage.take(block, offset + line.index, offset + line.index + line[0].length)
             ref('profile.location', block)
@@ -287,10 +540,9 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
     for (const [piece, offset] of usage.pieces(block)) {
       for (const line of piece.matchAll(/[^\n]+/g)) {
         const text = trimPiece(line[0])
-        const words = text.split(/\s+/).length
         let field: 'location' | 'headline' | null = null
-        if (!profile.location && LOCATION_LIKE.test(text) && words <= 6) field = 'location'
-        else if (!profile.headline && !/[@\d]/.test(text) && (isRoleTitle(text) || (!usage.used(block) && text.length <= 80 && words <= 10))) field = 'headline'
+        if (!profile.location && isLocation(text)) field = 'location'
+        else if (!profile.headline && !/[@\d]/.test(text) && (isRoleTitle(text) || (!usage.used(block) && text.length <= 80 && wordCount(text) <= 10))) field = 'headline'
         if (field) {
           profile[field] = text
           usage.take(block, offset + line.index, offset + line.index + line[0].length)
@@ -318,51 +570,94 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         if (lines.length) profile.summary = [profile.summary, ...lines].filter(Boolean).join('\n')
         break
       }
-      case 'unsupported':
-        warnings.push({ code: 'unsupported_section', blocks: [region.heading!.id] })
+      case 'outside':
+        warnings.push({ code: 'outside_structure', blocks: [region.heading!.id] })
         break
       case 'skills':
         seen('skills')
         mapSkills(region.blocks, document, locale, usage, ref)
         break
-      case 'mixed_awards':
-        seen('awards')
+      case 'mixed_awards': {
+        // A line that is neither award nor certificate describes the
+        // certificate directly above it; with none above, it stays unplaced.
+        const entries: { kind: 'awards' | 'certifications'; blocks: SourceBlock[] }[] = []
         for (const block of region.blocks) {
-          if (isAward(block.text)) mapEntry('awards', [block], document, locale, usage, ref, warnings)
-          else warnings.push({ code: 'unsupported_section', blocks: [block.id] })
+          const kind = isAward(block.text) ? 'awards' : isCertificate(block.text) ? 'certifications' : null
+          const last = entries.at(-1)
+          if (kind) entries.push({ kind, blocks: [block] })
+          else if (last?.kind === 'certifications') last.blocks.push(block)
+          else warnings.push({ code: 'ambiguous_entries', blocks: [block.id] })
+        }
+        for (const { kind, blocks } of entries) {
+          seen(kind)
+          mapEntry(kind, blocks, document, locale, usage, ref, warnings)
         }
         break
+      }
+      case 'references': {
+        seen('references')
+        const blocks = region.blocks
+        const headed = outline.confidence === 'typography' && blocks.some((block) => roleOf.get(block) === 'h3')
+        const contact = (i: number) => i < blocks.length && findContacts(blocks[i]!.text).length > 0
+        // Typography: every line up to the next h3. Rules path: a name-like line
+        // followed by a contact line, or by a position line and then one, and
+        // any contact lines directly after.
+        const lines = (i: number): number | null => {
+          const block = blocks[i]!
+          if (headed) {
+            if (roleOf.get(block) !== 'h3') return null
+            const next = blocks.findIndex((other, j) => j > i && roleOf.get(other) === 'h3')
+            return (next < 0 ? blocks.length : next) - i - 1
+          }
+          if (isBullet(block) || !isNameLike(block.text.trim())) return null
+          let count = contact(i + 1) ? 1 : i + 2 < blocks.length && !isBullet(blocks[i + 1]!) && contact(i + 2) && lines(i + 1) === null ? 2 : 0
+          if (!count) return null
+          // Further contact lines ("Email: …" under "Phone: …") belong to it too.
+          while (contact(i + count + 1)) count++
+          return count
+        }
+        mapReferences(blocks, lines, document, locale, usage, ref)
+        break
+      }
       case 'experience':
       case 'education':
       case 'projects':
-      case 'awards': {
+      case 'awards':
+      case 'certifications': {
         seen(region.kind)
-        const kind: EntryKind = region.kind
-        const blocks = kind === 'education' ? splitEducationRows(region.blocks) : region.blocks
-        const split = splitEntries(blocks, kind)
-        if (!split) {
-          if (kind === 'awards') {
-            for (const block of region.blocks) mapEntry(kind, [block], document, locale, usage, ref, warnings)
-          } else if (region.blocks.length) {
-            warnings.push({ code: 'ambiguous_entries', blocks: region.blocks.map((b) => b.id) })
+        const kind: ListEntryKind = region.kind
+        const blocks = kind === 'certifications' ? courseRows(region.blocks, roleOf, warnings) : region.blocks
+        let split: { lead: SourceBlock[]; units: Unit[] }
+        // Typography decides per region: entry headings split it only where they exist.
+        if (outline.confidence === 'typography' && blocks.some((block) => roleOf.get(block) === 'h3')) {
+          split = outlineUnits(blocks, kind, roleOf)
+        } else {
+          const rules = splitEntries(kind === 'education' ? splitEducationRows(blocks) : blocks, kind)
+          if (!rules) {
+            if (kind === 'awards' || kind === 'certifications') {
+              for (const block of blocks) mapEntry(kind, [block], document, locale, usage, ref, warnings)
+            } else if (blocks.length) {
+              warnings.push({ code: 'ambiguous_entries', blocks: blocks.map((b) => b.id) })
+            }
+            break
           }
-          break
+          split = { lead: rules.lead, units: rulesUnits(rules.entries, kind) }
         }
         if (split.lead.length) warnings.push({ code: 'ambiguous_entries', blocks: split.lead.map((b) => b.id) })
-        let employer: SourceBlock | undefined
-        for (let index = 0; index < split.entries.length; index++) {
-          const entry = split.entries[index]!
-          const title = entry[0]!
-          const titleText = usage.rest(title)
-          const next = split.entries[index + 1]?.[0]
-          if (kind === 'experience' && isHeaderLabel(title) && !isRoleTitle(titleText) && !splitRoleCompany(titleText) && next && isRoleTitle(next.text)) {
-            employer = title
-            usage.take(title)
-            continue
+        const employers = new Map<number, Employer>()
+        split.units.forEach((unit, index) => {
+          if (unit.employer) {
+            const [title, ...rest] = unit.blocks as [SourceBlock, ...SourceBlock[]]
+            const head = headOf(title)
+            usage.take(title, 0, head.date ? head.date.from : title.text.length)
+            const dates = [...(head.date ? [title] : []), ...rest.filter(isDateLine)]
+            const roles = split.units.filter((other) => other.of === index && sharesEmployer(other)).length
+            const { head: company, location } = splitTrailingLocation(head.text) ?? { head: head.text, location: '' }
+            employers.set(index, { block: title, company, location, date: dates.length === 1 && roles === 1 ? dates[0] : undefined })
+            return
           }
-          mapEntry(kind, entry, document, locale, usage, ref, warnings, employer)
-          if (kind === 'experience' && splitRoleCompany(titleText)) employer = undefined
-        }
+          mapEntry(kind, unit.blocks, document, locale, usage, ref, warnings, unit.of === undefined ? undefined : employers.get(unit.of), unit.role)
+        })
         break
       }
       default:
@@ -427,22 +722,32 @@ const mapSkills = (blocks: SourceBlock[], document: ResumeDocument, locale: Loca
   }
 }
 
+/** Entry kinds mapped field by field; references have their own reader. */
+type ListEntryKind = Exclude<EntryKind, 'references'>
+
 const mapEntry = (
-  kind: EntryKind,
+  kind: ListEntryKind,
   blocks: SourceBlock[],
   document: ResumeDocument,
   locale: Locale,
   usage: Usage,
   ref: Ref,
   warnings: MapWarning[],
-  employer?: SourceBlock,
+  employer?: Employer,
+  asRole = false,
 ) => {
   const item = getSectionModule(kind).emptyItem() as ExperienceItem & EducationItem & ProjectItem & AwardItem
   const text = item.text[locale] as unknown as Record<string, string | string[]>
   const path = (field: string) => `${kind}.${item.id}.${field}`
   let dated = false
 
-  const dateCandidates = blocks.filter(b => !isBullet(b)).flatMap(block => {
+  const [title, ...rest] = blocks as [SourceBlock, ...SourceBlock[]]
+  // A course's date is on its row or a date line under it, and a date line
+  // wins over the row's inline date; a year in its description is not its date.
+  const courseDate = kind === 'certifications'
+    ? (block: SourceBlock) => rest.some(isDateLine) ? isDateLine(block) : block === title || isDateLine(block)
+    : () => true
+  const dateCandidates = blocks.filter(b => !isBullet(b) && courseDate(b)).flatMap(block => {
     if (kind === 'projects') {
       const found = findProjectDate(block.text)
       return found ? [{ block, found }] : []
@@ -460,7 +765,7 @@ const mapEntry = (
     if (!found || usage.rest(block) === '') return
     dated = true
     usage.take(block, found.from, found.to)
-    if (kind === 'awards') {
+    if (kind === 'awards' || kind === 'certifications') {
       item.date = found.start
       ref(path('date'), block)
     } else {
@@ -469,8 +774,8 @@ const mapEntry = (
     }
   }
 
-  const [title, ...rest] = blocks as [SourceBlock, ...SourceBlock[]]
-  takeDates(title)
+  if (courseDate(title)) takeDates(title)
+  const titleDated = dated
   let titleText = stripBullet(usage.rest(title)).text.trim()
   const titleLimit = ambiguous ? Math.min(...dateCandidates.filter(c => c.block === title).map(c => c.found.from), title.text.length) : title.text.length
   if (ambiguous) titleText = trimPiece(title.text.slice(0, titleLimit))
@@ -484,7 +789,7 @@ const mapEntry = (
   }
 
   if (kind === 'experience') {
-    const split = splitRoleCompany(titleText)
+    const split = asRole ? null : splitRoleCompany(titleText)
     if (split) {
       item.company = split.company
       text.role = split.role
@@ -492,22 +797,43 @@ const mapEntry = (
       else usage.takeRest(title)
       ref(path('company'), title)
       ref(path('role'), title)
-    } else if (isRoleTitle(titleText)) {
+    } else if (asRole ? titleText : isRoleTitle(titleText)) {
       text.role = titleText
       if (ambiguous) usage.take(title, 0, titleLimit)
       else usage.takeRest(title)
       ref(path('role'), title)
       if (employer) {
-        item.company = employer.text.trim()
-        ref(path('company'), employer)
+        item.company = employer.company
+        ref(path('company'), employer.block)
+        if (employer.location) {
+          text.location = employer.location
+          ref(path('location'), employer.block)
+        }
+        // The employer's tenure, only for a role with no date of its own.
+        const tenure = !dateCandidates.length && employer.date ? findDateRange(employer.date.text) : null
+        if (tenure) {
+          dated = true
+          usage.take(employer.date!, tenure.from, tenure.to)
+          item.dates = dateRangeOf(tenure)
+          ref(path('dates'), employer.date!)
+        }
       }
     } else if (titleText) {
       warnings.push({ code: 'ambiguous_title', blocks: [title.id] })
     }
   } else if (titleText) {
-    const field = { education: 'school', projects: 'name', awards: 'title' }[kind]
+    const field = { education: 'school', projects: 'name', awards: 'title', certifications: 'title' }[kind]
     const metadata = kind === 'projects' ? projectMetadata(titleText) : null
-    const school = kind === 'education' ? /^(.+?)\s+[–—-]\s+(.+)$/.exec(titleText) : null
+    // The title without its date, or else the whole row, whose date may be what
+    // separates "Title, Issuer, 2024".
+    const row = stripBullet(title.text)
+    const whole = kind === 'certifications' ? splitTitleIssuer(row.text) : null
+    const course = kind === 'certifications' ? splitTitleIssuer(titleText) ?? whole : null
+    // An inline date that is not the entry's stays unplaced.
+    const keptDate = course && !titleDated && whole?.date ? row.from + whole.date.from : null
+    // "School - City, Country" names the place, not a qualification: kept whole.
+    const schoolSplit = kind === 'education' ? /^(.+?)\s+[–—-]\s+(.+)$/.exec(titleText) : null
+    const school = schoolSplit && !isLocation(schoolSplit[2]!.trim()) ? schoolSplit : null
     if (metadata) {
       text.name = metadata.name
       text.role = metadata.role
@@ -522,8 +848,15 @@ const mapEntry = (
       text.field = degree ? degree[2] ?? '' : qualification
       if (text.degree) ref(path('degree'), title)
       if (text.field) ref(path('field'), title)
+    } else if (course) {
+      text.title = course.title
+      if (course.issuer) {
+        text.issuer = course.issuer
+        ref(path('issuer'), title)
+      }
     } else text[field] = titleText
-    if (ambiguous) usage.take(title, 0, titleLimit)
+    if (keptDate !== null) usage.take(title, 0, keptDate)
+    else if (ambiguous) usage.take(title, 0, titleLimit)
     else usage.takeRest(title)
     ref(path(field), title)
   }
@@ -532,11 +865,11 @@ const mapEntry = (
   if (inlineDescription) ref(path('description'), title)
   for (const block of rest) {
     // A year inside an achievement ("…by 30% in 2019") is not the entry's period.
-    if (!isBullet(block)) takeDates(block)
+    if (!isBullet(block) && courseDate(block)) takeDates(block)
     if (usage.rest(block) === '') continue
     if (ambiguous && dateCandidates.some(c => c.block === block)) continue
 
-    if (isBullet(block) && kind !== 'education' && kind !== 'awards') {
+    if (isBullet(block) && kind !== 'education' && kind !== 'awards' && kind !== 'certifications') {
       const bullets = text.bullets as string[]
       bullets.push(stripBullet(block.text).text.trim())
       usage.take(block)

@@ -1,0 +1,253 @@
+{
+  "locale": "en",
+  "profile": {
+    "name": "Andi Wijaya",
+    "headline": "",
+    "location": "",
+    "summary": ""
+  },
+  "contact": {
+    "email": "andi.wijaya@example.com",
+    "phone": "",
+    "website": "",
+    "github": "",
+    "linkedin": "",
+    "avatar": ""
+  },
+  "sections": {
+    "experience": [
+      {
+        "company": "Example Company 1",
+        "role": "Engineer 1",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2001",
+          "end": "2002"
+        },
+        "bullets": [
+          "Achievement 1 at company 1.",
+          "Achievement 2 at company 1.",
+          "Achievement 3 at company 1."
+        ]
+      },
+      {
+        "company": "Example Company 2",
+        "role": "Engineer 2",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2002",
+          "end": "2003"
+        },
+        "bullets": [
+          "Achievement 1 at company 2.",
+          "Achievement 2 at company 2.",
+          "Achievement 3 at company 2."
+        ]
+      },
+      {
+        "company": "Example Company 3",
+        "role": "Engineer 3",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2003",
+          "end": "2004"
+        },
+        "bullets": [
+          "Achievement 1 at company 3.",
+          "Achievement 2 at company 3.",
+          "Achievement 3 at company 3."
+        ]
+      },
+      {
+        "company": "Example Company 4",
+        "role": "Engineer 4",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2004",
+          "end": "2005"
+        },
+        "bullets": [
+          "Achievement 1 at company 4.",
+          "Achievement 2 at company 4.",
+          "Achievement 3 at company 4."
+        ]
+      },
+      {
+        "company": "Example Company 5",
+        "role": "Engineer 5",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2005",
+          "end": "2006"
+        },
+        "bullets": [
+          "Achievement 1 at company 5.",
+          "Achievement 2 at company 5.",
+          "Achievement 3 at company 5."
+        ]
+      },
+      {
+        "company": "Example Company 6",
+        "role": "Engineer 6",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2006",
+          "end": "2007"
+        },
+        "bullets": [
+          "Achievement 1 at company 6.",
+          "Achievement 2 at company 6.",
+          "Achievement 3 at company 6."
+        ]
+      },
+      {
+        "company": "Example Company 7",
+        "role": "Engineer 7",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2007",
+          "end": "2008"
+        },
+        "bullets": [
+          "Achievement 1 at company 7.",
+          "Achievement 2 at company 7.",
+          "Achievement 3 at company 7."
+        ]
+      },
+      {
+        "company": "Example Company 8",
+        "role": "Engineer 8",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2008",
+          "end": "2009"
+        },
+        "bullets": [
+          "Achievement 1 at company 8.",
+          "Achievement 2 at company 8.",
+          "Achievement 3 at company 8."
+        ]
+      },
+      {
+        "company": "Example Company 9",
+        "role": "Engineer 9",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2009",
+          "end": "2010"
+        },
+        "bullets": [
+          "Achievement 1 at company 9.",
+          "Achievement 2 at company 9.",
+          "Achievement 3 at company 9."
+        ]
+      },
+      {
+        "company": "Example Company 10",
+        "role": "Engineer 10",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2010",
+          "end": "2011"
+        },
+        "bullets": [
+          "Achievement 1 at company 10.",
+          "Achievement 2 at company 10.",
+          "Achievement 3 at company 10."
+        ]
+      },
+      {
+        "company": "Example Company 11",
+        "role": "Engineer 11",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2011",
+          "end": "2012"
+        },
+        "bullets": [
+          "Achievement 1 at company 11.",
+          "Achievement 2 at company 11.",
+          "Achievement 3 at company 11."
+        ]
+      },
+      {
+        "company": "Example Company 12",
+        "role": "Engineer 12",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2012",
+          "end": "2013"
+        },
+        "bullets": [
+          "Achievement 1 at company 12.",
+          "Achievement 2 at company 12.",
+          "Achievement 3 at company 12."
+        ]
+      },
+      {
+        "company": "Example Company 13",
+        "role": "Engineer 13",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2013",
+          "end": "2014"
+        },
+        "bullets": [
+          "Achievement 1 at company 13.",
+          "Achievement 2 at company 13.",
+          "Achievement 3 at company 13."
+        ]
+      },
+      {
+        "company": "Example Company 14",
+        "role": "Engineer 14",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2014",
+          "end": "2015"
+        },
+        "bullets": [
+          "Achievement 1 at company 14.",
+          "Achievement 2 at company 14.",
+          "Achievement 3 at company 14."
+        ]
+      },
+      {
+        "company": "Example Company 15",
+        "role": "Engineer 15",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2015",
+          "end": "2016"
+        },
+        "bullets": [
+          "Achievement 1 at company 15.",
+          "Achievement 2 at company 15.",
+          "Achievement 3 at company 15."
+        ]
+      }
+    ],
+    "education": [],
+    "projects": [],
+    "skills": [],
+    "awards": [],
+    "certifications": [],
+    "references": []
+  },
+  "unplaced": 0
+}

@@ -2,7 +2,7 @@ import { createId, idOf, isRecord, str, textNode } from '$lib/model/coerce'
 import type { AwardItem, AwardText } from '$lib/model/types'
 import type { SectionModule } from '../types'
 
-const text = (raw: unknown): AwardText => {
+export const awardText = (raw: unknown): AwardText => {
   const value = isRecord(raw) ? raw : {}
   return {
     title: str(value.title),
@@ -16,12 +16,12 @@ const awards: SectionModule<AwardItem, AwardText> = {
   order: 4,
   labelKey: 'section.awards',
   translatableFields: ['title', 'issuer', 'description'],
-  emptyItem: () => ({ id: createId('awd'), date: '', text: textNode(undefined, text) }),
+  emptyItem: () => ({ id: createId('awd'), date: '', text: textNode(undefined, awardText) }),
   validate: (input) =>
     (Array.isArray(input) ? input : []).filter(isRecord).map((raw) => ({
       id: idOf(raw, 'awd'),
       date: str(raw.date),
-      text: textNode(raw.text, text),
+      text: textNode(raw.text, awardText),
     })),
 }
 

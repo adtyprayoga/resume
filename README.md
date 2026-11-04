@@ -200,6 +200,10 @@ edit or import. The introduction disappears once the sample is changed or
 the introduction is dismissed. **Start blank** is also in Settings → Data, where it
 asks for confirmation.
 
+The available sections are Experience, Education, Projects, Skills, Awards,
+Courses & Certifications, and References. Reference names, positions and notes
+are localized; phone and email are shared plain text.
+
 The app starts in **Preview**. Press **Edit** to reveal what can be changed;
 editable text gets a dashed outline and a hint above the page explains the
 keys:
@@ -331,12 +335,17 @@ most 99% until the browser has validated and mapped the review draft. Review
 announces 100%. Older servers still show stage messages without a percentage.
 **Cancel conversion** remains available; retry starts progress afresh.
 
-The browser then maps the text to resume fields with fixed bilingual rules:
-section headings, dates, contact details, bullets and entry boundaries it can
-recognise. It fills only what a rule matches with confidence and never invents,
-rewords or translates anything. Uncertain fields stay blank, and any text it
-could not place is listed separately. Conversion will not be perfect for every
-CV layout.
+The browser then maps the text to resume fields with fixed bilingual rules.
+Headings are found by typography: the service reports each block's font and
+size (as opaque ids, never the embedded font names), the browser learns which
+style the recognised section headings use, and from that reads entry headings
+(employer, school, course) and the role lines under them. Where a PDF gives no
+usable styles, the same wording rules as before decide. Within that outline,
+rules match dates, contact details, bullets and entry boundaries. The mapper
+fills only what a rule matches with confidence and never invents, rewords or
+translates anything. Uncertain fields stay blank, and any text it could not
+place is listed separately. Conversion will not be perfect for every CV
+layout.
 
 PDF import keeps your selected Classic or ATS layout, font size, and existing
 photo. It imports text into that layout; photos are not extracted from the PDF.
@@ -346,10 +355,15 @@ The mapper also recognises core competencies, additional experience, multiple
 roles under one employer, and inline project and education entries. Where the
 PDF provides usable geometry, dates are matched to their title row rather than
 chosen from reading order alone. Wrapped text retains its source references.
-Conflicting dates stay blank for review. In a mixed certifications-and-awards
-section, explicit awards can be imported; certificates and spoken-language
-sections remain listed as unplaced text. No translation or qualification is
-inferred.
+Conflicting dates stay blank for review. Courses and certifications ("Title -
+Issuer" with a month and year, then a line of topics or scores) and references
+(a name, then position and contacts, or a single note such as "available on
+request") are imported into their own sections. In a mixed
+certifications-and-awards section, award-like lines go to Awards and
+certificate-like lines to Courses & Certifications. Sections outside the
+recommended structure (hobbies, for example) are listed with a note that they
+are not part of it, and their text stays in the unplaced list. No translation
+or qualification is inferred.
 
 The review lets you correct every field, add or remove entries, choose which
 language the text is in (the other language stays blank and falls back as
@@ -366,6 +380,69 @@ Imported data is validated field by field rather than trusted: containers must
 have the right shape, leaves are coerced to safe defaults, URLs are restricted
 to safe schemes (`javascript:` and `data:image/svg+xml` are rejected), and a file
 from a newer schema version is refused rather than silently downgraded.
+
+### How accurate is PDF import?
+
+Each synthetic test CV (invented people only) has a hand-written answer key.
+The benchmark maps every fixture with typography and with the styles
+stripped (text rules only), and scores each field: a value is correct if it
+matches after whitespace normalisation, and a list (bullets, skill items)
+scores matched items over the larger of the expected and imported counts.
+Recall is correct fields over expected fields, precision is correct fields over
+filled fields, and "unplaced" counts the text fragments left for review.
+"Before" is the mapper prior to the typography outline and the Courses &
+Certifications and References sections.
+
+| Fixture | Before | Now, typography | Now, text rules only |
+| --- | --- | --- | --- |
+| `en_single` | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 |
+| `id_single` | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 |
+| `two_column` | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 |
+| `five_page` | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 |
+| `progression` | 92.0% / 98.9% / 5 | 95.0% / 99.0% / 4 | 95.0% / 99.0% / 4 |
+| `scanned` | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 | 100.0% / 100.0% / 0 |
+| `mixed` | 95.1% / 86.7% / 0 | 95.1% / 86.7% / 0 | 95.1% / 86.7% / 0 |
+| `guide_template` | 7.4% / 80.0% / 32 | 79.6% / 100.0% / 6 | 79.6% / 100.0% / 6 |
+
+Cells are recall / precision / unplaced. Docling labels the synthetic
+fixtures' headings as headings, so both modes score the same on them. To show
+what typography adds when those labels are missing, the benchmark also maps
+every fixture with its heading labels flattened to plain text:
+
+| Fixture | Labels flattened, typography | Labels flattened, text rules only |
+| --- | --- | --- |
+| `en_single` | 100.0% / 100.0% / 0 | 77.8% / 100.0% / 5 |
+| `id_single` | 100.0% / 100.0% / 0 | 70.0% / 100.0% / 5 |
+| `two_column` | 100.0% / 100.0% / 0 | 78.9% / 100.0% / 3 |
+| `five_page` | 100.0% / 100.0% / 0 | 98.9% / 100.0% / 1 |
+| `progression` | 95.0% / 99.0% / 4 | 68.0% / 74.7% / 6 |
+| `scanned` | 77.8% / 100.0% / 5 | 77.8% / 100.0% / 5 |
+| `mixed` | 87.8% / 85.7% / 2 | 73.2% / 83.3% / 7 |
+| `guide_template` | 79.6% / 100.0% / 6 | 57.4% / 88.6% / 11 |
+
+The scanned pages have no typography, so there both columns are the text
+rules. On a real CV checked locally (not published), the
+text rules alone left the name, headline and location blank, while typography
+filled them. In `guide_template`, Docling merges the school and degree lines
+into one block, which the mapper leaves for review rather than guessing.
+
+OCR is measured on `scanned.pdf`, a 200-dpi raster of `en_single.pdf`, against
+the native text extraction of `en_single.pdf`: the character error rate
+(Levenshtein distance over reference length, after whitespace normalisation) is
+**0.91%** on its one page (657 reference characters).
+
+```bash
+bun run bench:import                     # prints the table; fails if any correct field is lost
+BENCH_UPDATE=1 bun run bench:import      # re-records services/pdf-import/bench-results/accuracy.json
+docker run --rm -v "$PWD/services/pdf-import/app:/app/app" -v "$PWD/services/pdf-import/tests:/app/tests" \
+  -v "$PWD/services/pdf-import/scripts:/app/scripts" -v "$PWD/services/pdf-import/bench-results:/app/bench-results" \
+  pdf-import:test python scripts/ocr_accuracy.py  # writes services/pdf-import/bench-results/ocr.json
+```
+
+Text recognition is Docling's: its layout model finds the blocks and reading
+order, and Tesseract reads scanned pages. This project adds the typography
+outline, the mapping rules, and the resource and progress tuning of the
+service.
 
 ## Project layout
 

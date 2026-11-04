@@ -64,6 +64,21 @@ class TestHealth:
 
 
 class TestJobs:
+    @pytest.mark.parametrize("query,progress,styles", [
+        ("", False, False), ("?styles=1", False, True),
+        ("?progress=1", True, False), ("?progress=1&styles=1", True, True),
+        ("?progress=0&styles=true", False, False),
+    ])
+    def test_styles_are_opt_in(self, client: TestClient, query: str, progress: bool, styles: bool) -> None:
+        job_id = upload(client).json()["id"]
+        assert poll(client, job_id)["status"] == "completed"
+        body = client.get(f"{BASE}/jobs/{job_id}{query}").json()
+        assert ("progress" in body) == progress
+        block = body["result"]["blocks"][0]
+        assert set(block) == {"id", "page", "label", "group", "text", "bbox"} | ({"style"} if styles else set())
+        if styles:
+            assert block["style"] == {"font": "f1", "size": 12.0, "bold": True, "italic": None}
+
     def test_upload_poll_and_delete(self, client: TestClient, settings: Settings) -> None:
         response = upload(client)
         assert response.status_code == 202

@@ -1,0 +1,85 @@
+{
+  "locale": "en",
+  "profile": {
+    "name": "Jane Doe",
+    "headline": "Senior Backend Engineer",
+    "location": "Jakarta, Indonesia",
+    "summary": "Backend engineer with eight years of experience building payment systems."
+  },
+  "contact": {
+    "email": "jane.doe@example.com",
+    "phone": "+62 812 3456 7890",
+    "website": "",
+    "github": "https://github.com/janedoe",
+    "linkedin": "",
+    "avatar": ""
+  },
+  "sections": {
+    "experience": [
+      {
+        "company": "Example Payments",
+        "role": "Senior Backend Engineer",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2021-01",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Led the migration of settlement jobs to an event-driven pipeline.",
+          "Reduced reconciliation time from six hours to forty minutes."
+        ]
+      },
+      {
+        "company": "Sample Logistics",
+        "role": "Software Engineer",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2017",
+          "end": "2020"
+        },
+        "bullets": [
+          "Built the courier routing service used in twelve cities."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Universitas Contoh",
+        "degree": "Bachelor of Computer Science",
+        "field": "",
+        "gpa": "",
+        "description": "",
+        "dates": {
+          "start": "2013",
+          "end": "2017"
+        }
+      }
+    ],
+    "projects": [],
+    "skills": [
+      {
+        "title": "Languages",
+        "items": [
+          "Go",
+          "Python",
+          "TypeScript"
+        ]
+      },
+      {
+        "title": "Infrastructure",
+        "items": [
+          "PostgreSQL",
+          "Kafka",
+          "Kubernetes"
+        ]
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "references": []
+  },
+  "unplaced": 0
+}

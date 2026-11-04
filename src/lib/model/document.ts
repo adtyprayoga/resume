@@ -70,6 +70,8 @@ const contentOf = (raw: unknown): ResumeSections => {
     projects: getSectionModule('projects').validate(value.projects),
     skills: getSectionModule('skills').validate(value.skills),
     awards: getSectionModule('awards').validate(value.awards),
+    certifications: getSectionModule('certifications').validate(value.certifications),
+    references: getSectionModule('references').validate(value.references),
   }
 }
 

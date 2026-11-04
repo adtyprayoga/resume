@@ -242,7 +242,7 @@ describe('side panels', () => {
     const user = userEvent.setup()
     await user.click(toggle('Sections'))
     await user.click(toggle('Settings'))
-    expect(within(panel('Sections')!).getAllByRole('button', { name: /^Reorder / })).toHaveLength(5)
+    expect(within(panel('Sections')!).getAllByRole('button', { name: /^Reorder / })).toHaveLength(7)
     expect(within(panel('Settings')!).queryAllByRole('button', { name: /^Reorder / })).toHaveLength(0)
     expect(within(panel('Settings')!).getByRole('button', { name: 'Reset to sample' })).toBeInTheDocument()
     expect(within(panel('Settings')!).getByRole('button', { name: 'Start blank' })).toBeInTheDocument()
@@ -284,7 +284,7 @@ describe('section navigation from the Sections panel', () => {
   it('anchors each rendered section and the profile by kind', () => {
     render(App)
     const kinds = [...document.querySelectorAll('.resume-paper [data-cv-section]')].map((el) => el.getAttribute('data-cv-section'))
-    expect(kinds).toEqual(['profile', ...resumeDoc.current.sections.map((s) => s.kind)])
+    expect(kinds).toEqual(['profile', ...resumeDoc.current.sections.filter((s) => resumeDoc.current.content[s.kind].length).map((s) => s.kind)])
   })
 
   it('scrolls a section heading outside the viewport into view and keeps focus on the button', async () => {
@@ -329,14 +329,14 @@ describe('section navigation from the Sections panel', () => {
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     editing.setDraft('profile.name', 'Before Moving')
     await tick() // the inline editor mounts and takes focus first
-    within(sections).getByRole('button', { name: 'Reorder Experience, position 1 of 5' }).focus()
+    within(sections).getByRole('button', { name: 'Reorder Experience, position 1 of 7' }).focus()
     await user.keyboard('{ArrowDown}')
     expect(resumeDoc.current.profile.text.en.name).toBe('Before Moving')
     expect(editing.active).toBeNull()
     const order = resumeDoc.current.sections.map((s) => s.kind)
     expect([...document.querySelectorAll('.resume-paper [data-cv-section]')].map((el) => el.getAttribute('data-cv-section'))).toEqual(['profile', ...order])
     expect(within(sections).getAllByRole('button', { name: /^Go to / }).map((b) => b.getAttribute('aria-label'))).toEqual(
-      ['Go to Profile', ...order.map((kind) => `Go to ${kind === 'experience' ? 'Experience' : kind === 'education' ? 'Education' : kind === 'projects' ? 'Projects' : kind === 'skills' ? 'Skills' : 'Awards'}`)],
+      ['Go to Profile', ...order.map((kind) => `Go to ${kind === 'experience' ? 'Experience' : kind === 'education' ? 'Education' : kind === 'projects' ? 'Projects' : kind === 'skills' ? 'Skills' : kind === 'awards' ? 'Awards' : kind === 'certifications' ? 'Courses & Certifications' : 'References'}`)],
     )
   })
 

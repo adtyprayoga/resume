@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { stripStyles } from './accuracy'
 import { parseExtraction } from './validate'
-import { mapExtraction } from './mapper'
-import type { BBox, Extraction, SourceBlock } from './types'
+import { mapExtraction, type Proposal } from './mapper'
+import { buildOutline } from './outline'
+import type { BBox, BlockStyle, Extraction, SourceBlock } from './types'
 
 const b = (id: string, text: string, label = 'text', options: Partial<Pick<SourceBlock, 'page' | 'group' | 'bbox'>> = {}): SourceBlock => ({
   id, text, label, page: 1, group: null, bbox: null, ...options,
@@ -225,7 +227,10 @@ describe('PDF layout mapping regressions', () => {
     expect(proposal.document.content.awards[0]!.text.en.title).toContain('Gold Pin')
     expect(proposal.document.content.awards[0]!.date).toBe('2021')
     expect(proposal.document.content.skills).toHaveLength(0)
-    expect(leftovers(proposal)).toContain('Professional Testing Certificate')
+    expect(proposal.document.content.certifications.map((item) => [item.text.en.title, item.text.en.issuer, item.date])).toEqual([
+      ['Professional Testing Certificate', 'Example Institute', '2023'],
+    ])
+    expect(leftovers(proposal)).not.toContain('Professional Testing Certificate')
     expect(leftovers(proposal)).toContain('Bahasa Indonesia (Native)')
     expect(leftovers(proposal)).toContain('Organized neighborhood repair workshops.')
   })
@@ -277,9 +282,532 @@ describe('PDF layout mapping regressions', () => {
     expect(doc.content.education.map((item) => item.dates)).toEqual([{ start: '2019', end: '2025' }, { start: '2015', end: '2018' }])
     expect(doc.content.awards).toHaveLength(1)
     expect(doc.content.awards[0]!.text.en.title).toContain('Gold Pin')
-    expect(leftovers(proposal)).toContain('Foundation Testing Certificate')
+    expect(doc.content.certifications).toHaveLength(1)
+    expect(doc.content.certifications[0]!.text.en.title).toBe('Foundation Testing Certificate')
+    expect(doc.content.certifications[0]!.date).toBe('2024')
+    expect(leftovers(proposal)).not.toContain('Foundation Testing Certificate')
     expect(leftovers(proposal)).toContain('Bahasa Indonesia (Native); English (Conversational)')
     expect(proposal.refs).toContainEqual({ path: `experience.${doc.content.experience[0]!.id}.dates`, blocks: ['b26'] })
   })
+})
 
+// Header and regions from the typography outline: a name/heading style is
+// learned from the known headings, so a plain-text name and an unknown
+// heading in the same style are read the way the page shows them.
+describe('PDF outline mapping', () => {
+  const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
+  const s = (id: string, text: string, label: string, style: BlockStyle | null, options: Partial<Pick<SourceBlock, 'page' | 'group' | 'bbox'>> = {}): SourceBlock => ({
+    ...b(id, text, label, options), style,
+  })
+  const top = () => [
+    s('b1', 'Rina Wulandari', 'text', S('f1', 14)),
+    s('b2', 'People Development | Learning & Development | Bilingual Facilitator', 'text', S('f3', 10)),
+    s('b3', 'Bandung, Indonesia | rina.w@example.com | +62 811 0000 5678', 'text', S('f3', 10)),
+    s('b4', 'Profile Summary', 'text', S('f2', 16)),
+    s('b5', 'I have four years of experience in learning and development across banking, retail and education.', 'text', S('f3', 10)),
+  ]
+
+  it('maps the header from the outline and keeps bullets out of it', () => {
+    const proposal = mapExtraction(source(...top(),
+      s('b6', 'Competencies & Abilities', 'text', S('f2', 16)),
+      s('b7', '➔ Support Skills: Office 365, Fast Typing, AI Integration', 'list_item', S('f3', 10)),
+    ), 'en')
+    expect(proposal.document.profile.text.en).toMatchObject({
+      name: 'Rina Wulandari',
+      headline: 'People Development | Learning & Development | Bilingual Facilitator',
+      location: 'Bandung, Indonesia',
+      summary: 'I have four years of experience in learning and development across banking, retail and education.',
+    })
+    expect(proposal.document.contact).toMatchObject({ email: 'rina.w@example.com', phone: '+62 811 0000 5678' })
+    expect(proposal.document.content.skills.map((group) => group.text.en)).toEqual([
+      { title: 'Support Skills', items: ['Office 365', 'Fast Typing', 'AI Integration'] },
+    ])
+    expect(proposal.refs).toContainEqual({ path: 'profile.name', blocks: ['b1'] })
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('takes the location from the contact row before a comma-separated headline', () => {
+    const blocks = top()
+    blocks[1] = s('b2', 'Facilitator, Trainer', 'text', S('f3', 10))
+    const profile = mapExtraction(source(...blocks), 'en').document.profile.text.en
+    expect(profile.location).toBe('Bandung, Indonesia')
+    expect(profile.headline).toBe('Facilitator, Trainer')
+  })
+
+  it('lists an unknown heading-style section as outside the structure without leaking into the previous section', () => {
+    const proposal = mapExtraction(source(...top(),
+      s('b6', 'Hobbies', 'text', S('f2', 16)),
+      s('b7', 'Hiking', 'text', S('f3', 10)),
+      s('b8', 'Working Experience', 'text', S('f2', 16)),
+    ), 'en')
+    expect(proposal.document.profile.text.en.summary).not.toContain('Hiking')
+    expect(proposal.warnings).toContainEqual({ code: 'outside_structure', blocks: ['b6'] })
+    expect(leftovers(proposal)).toContain('Hobbies')
+    expect(leftovers(proposal)).toContain('Hiking')
+  })
+
+  it('keeps a header line in the heading style in the header before the first known heading', () => {
+    const proposal = mapExtraction(source(
+      s('b1', 'Rina Wulandari', 'text', S('f1', 20)),
+      s('b2', 'Data Analyst', 'text', S('f2', 16)),
+      s('b3', 'rina.w@example.com | +62 811 0000 5678', 'text', S('f3', 10)),
+      s('b4', 'Profile Summary', 'text', S('f2', 16)),
+      s('b5', 'I have four years of experience in learning and development across banking, retail and education.', 'text', S('f3', 10)),
+      s('b6', 'Hobbies', 'text', S('f2', 16)),
+      s('b7', 'Hiking', 'text', S('f3', 10)),
+    ), 'en')
+    expect(proposal.document.profile.text.en).toMatchObject({ name: 'Rina Wulandari', headline: 'Data Analyst' })
+    expect(proposal.document.contact).toMatchObject({ email: 'rina.w@example.com', phone: '+62 811 0000 5678' })
+    expect(proposal.warnings.filter((warning) => warning.code === 'outside_structure')).toEqual([{ code: 'outside_structure', blocks: ['b6'] }])
+    expect(leftovers(proposal)).toBe('Hobbies\nHiking')
+  })
+
+  it('keeps header fields empty from bullets when headings are unknown (fallback)', () => {
+    const proposal = mapExtraction(source(
+      b('b1', 'Rina Wulandari', 'section_header'),
+      b('b2', 'Abilities Overview', 'section_header'),
+      b('b3', '➔ Support Skills: Office 365, Fast Typing, AI Integration', 'list_item'),
+      b('b4', '➔ Training Skills: Needs Analysis, Curriculum Design', 'list_item'),
+    ), 'en')
+    expect(proposal.document.profile.text.en).toMatchObject({ name: 'Rina Wulandari', headline: '', location: '' })
+  })
+
+  it('joins a bullet continued on the next page', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Experience', 'section_header'),
+      b('b3', 'Curriculum Designer', 'section_header'), b('b4', '2022 – 2024'),
+      b('b5', 'Reviewed drafts before submission to the programme office', 'list_item', { group: 'g1', bbox: box(91, 760, 500) }),
+      b('b6', 'for further review.', 'list_item', { group: 'g1', page: 2, bbox: box(108, 50, 200) }),
+    ), 'en')
+    const job = proposal.document.content.experience[0]!
+    expect(job.text.en.bullets).toEqual(['Reviewed drafts before submission to the programme office for further review.'])
+    expect(proposal.refs).toContainEqual({ path: `experience.${job.id}.bullets`, blocks: ['b5', 'b6'] })
+  })
+})
+
+// The guard for the outline: a document whose blocks all share one style has no
+// establishable heading class, so the mapper must produce exactly the rules-path
+// proposal. Ids are random, so they are normalised wherever they appear.
+describe('outline fallback equivalence', () => {
+  const root = resolve(__dirname, '../../../../services/pdf-import/tests/fixtures/contract/valid')
+  const FIXTURES = readdirSync(root).filter((file) => /^extraction_.+\.json$/.test(file)).map((file) => file.slice('extraction_'.length, -'.json'.length))
+  const loadFixture = (name: string): Extraction => {
+    const parsed = parseExtraction(JSON.parse(readFileSync(resolve(root, `extraction_${name}.json`), 'utf8')))
+    if (!parsed.ok) throw new Error(parsed.error)
+    return parsed.value
+  }
+  const normalise = (p: Proposal) => JSON.parse(JSON.stringify(p).replace(/(?<=[".])(?:exp|edu|prj|skl|awd|crt|ref)_[a-z0-9]+(?=[".])/g, 'ID'))
+  const singleStyle = (e: Extraction): Extraction => ({ ...e, blocks: e.blocks.map((block) => ({ ...block, style: { font: 'f1', size: 10, bold: null, italic: null } })) })
+
+  it('covers every extraction fixture', () => {
+    expect(FIXTURES).toEqual(expect.arrayContaining(['en_single', 'id_single', 'two_column', 'five_page', 'progression', 'scanned', 'mixed', 'guide_template']))
+  })
+
+  it.each(FIXTURES)('fallback mapping equals the rules path for %s', (name) => {
+    const e = loadFixture(name)
+    expect(normalise(mapExtraction(singleStyle(e), 'en'))).toEqual(normalise(mapExtraction(stripStyles(e), 'en')))
+  })
+
+  it('maps the mixed native/scanned fixture', () => {
+    const e = loadFixture('mixed')
+    const scanned = new Set(e.blocks.filter((block) => block.style == null).map((block) => block.id))
+    expect([...scanned]).toEqual(expect.arrayContaining(['b21', 'b24', 'b26', 'b29']))
+    // Every field filled from unstyled (scanned) blocks, with its value, plus the scanned leftovers and warnings.
+    const scannedPart = (proposal: Proposal) => {
+      const { document, locale } = proposal
+      const valueAt = (path: string): unknown => {
+        const [head, id, field] = path.split('.') as [string, string, string | undefined]
+        if (head === 'profile') return document.profile.text[locale][id as keyof (typeof document.profile.text)['en']]
+        if (head === 'contact') return document.contact[id as keyof typeof document.contact]
+        const item = (document.content[head as keyof typeof document.content] as unknown as { id: string; text: Record<string, Record<string, unknown>> }[]).find((entry) => entry.id === id)!
+        return field! in item ? (item as unknown as Record<string, unknown>)[field!] : item.text[locale]![field!]
+      }
+      return normalise({
+        ...proposal,
+        document: undefined as never,
+        refs: proposal.refs.filter((ref) => ref.blocks.some((id) => scanned.has(id))).map((ref) => ({ ...ref, value: valueAt(ref.path) })),
+        warnings: proposal.warnings.filter((warning) => warning.blocks.some((id) => scanned.has(id))),
+        unmatched: proposal.unmatched.filter((item) => scanned.has(item.block)),
+      })
+    }
+    const styled = scannedPart(mapExtraction(e, 'en'))
+    expect(styled.refs.map((ref: { path: string }) => ref.path)).toEqual(expect.arrayContaining(['experience.ID.role', 'experience.ID.bullets', 'education.ID.school']))
+    expect(styled).toEqual(scannedPart(mapExtraction(stripStyles(e), 'en')))
+  })
+})
+
+// Entries from the outline: an h3 company row with h4 roles, and the same
+// employer-row shapes read by the rules path when no entry heading style exists.
+describe('PDF outline entries', () => {
+  const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
+  const s = (id: string, text: string, label: string, style: BlockStyle | null): SourceBlock => ({ ...b(id, text, label), style })
+  const body = S('f1', 10)
+  const name = () => s('b1', 'Rina Wulandari', 'section_header', S('f1', 14))
+  const work = () => s('b2', 'Working Experience', 'section_header', S('f2', 16))
+  const noDates = { start: '', end: null }
+  const jobsOf = (proposal: Proposal) => proposal.document.content.experience.map((job) => ({
+    company: job.company, location: job.text.en.location, role: job.text.en.role, dates: job.dates,
+  }))
+  const twoJobs = [
+    { company: 'Contoh Consulting', location: 'Bandung, Indonesia', role: 'Training Consultant', dates: { start: '2024-09', end: null, current: true } },
+    { company: 'Contoh Edu', location: 'Surabaya, Indonesia', role: 'Curriculum Designer', dates: { start: '2022-09', end: '2024-09' } },
+  ]
+
+  it('maps h3 company rows with h4 roles', () => {
+    const proposal = mapExtraction(source(name(), work(),
+      s('b3', 'Contoh Consulting - Bandung, Indonesia', 'section_header', S('f2', 10)),
+      s('b4', 'Sep 2024 - Present', 'text', body),
+      s('b5', 'Training Consultant', 'section_header', S('f3', 10)),
+      s('b6', 'Designed 12 training modules for banking clients.', 'list_item', body),
+      s('b7', 'Contoh Edu - Surabaya, Indonesia', 'section_header', S('f2', 10)),
+      s('b8', 'Sep 2022 - Sep 2024', 'text', body),
+      s('b9', 'Curriculum Designer', 'section_header', S('f3', 10)),
+      s('b10', 'Mapped 30 courses to national competency standards.', 'list_item', body),
+    ), 'en')
+    expect(jobsOf(proposal)).toEqual(twoJobs)
+    const [first, second] = proposal.document.content.experience
+    expect(proposal.refs).toContainEqual({ path: `experience.${first!.id}.dates`, blocks: ['b4'] })
+    expect(proposal.refs).toContainEqual({ path: `experience.${second!.id}.dates`, blocks: ['b8'] })
+    expect(proposal.refs).toContainEqual({ path: `experience.${first!.id}.company`, blocks: ['b3'] })
+    expect(proposal.refs).toContainEqual({ path: `experience.${first!.id}.location`, blocks: ['b3'] })
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('maps two styled roles under one employer', () => {
+    // The headline keeps f1@10 the body class (the class with the most letters).
+    const proposal = mapExtraction(source(name(), s('b9', 'People Development | Learning & Development | Bilingual Facilitator', 'text', body), work(),
+      s('b3', 'Contoh Group - Jakarta, Indonesia', 'text', S('f2', 10)),
+      s('b4', '2018 - 2024', 'text', body),
+      s('b5', 'Senior Analyst', 'text', S('f3', 10)),
+      s('b6', 'Did A.', 'list_item', body),
+      s('b7', 'Analyst', 'text', S('f3', 10)),
+      s('b8', 'Did B.', 'list_item', body),
+    ), 'en')
+    const jobs = proposal.document.content.experience
+    expect(jobs.map((job) => job.text.en.role)).toEqual(['Senior Analyst', 'Analyst'])
+    expect(jobs.map((job) => [job.company, job.text.en.location])).toEqual(Array(2).fill(['Contoh Group', 'Jakarta, Indonesia']))
+    expect(jobs.map((job) => job.text.en.bullets)).toEqual([['Did A.'], ['Did B.']])
+    expect(jobs.map((job) => job.dates)).toEqual([noDates, noDates])
+    expect(leftovers(proposal)).toContain('2018 - 2024')
+  })
+
+  it('ends an h4-role employer at the next h3', () => {
+    const proposal = mapExtraction(source(name(), work(),
+      s('b3', 'Contoh Consulting - Bandung, Indonesia', 'section_header', S('f2', 10)),
+      s('b4', 'Sep 2024 - Present', 'text', body),
+      s('b5', 'Training Consultant', 'section_header', S('f3', 10)),
+      s('b6', 'Designed 12 training modules for banking clients.', 'list_item', body),
+      s('b7', 'Freelance Writer', 'section_header', S('f2', 10)),
+      s('b8', 'Jan 2020 - Aug 2024', 'text', body),
+      s('b9', 'Wrote 50 articles on workplace learning for online magazines.', 'list_item', body),
+    ), 'en')
+    expect(jobsOf(proposal)).toEqual([
+      { company: 'Contoh Consulting', location: 'Bandung, Indonesia', role: 'Training Consultant', dates: { start: '2024-09', end: null, current: true } },
+      { company: '', location: '', role: 'Freelance Writer', dates: { start: '2020-01', end: '2024-08' } },
+    ])
+    expect(leftovers(proposal)).not.toContain('Sep 2024 - Present')
+  })
+
+  const plainRows = (style: BlockStyle | null) => [
+    s('b3', 'Contoh Consulting - Bandung, Indonesia', 'text', style),
+    s('b4', 'Sep 2024 - Present', 'text', style),
+    s('b5', 'Training Consultant', 'section_header', style),
+    s('b6', 'Designed 12 training modules for banking clients.', 'list_item', style),
+    s('b7', 'Contoh Edu - Surabaya, Indonesia', 'text', style),
+    s('b8', 'Sep 2022 - Sep 2024', 'text', style),
+    s('b9', 'Curriculum Designer', 'section_header', style),
+    s('b10', 'Mapped 30 courses to national competency standards.', 'list_item', style),
+  ]
+
+  it('maps plain-font job rows under styled headings', () => {
+    const proposal = mapExtraction(source(name(), work(), ...plainRows(body)), 'en')
+    expect(jobsOf(proposal)).toEqual(twoJobs)
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('applies the employer-row rule in fallback too', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Working Experience', 'section_header'), ...plainRows(null)), 'en')
+    expect(jobsOf(proposal)).toEqual(twoJobs)
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('keeps a school title with a trailing location verbatim', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Education', 'section_header'),
+      b('b3', 'Universitas Contoh - Semarang, Indonesia'),
+      b('b4', '2017 - 2021'),
+      b('b5', 'Bachelor Degree in English Literature - GPA: 3.60/4.00'),
+    ), 'en')
+    const school = proposal.document.content.education[0]!
+    expect(school.text.en).toMatchObject({ school: 'Universitas Contoh - Semarang, Indonesia', degree: 'Bachelor Degree in English Literature', field: '' })
+    expect(school.gpa).toBe('3.60/4.00')
+    expect(school.dates).toEqual({ start: '2017', end: '2021' })
+  })
+})
+
+// Courses & certifications and references from the outline, with the rules
+// path's boundaries where no entry heading style exists.
+describe('PDF headings with a decorative glyph', () => {
+  const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
+  const probe = (styles: { name: BlockStyle; h2: BlockStyle; entry: BlockStyle; body: BlockStyle } | null) => source(
+    { ...b('b1', 'MAYA UTAMI', 'title'), style: styles?.name ?? null },
+    { ...b('b2', '■ EXPERIENCE', 'section_header'), style: styles?.h2 ?? null },
+    { ...b('b3', 'Analyst, PT Contoh', 'section_header'), style: styles?.entry ?? null },
+    { ...b('b4', '2020 - 2023'), style: styles?.body ?? null },
+    { ...b('b5', '• Built dashboards for the regional sales team.', 'list_item'), style: styles?.body ?? null },
+  )
+  const check = (proposal: Proposal) => {
+    expect(proposal.document.content.experience).toHaveLength(1)
+    const job = proposal.document.content.experience[0]!
+    expect(job.dates).toMatchObject({ start: '2020', end: '2023' })
+    expect(job.text.en.bullets).toEqual(['Built dashboards for the regional sales team.'])
+    expect(`${job.text.en.role} ${job.company}`).toContain('Analyst')
+    expect(proposal.unmatched).toEqual([])
+  }
+
+  it('opens the section on the rules path', () => {
+    check(mapExtraction(probe(null), 'en'))
+  })
+
+  it('opens the section when the glyph line carries the heading style', () => {
+    const styled = probe({ name: S('f2', 18), h2: S('f2', 14), entry: S('f3', 10), body: S('f1', 10) })
+    expect(buildOutline(styled.blocks).confidence).toBe('typography')
+    check(mapExtraction(styled, 'en'))
+  })
+})
+
+describe('PDF outline certifications and references', () => {
+  const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
+  const s = (id: string, text: string, label: string, style: BlockStyle | null): SourceBlock => ({ ...b(id, text, label), style })
+  const body = S('f1', 10)
+  const name = () => s('b1', 'Rina Wulandari', 'section_header', S('f1', 14))
+  const h2 = (id: string, text: string) => s(id, text, 'section_header', S('f2', 16))
+  const certsOf = (proposal: Proposal) => proposal.document.content.certifications.map((item) => [item.text.en.title, item.text.en.issuer, item.date, item.text.en.description])
+  const refsOf = (proposal: Proposal) => proposal.document.content.references.map((item) => ({ ...item.text.en, phone: item.phone, email: item.email }))
+  const anggi = { name: 'Anggi Pratiwi', position: 'HR Manager at PT Contoh Abadi', phone: '+62 812 0000 1111', email: 'anggi@example.com', note: '' }
+  const contactLine = 'HR Manager at PT Contoh Abadi - +62 812 0000 1111 | anggi@example.com'
+
+  it('maps body-font course rows under a styled heading', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025', 'text', body),
+      s('b4', 'Presentation, negotiation, and business writing', 'text', body),
+      s('b5', 'Data Analysis with Power BI - Coursera | Mar 2024', 'text', body),
+      s('b6', 'Dashboards, Power Query, and data modelling', 'text', body),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([
+      ['Business English Training', 'Contoh Language Centre', '2025-06', 'Presentation, negotiation, and business writing'],
+      ['Data Analysis with Power BI', 'Coursera', '2024-03', 'Dashboards, Power Query, and data modelling'],
+    ])
+    const first = proposal.document.content.certifications[0]!
+    expect(proposal.refs).toContainEqual({ path: `certifications.${first.id}.issuer`, blocks: ['b3'] })
+    expect(proposal.refs).toContainEqual({ path: `certifications.${first.id}.description`, blocks: ['b4'] })
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('maps course rows with inline or row dates', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025', 'text', body),
+      s('b4', 'Presentation, negotiation, and business writing', 'text', body),
+      s('b5', 'Hanyu Shuiping Kaoshi / Mandarin Test - Contoh Institute', 'text', body),
+      s('b6', 'May 2024', 'text', body),
+      s('b7', 'Listening 90/100', 'text', body),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([
+      ['Business English Training', 'Contoh Language Centre', '2025-06', 'Presentation, negotiation, and business writing'],
+      ['Hanyu Shuiping Kaoshi / Mandarin Test', 'Contoh Institute', '2024-05', 'Listening 90/100'],
+    ])
+    expect(proposal.document.sections[0]!.kind).toBe('certifications')
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('splits a merged course paragraph only where a row is certain', () => {
+    const single = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025 Presentation, negotiation, and business writing', 'text', body),
+    ), 'en')
+    expect(certsOf(single)).toEqual([['Business English Training', 'Contoh Language Centre', '2025-06', 'Presentation, negotiation, and business writing']])
+    expect(single.unmatched).toEqual([])
+
+    // Where the first description ends and the second title begins is not in the text.
+    const merged = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025 Presentation, negotiation, and business writing Data Analysis with Power BI - Coursera | Mar 2024 Dashboards, Power Query, and data modelling', 'text', body),
+    ), 'en')
+    expect(certsOf(merged)).toEqual([['Business English Training', 'Contoh Language Centre', '2025-06', '']])
+    expect(leftovers(merged)).toBe('Presentation, negotiation, and business writing Data Analysis with Power BI - Coursera | Mar 2024 Dashboards, Power Query, and data modelling')
+    expect(merged.warnings).toContainEqual({ code: 'ambiguous_entries', blocks: ['b3'] })
+  })
+
+  it('splits a mixed section into certifications and awards and leaves the rest', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Certifications & Awards', 'section_header'),
+      b('b3', 'Foundation Testing Certificate, Example Board, 2024'),
+      b('b4', 'National Service Gold Pin, Civic Agency, 2021'),
+      b('b5', 'Bahasa Indonesia (Native); English (Conversational)'),
+    ), 'en')
+    expect(proposal.document.content.certifications.map((item) => item.date)).toEqual(['2024'])
+    expect(certsOf(proposal)[0]!.slice(0, 2)).toEqual(['Foundation Testing Certificate', 'Example Board'])
+    expect(proposal.document.content.awards).toHaveLength(1)
+    expect(leftovers(proposal)).toContain('Bahasa Indonesia (Native)')
+    expect(proposal.warnings).toContainEqual({ code: 'ambiguous_entries', blocks: ['b5'] })
+    expect(proposal.warnings.map((warning) => warning.code)).not.toContain('outside_structure')
+  })
+
+  it('keeps a line under a certificate in a mixed section as its description', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Certifications & Awards', 'section_header'),
+      b('b3', 'Overall rating 4 of 5'),
+      b('b4', 'English Proficiency Certificate, Contoh Testing Board, 2024'),
+      b('b5', 'Score 900/1000'),
+      b('b6', 'Best Volunteer Award, Contoh Foundation, 2022'),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([['English Proficiency Certificate', 'Contoh Testing Board', '2024', 'Score 900/1000']])
+    expect(proposal.document.content.awards).toHaveLength(1)
+    expect(proposal.warnings).toEqual([{ code: 'ambiguous_entries', blocks: ['b3'] }])
+    expect(leftovers(proposal)).toBe('Overall rating 4 of 5')
+  })
+
+  it('maps a named reference with position and contacts', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'References'),
+      s('b3', 'Anggi Pratiwi', 'text', S('f2', 10)),
+      s('b4', contactLine, 'text', body),
+    ), 'en')
+    expect(refsOf(proposal)).toEqual([anggi])
+    const item = proposal.document.content.references[0]!
+    for (const field of ['name', 'position', 'phone', 'email']) expect(proposal.refs).toContainEqual({ path: `references.${item.id}.${field}`, blocks: [field === 'name' ? 'b3' : 'b4'] })
+    expect(proposal.document.contact.email).toBe('')
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('maps a reference line without a person as a note', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'References'),
+      s('b3', 'Contact person available by request', 'text', body),
+    ), 'en')
+    expect(refsOf(proposal)).toEqual([{ name: '', position: '', phone: '', email: '', note: 'Contact person available by request' }])
+    expect(proposal.warnings.map((warning) => warning.code)).not.toContain('outside_structure')
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('maps a named reference in fallback when the next line has a contact', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'References', 'section_header'),
+      b('b3', 'Anggi Pratiwi'), b('b4', contactLine), b('b5', 'Contact person available by request'),
+    ), 'en')
+    expect(refsOf(proposal)).toEqual([anggi, { name: '', position: '', phone: '', email: '', note: 'Contact person available by request' }])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('lets a row date win over the inline date and still splits the title', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025', 'text', body),
+      s('b4', 'May 2024', 'text', body),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([['Business English Training', 'Contoh Language Centre', '2024-05', '']])
+    expect(leftovers(proposal)).toBe('Jun 2025')
+  })
+
+  it('keeps a description ending in a year with its course row', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025', 'text', body),
+      s('b4', 'Completed modules in Python, 2024', 'text', body),
+      s('b5', 'Data Analysis with Power BI - Coursera | Mar 2024', 'text', body),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([
+      ['Business English Training', 'Contoh Language Centre', '2025-06', 'Completed modules in Python, 2024'],
+      ['Data Analysis with Power BI', 'Coursera', '2024-03', ''],
+    ])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('reads name, position and contact lines as one reference (typography)', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'References'),
+      s('b3', 'Anggi Pratiwi', 'text', S('f2', 10)),
+      s('b4', 'HR Manager at PT Contoh Abadi', 'text', body),
+      s('b5', '+62 812 0000 1111 | anggi@example.com', 'text', body),
+    ), 'en')
+    expect(refsOf(proposal)).toEqual([anggi])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('reads name, position and contact lines as one reference (fallback)', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'References', 'section_header'),
+      b('b3', 'Anggi Pratiwi'), b('b4', 'HR Manager at PT Contoh Abadi'), b('b5', '+62 812 0000 1111 | anggi@example.com'),
+    ), 'en')
+    expect(refsOf(proposal)).toEqual([anggi])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it.each(['typography', 'fallback'])('strips contact labels and keeps labelled contact lines with the reference (%s)', (mode) => {
+    const nameLine = (id: string) => mode === 'typography' ? s(id, 'Anggi Pratiwi', 'text', S('f2', 10)) : b(id, 'Anggi Pratiwi')
+    const line = (id: string, text: string) => mode === 'typography' ? s(id, text, 'text', body) : b(id, text)
+    const heading = mode === 'typography' ? [name(), h2('b2', 'References')] : [header(), b('b2', 'References', 'section_header')]
+    const contactsOnly = mapExtraction(source(...heading, nameLine('b3'),
+      line('b4', 'Phone: +62 812 0000 1111'), line('b5', 'Email: anggi@example.com'),
+    ), 'en')
+    expect(refsOf(contactsOnly)).toEqual([{ ...anggi, position: '' }])
+    expect(contactsOnly.unmatched).toEqual([])
+
+    const withPosition = mapExtraction(source(...heading, nameLine('b3'),
+      line('b4', 'HR Manager, PT Contoh Abadi'), line('b5', 'Phone: +62 812 0000 1111'), line('b6', 'Email: anggi@example.com'),
+    ), 'en')
+    expect(refsOf(withPosition)).toEqual([{ ...anggi, position: 'HR Manager, PT Contoh Abadi' }])
+    expect(withPosition.unmatched).toEqual([])
+
+    const hotel = mapExtraction(source(...heading, nameLine('b3'), line('b4', 'Front Office Manager at Contoh Hotel +62 812 0000 1111')), 'en')
+    expect(refsOf(hotel)[0]!.position).toBe('Front Office Manager at Contoh Hotel')
+  })
+
+  it('never makes a contact line a note', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'References', 'section_header'), b('b3', '+62 812 0000 1111 | anggi@example.com')), 'en')
+    expect(proposal.document.content.references).toEqual([])
+    expect(leftovers(proposal)).toContain('anggi@example.com')
+  })
+
+  it('keeps long entry rows and a first course row in another font as entries', () => {
+    const row = S('f2', 10)
+    const proposal = mapExtraction(source(name(), h2('b2', 'Profile Summary'),
+      s('b3', 'I have 6 years of experience designing learning programmes for banks, retailers and public agencies. I map needs, write curricula and modules, and deliver workshops for audiences from new staff to senior leaders, with dashboards that track outcomes.', 'text', body),
+      h2('b4', 'Education Background'),
+      s('b5', 'Universitas Contoh Raya - Bandung, Indonesia', 'text', row), s('b6', '2015 - 2019', 'text', row),
+      s('b7', 'Bachelor of Invented Studies - GPA: 3.60/4.00', 'text', body),
+      s('b8', 'Contoh Sea College of Trade and Logistics (CSCTL) - Lae, Papua New Guinea', 'text', row), s('b9', '2018', 'text', row),
+      s('b10', 'Summer Semester Programme - Credits: 18', 'text', body),
+      h2('b11', 'Certifications'),
+      s('b12', 'Public Speaking Training - Contoh Speaking Club', 'text', S('f3', 10)), s('b13', 'Jun 2025', 'text', S('f3', 10)),
+      s('b14', 'Overall Score 85/100', 'text', body),
+      s('b15', 'Spreadsheet Modelling for Small Farms: Budgets, Yields & Forecasts - Contoh Agri School', 'text', row), s('b16', 'May 2025', 'text', row),
+      s('b17', 'Crop budgets and seasonal cash flow', 'text', body),
+      s('b18', 'Project Management Basics - Contoh Institute', 'text', row), s('b19', 'May 2024', 'text', row),
+      s('b20', 'Final Score 90/100', 'text', body),
+    ), 'en')
+    expect(proposal.document.content.education.map((item) => [item.text.en.school, item.dates.start, item.text.en.description])).toEqual([
+      ['Universitas Contoh Raya - Bandung, Indonesia', '2015', ''],
+      ['Contoh Sea College of Trade and Logistics (CSCTL) - Lae, Papua New Guinea', '2018', ''],
+    ])
+    expect(certsOf(proposal)).toEqual([
+      ['Public Speaking Training', 'Contoh Speaking Club', '2025-06', 'Overall Score 85/100'],
+      ['Spreadsheet Modelling for Small Farms: Budgets, Yields & Forecasts', 'Contoh Agri School', '2025-05', 'Crop budgets and seasonal cash flow'],
+      ['Project Management Basics', 'Contoh Institute', '2024-05', 'Final Score 90/100'],
+    ])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('keeps a skill item worded like a section in skills (list items and plain text)', () => {
+    const bullets = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
+      b('b3', '• Leadership', 'list_item'), b('b4', '• Training', 'list_item'), b('b5', '• Public speaking', 'list_item'),
+    ), 'en')
+    expect(bullets.document.content.skills.flatMap((group) => group.text.en.items)).toEqual(['Leadership', 'Training', 'Public speaking'])
+    expect(bullets.document.content.certifications).toEqual([])
+    expect(bullets.unmatched).toEqual([])
+
+    const plain = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
+      b('b3', 'Leadership'), b('b4', 'Course'), b('b5', 'Public speaking'), b('b6', 'Reference'),
+    ), 'en')
+    expect(plain.document.content.skills.flatMap((group) => group.text.en.items)).toEqual(['Leadership', 'Course', 'Public speaking', 'Reference'])
+    expect(plain.document.content.certifications).toEqual([])
+    expect(plain.document.content.references).toEqual([])
+    expect(plain.unmatched).toEqual([])
+  })
+
+  it('keeps a skills group labelled "Certifications:" in skills', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
+      b('b3', 'Certifications:'), b('b4', 'AWS Solutions Architect, CKA'),
+    ), 'en')
+    expect(proposal.document.content.skills.map((group) => group.text.en)).toEqual([{ title: 'Certifications', items: ['AWS Solutions Architect', 'CKA'] }])
+    expect(proposal.document.content.certifications).toEqual([])
+    expect(proposal.unmatched).toEqual([])
+  })
 })

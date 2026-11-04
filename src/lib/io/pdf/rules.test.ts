@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findContacts, findDateRange, matchHeading, parseDate, splitRoleCompany, stripBullet } from './rules'
+import { findContacts, findDateRange, isCertificate, isLocation, matchHeading, parseDate, sectionHeading, splitRoleCompany, splitTitleIssuer, splitTrailingLocation, stripBullet } from './rules'
 
 describe('matchHeading', () => {
   it.each([
@@ -25,11 +25,8 @@ describe('matchHeading', () => {
     ['Tentang Saya', 'summary'],
     ['Contact', 'contact'],
     ['Kontak', 'contact'],
-    ['Certifications', 'unsupported'],
-    ['Sertifikasi', 'unsupported'],
     ['Languages', 'unsupported'],
     ['Bahasa', 'unsupported'],
-    ['References', 'unsupported'],
   ])('%s → %s', (text, kind) => {
     expect(matchHeading(text)).toBe(kind)
   })
@@ -40,6 +37,41 @@ describe('matchHeading', () => {
       expect(matchHeading(text)).toBeNull()
     },
   )
+})
+
+describe('matchHeading aliases from the resume guide', () => {
+  it.each([
+    ['Profile Summary', 'summary'], ['Personal Summary', 'summary'], ['Personal Profile', 'summary'], ['Career Profile', 'summary'],
+    ['Competencies & Abilities', 'skills'], ['Skills & Abilities', 'skills'], ['Skills and Competencies', 'skills'],
+    ['Competencies & Skills', 'skills'], ['Abilities', 'skills'],
+    ['Working Experience', 'experience'], ['Working Experiences', 'experience'], ['Work Experiences', 'experience'],
+    ['Professional Experiences', 'experience'], ['Experiences', 'experience'], ['Pengalaman Bekerja', 'experience'],
+    ['Education Background', 'education'], ['Education History', 'education'], ['Educational History', 'education'],
+    ['Course', 'certifications'], ['Courses', 'certifications'], ['Courses & Certifications', 'certifications'],
+    ['Certifications', 'certifications'], ['Certification', 'certifications'], ['Certificates', 'certifications'],
+    ['Certificate', 'certifications'], ['Licenses & Certifications', 'certifications'], ['Licences and Certifications', 'certifications'],
+    ['Training', 'certifications'], ['Trainings', 'certifications'], ['Kursus', 'certifications'], ['Pelatihan', 'certifications'],
+    ['Sertifikasi', 'certifications'], ['Sertifikat', 'certifications'], ['Lisensi dan Sertifikasi', 'certifications'],
+    ['References', 'references'], ['Reference', 'references'], ['Referees', 'references'], ['Referensi', 'references'],
+    ['Rekomendasi', 'references'],
+    ['Hobbies', 'unsupported'], ['Languages', 'unsupported'],
+  ] as const)('matches %s', (text, kind) => expect(matchHeading(text)).toBe(kind))
+})
+
+describe('isLocation', () => {
+  it.each(['Bandung, Indonesia', 'Jakarta Selatan, DKI Jakarta, Indonesia'])('accepts %s', (text) => expect(isLocation(text)).toBe(true))
+  it.each(['Bandung', 'Bachelor of Computer Science, 2013 - 2017', 'A B C D E F, G'])('rejects %s', (text) => expect(isLocation(text)).toBe(false))
+})
+
+describe('splitTrailingLocation', () => {
+  it('splits a trailing location only when it is one', () => {
+    expect(splitTrailingLocation('Contoh Consulting - Bandung, Indonesia')).toEqual({ head: 'Contoh Consulting', location: 'Bandung, Indonesia' })
+    expect(splitTrailingLocation('Contoh Edu | Surabaya, Indonesia')).toEqual({ head: 'Contoh Edu', location: 'Surabaya, Indonesia' })
+    expect(splitTrailingLocation('PT A – B — Jakarta Selatan, Indonesia')).toEqual({ head: 'PT A – B', location: 'Jakarta Selatan, Indonesia' })
+    expect(splitTrailingLocation('Universitas Contoh - S1 Informatika')).toBeNull()
+    expect(splitTrailingLocation(' - Bandung, Indonesia')).toBeNull()
+    expect(splitTrailingLocation('Bandung, Indonesia')).toBeNull()
+  })
 })
 
 describe('parseDate', () => {
@@ -149,6 +181,17 @@ describe('stripBullet', () => {
   ])('%s', (text, expected) => {
     expect(stripBullet(text).text).toBe(expected)
   })
+
+  it.each(['➔ ', '→ ', '➜ ', '➤ ', '➣ ', '✓ ', '✔ ', '■ ', '□ ', '◆ ', '◇ ', '❖ ', '○ '])('strips %s', (g) =>
+    expect(stripBullet(`${g}Soft Skills: X`).text).toBe('Soft Skills: X'))
+
+  it('strips the ASCII arrow Docling writes for ➔', () => {
+    expect(stripBullet('-> Soft Skills: X')).toEqual({ text: 'Soft Skills: X', from: 3 })
+  })
+
+  it.each(['A->B', '->', '->B', '=> Soft Skills', '> Soft Skills'])('leaves %j alone', (text) => {
+    expect(stripBullet(text)).toEqual({ text, from: 0 })
+  })
 })
 
 describe('splitRoleCompany', () => {
@@ -165,5 +208,80 @@ describe('splitRoleCompany', () => {
     expect(splitRoleCompany('Example Payments, Sample Logistics')).toBeNull()
     expect(splitRoleCompany('Product Designer')).toBeNull()
     expect(splitRoleCompany('Lead Engineer, Engineering Manager')).toBeNull()
+  })
+})
+
+describe('splitTitleIssuer', () => {
+  it('splits a course row at the last spaced dash and reads a trailing "| date"', () => {
+    const text = 'Business English Training - Contoh Language Centre | Jun 2025'
+    const row = splitTitleIssuer(text)
+    expect(row).toMatchObject({ title: 'Business English Training', issuer: 'Contoh Language Centre', date: { start: '2025-06' } })
+    expect(text.slice(row!.date!.from, row!.date!.to)).toBe('Jun 2025')
+  })
+
+  it('splits at the last dash and leaves the date null without one', () => {
+    expect(splitTitleIssuer('Hanyu Shuiping Kaoshi / Mandarin Test - Contoh Institute')).toEqual({
+      title: 'Hanyu Shuiping Kaoshi / Mandarin Test', issuer: 'Contoh Institute', date: null,
+    })
+    expect(splitTitleIssuer('Cloud - Data - Example Academy')).toMatchObject({ title: 'Cloud - Data', issuer: 'Example Academy' })
+  })
+
+  it('reads a date after a dash or comma, and splits "Title, Issuer, year"', () => {
+    expect(splitTitleIssuer('Professional Testing Certificate — Example Institute — 2023')).toMatchObject({
+      title: 'Professional Testing Certificate', issuer: 'Example Institute', date: { start: '2023' },
+    })
+    expect(splitTitleIssuer('Foundation Testing Certificate, Example Board, 2024')).toMatchObject({
+      title: 'Foundation Testing Certificate', issuer: 'Example Board', date: { start: '2024' },
+    })
+  })
+
+  it('keeps a dated row without an issuer whole', () => {
+    expect(splitTitleIssuer('AWS Certified Cloud Practitioner | Mar 2023')).toMatchObject({
+      title: 'AWS Certified Cloud Practitioner', issuer: '', date: { start: '2023-03' },
+    })
+  })
+
+  it.each([
+    'Presentation, negotiation, and business writing',
+    'Dashboards, Power Query, 2024 and data modelling',
+    'Business English Training - Contoh Language Centre | Jun 2025 Presentation, negotiation',
+    'Data Analysis',
+  ])('returns null for %j', (text) => expect(splitTitleIssuer(text)).toBeNull())
+})
+
+describe('isCertificate', () => {
+  it.each(['Foundation Testing Certificate', 'AWS Certified Developer', 'Business English Training', 'Data Analysis Course',
+    'Driving Licence', 'Sertifikasi BNSP', 'Kursus Bahasa Inggris', 'Pelatihan Kepemimpinan', 'Lisensi Ahli K3'])('%s is a certificate', (text) => {
+    expect(isCertificate(text)).toBe(true)
+  })
+  it.each(['National Service Gold Pin, Civic Agency, 2021', 'Bahasa Indonesia (Native); English (Conversational)'])('%s is not', (text) => {
+    expect(isCertificate(text)).toBe(false)
+  })
+})
+
+describe('sectionHeading for certifications and references', () => {
+  it('reads a plain-text "Certifications:" or "References:" label as content, not a section', () => {
+    expect(sectionHeading('Certifications:', 'text')).toBeNull()
+    expect(sectionHeading('References:', 'list_item')).toBeNull()
+    expect(sectionHeading('Certifications:', 'section_header')).toBe('certifications')
+    expect(sectionHeading('Certifications', 'section_header')).toBe('certifications')
+  })
+
+  it('needs a heading label for certifications and references, and never opens one from a list item', () => {
+    expect(sectionHeading('Certifications', 'text')).toBeNull()
+    expect(sectionHeading('Training', 'text')).toBeNull()
+    expect(sectionHeading('Reference', 'text')).toBeNull()
+    expect(sectionHeading('Training', 'list_item')).toBeNull()
+    expect(sectionHeading('• Training', 'text')).toBeNull()
+    expect(sectionHeading('Experience', 'list_item')).toBeNull()
+    expect(sectionHeading('➔ Experience', 'text')).toBeNull()
+    expect(sectionHeading('Experience', 'text')).toBe('experience')
+  })
+
+  it('opens a section from a heading-labelled line with a decorative glyph', () => {
+    expect(sectionHeading('■ EXPERIENCE', 'section_header')).toBe('experience')
+    expect(sectionHeading('➔ Education', 'title')).toBe('education')
+    expect(sectionHeading('• Training', 'section_header')).toBe('certifications')
+    expect(sectionHeading('■ EXPERIENCE', 'text')).toBeNull()
   })
 })

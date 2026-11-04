@@ -49,8 +49,8 @@ describe('convertPdf', () => {
     expect(stages).toEqual(['uploading', 'queued', 'extracting', 'reading'])
     expect(calls).toEqual([
       'POST /api/pdf-import/jobs',
-      `GET /api/pdf-import/jobs/${ID}?progress=1`,
-      `GET /api/pdf-import/jobs/${ID}?progress=1`,
+      `GET /api/pdf-import/jobs/${ID}?progress=1&styles=1`,
+      `GET /api/pdf-import/jobs/${ID}?progress=1&styles=1`,
       `DELETE /api/pdf-import/jobs/${ID}`,
     ])
   })
@@ -180,5 +180,5 @@ it('opts into progress, retains monotonic telemetry and supports legacy polls', 
   const result = await convertPdf(pdf(), { fetch, signal: new AbortController().signal, pollMs: 0, onStage: () => {}, onProgress: (p) => seen.push(p) })
   expect(result.ok).toBe(true)
   expect(seen).toEqual([null, first, first, first, final])
-  expect(calls.filter((c) => c.startsWith('GET')).every((c) => c.endsWith('?progress=1'))).toBe(true)
+  expect(calls.filter((c) => c.startsWith('GET')).every((c) => c.endsWith('?progress=1&styles=1'))).toBe(true)
 })

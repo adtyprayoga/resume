@@ -141,6 +141,16 @@ def normalized(value: str) -> str:
 
 @pytest.mark.docling
 class TestRealExtraction:
+    def test_guide_template_cv_keeps_every_line(self) -> None:
+        extraction = extract_pdf(PDF / "guide_template.pdf")
+        joined = texts(extraction)
+        for phrase in ["Rina Wulandari", "Profile Summary", "Competencies & Abilities", "Working Experience",
+                       "Education Background", "Course", "References", "Hobbies", "for further review.",
+                       "Contoh Consulting - Bandung, Indonesia", "Sep 2024 - Present", "Anggi Pratiwi"]:
+            assert phrase in joined
+        assert extraction.pages == 2
+        assert next(b for b in extraction.blocks if "for further review." in b.text).page == 2
+
     def test_english_cv_keeps_native_text_in_reading_order(self) -> None:
         extraction = extract_pdf(PDF / "en_single.pdf")
         joined = texts(extraction)

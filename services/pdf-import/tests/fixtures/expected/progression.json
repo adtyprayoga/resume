@@ -1,0 +1,264 @@
+{
+  "locale": "en",
+  "profile": {
+    "name": "MAYA NUSANTARA",
+    "headline": "Technical Lead/Senior Engineer (Python & TypeScript) - IT Instructor",
+    "location": "Bandung, Indonesia",
+    "summary": "Technical leader delivering public-service software and engineering training.\nImpact Highlights\nReduced reporting turnaround while mentoring delivery teams."
+  },
+  "contact": {
+    "email": "maya@example.com",
+    "phone": "+62 811 0000 1234",
+    "website": "https://example.com/maya",
+    "github": "",
+    "linkedin": "",
+    "avatar": ""
+  },
+  "sections": {
+    "experience": [
+      {
+        "company": "Contoh Learning / PT Contoh Teknologi",
+        "role": "Engineering Lead / Software Manager",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2022-01",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Led a multidisciplinary engineering team.",
+          "Established service reliability practices.",
+          "Reviewed architecture and delivery plans.",
+          "Mentored developers across teams.",
+          "Coordinated delivery with public-sector stakeholders."
+        ]
+      },
+      {
+        "company": "Contoh Learning / PT Contoh Teknologi",
+        "role": "Software Staff (Full Stack Developer)",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2018-03",
+          "end": "2022-01"
+        },
+        "bullets": [
+          "Built online application workflows.",
+          "Integrated external service APIs.",
+          "Optimized database performance.",
+          "Maintained deployment tooling."
+        ]
+      },
+      {
+        "company": "Contoh Learning / PT Contoh Teknologi",
+        "role": "Training Staff (Software Engineer Focus)",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2018-03",
+          "end": "2018-12"
+        },
+        "bullets": [
+          "Prepared engineering course materials.",
+          "Supported practical learning sessions."
+        ]
+      },
+      {
+        "company": "",
+        "role": "IT Course Instructor",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2022-02",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Taught practical backend engineering.",
+          "Developed hands-on programming exercises."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Universitas Contoh",
+        "degree": "B.Sc.",
+        "field": "Information Technology",
+        "gpa": "",
+        "description": "",
+        "dates": {
+          "start": "2019",
+          "end": "2025"
+        }
+      },
+      {
+        "school": "SMK Contoh",
+        "degree": "",
+        "field": "Computer & Information Sciences",
+        "gpa": "",
+        "description": "",
+        "dates": {
+          "start": "2015",
+          "end": "2018"
+        }
+      }
+    ],
+    "projects": [
+      {
+        "name": "Personnel Portal (CIVIC)",
+        "role": "Programmer",
+        "description": "Modernized personnel workflows.",
+        "bullets": [],
+        "techStack": [
+          "Django",
+          "Vue",
+          "PostgreSQL"
+        ],
+        "link": "",
+        "dates": {
+          "start": "2020",
+          "end": "2021"
+        }
+      },
+      {
+        "name": "Storm Tracker (METEO)",
+        "role": "Programmer",
+        "description": "Computed nearby lightning coordinates.",
+        "bullets": [],
+        "techStack": [
+          "Python",
+          "PostgreSQL"
+        ],
+        "link": "",
+        "dates": {
+          "start": "2021",
+          "end": ""
+        }
+      },
+      {
+        "name": "Submission Hub (CIVIC)",
+        "role": "Senior Programmer",
+        "description": "Reduced submission processing time.",
+        "bullets": [],
+        "techStack": [
+          "REST APIs"
+        ],
+        "link": "",
+        "dates": {
+          "start": "2021",
+          "end": "2023"
+        }
+      },
+      {
+        "name": "Lake Atlas (RESEARCH)",
+        "role": "Tech Lead",
+        "description": "Centralized environmental records.",
+        "bullets": [],
+        "techStack": [
+          "Django",
+          "Vue"
+        ],
+        "link": "",
+        "dates": {
+          "start": "2023",
+          "end": ""
+        }
+      },
+      {
+        "name": "Certificate System (SKILLS)",
+        "role": "Tech Lead",
+        "description": "Directed digital signing delivery.",
+        "bullets": [],
+        "techStack": [
+          "Django",
+          "MySQL"
+        ],
+        "link": "",
+        "dates": {
+          "start": "2024",
+          "end": null,
+          "current": true
+        }
+      }
+    ],
+    "skills": [
+      {
+        "title": "Backend",
+        "items": [
+          "Python",
+          "Django",
+          "REST APIs"
+        ]
+      },
+      {
+        "title": "Frontend",
+        "items": [
+          "TypeScript",
+          "Vue"
+        ]
+      },
+      {
+        "title": "Database",
+        "items": [
+          "PostgreSQL",
+          "MySQL"
+        ]
+      },
+      {
+        "title": "Infrastructure",
+        "items": [
+          "Docker",
+          "Linux"
+        ]
+      },
+      {
+        "title": "Quality",
+        "items": [
+          "Testing",
+          "Code Review"
+        ]
+      },
+      {
+        "title": "Leadership",
+        "items": [
+          "Mentoring",
+          "Planning"
+        ]
+      },
+      {
+        "title": "Domain",
+        "items": [
+          "Public services",
+          "Education (training, coaching)",
+          "Workflow modernization"
+        ]
+      },
+      {
+        "title": "Languages",
+        "items": [
+          "Bahasa Indonesia (Native)",
+          "English (Conversational)"
+        ]
+      }
+    ],
+    "awards": [
+      {
+        "title": "National Service Gold Pin",
+        "issuer": "Civic Agency",
+        "date": "2021",
+        "description": ""
+      }
+    ],
+    "certifications": [
+      {
+        "title": "Foundation Testing Certificate",
+        "issuer": "Example Board",
+        "date": "2024",
+        "description": ""
+      }
+    ],
+    "references": []
+  },
+  "unplaced": 2
+}

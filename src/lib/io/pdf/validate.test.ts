@@ -71,3 +71,39 @@ it('accepts valid optional progress and ignores malformed telemetry independentl
   }
   expect(parseJobStatus({ ...job, progress, result: null }).ok).toBe(false)
 })
+
+const withBlock = (extra: Record<string, unknown>) => ({
+  contract_version: 1,
+  pages: 1,
+  blocks: [{ id: 'b1', page: 1, label: 'text', group: null, text: 'Sample text', bbox: null, ...extra }],
+})
+
+it('preserves valid, null and absent block styles', () => {
+  const style = { font: 'f2', size: 13.3, bold: null, italic: true }
+  const styled = parseExtraction(withBlock({ style }))
+  expect(styled.ok && styled.value.blocks[0]).toHaveProperty('style', style)
+  const explicitNull = parseExtraction(withBlock({ style: null }))
+  expect(explicitNull.ok && explicitNull.value.blocks[0]).toHaveProperty('style', null)
+  const absent = parseExtraction(withBlock({}))
+  expect(absent.ok).toBe(true)
+  expect(absent.ok && absent.value.blocks[0]).not.toHaveProperty('style')
+  expect(parseExtraction(withBlock({ style: { font: 'f12', size: 10, bold: false, italic: false } })).ok).toBe(true)
+})
+
+it.each([
+  { font: 'Arial', size: 10, bold: null, italic: null },
+  { font: 'f0', size: 10, bold: null, italic: null },
+  { font: 'f01', size: 10, bold: null, italic: null },
+  ...[0, -1, Infinity, NaN, '10'].map((size) => ({ font: 'f1', size, bold: null, italic: null })),
+  { font: 'f1', size: 10, bold: 'yes', italic: null },
+  { font: 'f1', size: 10, bold: null, italic: 1 },
+  { font: 'f1', size: 10, bold: null },
+  { font: 'f1', size: 10, bold: null, italic: null, name: 'x' },
+  undefined,
+])('rejects malformed block style %o', (style) => {
+  expect(parseExtraction(withBlock({ style })).ok).toBe(false)
+})
+
+it('continues rejecting unknown block keys', () => {
+  expect(parseExtraction(withBlock({ formatting: null })).ok).toBe(false)
+})
