@@ -124,23 +124,24 @@ function summary(view: ResolvedResume, locale: Locale): StoryPage {
 
 function competencies(view: ResolvedResume, locale: Locale): StoryPage {
   const p = page('competencies')
-  for (const group of view.skills) {
-    const items = joinList(group.items.map((_, index) => `{${index}}`), locale)
+  const populated = view.skills.filter(group => !missing(group.title) && group.items.some(item => !missing(item)))
+  for (const group of populated) {
+    const items = joinList(group.items.flatMap((item, index) => missing(item) ? [] : [`{${index}}`]), locale)
       .split(/\{(\d+)\}/).map((part, index): Segment =>
         index % 2 ? resume(group.items[Number(part)]!) : { kind: 'text', text: part },
       )
     paragraph(p, STORY.skillGroup, locale, { title: resume(group.title), items })
   }
-  const kinds = new Set(view.skills.map(group => groupKind(group.title)))
+  const kinds = new Set(populated.map(group => groupKind(group.title)))
   if (!kinds.has('hard')) paragraph(p, STORY.hard, locale, {
     hardField: blank(p, p.id, 'hardField', LABELS.hardField), hardItems: blank(p, p.id, 'hardItems', LABELS.hardItems, 'tags'),
   })
   for (const kind of ['tools', 'soft', 'languages'] as const) {
     if (!kinds.has(kind)) paragraph(p, STORY[kind], locale, { [kind]: blank(p, p.id, kind, LABELS[kind], 'tags') })
   }
-  for (const group of view.skills.filter(group => groupKind(group.title) === 'languages')) {
+  for (const group of populated.filter(group => groupKind(group.title) === 'languages')) {
     group.items.forEach((item, index) => {
-      if (languageWithoutLevel(item)) paragraph(p, STORY.level, locale, {
+      if (!missing(item) && languageWithoutLevel(item)) paragraph(p, STORY.level, locale, {
         language: resume(item), level: blank(p, p.id, `level:${group.id}:${index}`, { en: item, id: item }),
       })
     })

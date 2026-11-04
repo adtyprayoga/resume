@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import skills from '$lib/sections/skills'
 import { emptyDocument } from '$lib/model/document'
 import type { Locale, ResumeDocument } from '$lib/model/types'
 import { buildStory, gapIds, type StoryPage } from './story'
@@ -65,6 +66,40 @@ describe('buildStory', () => {
     expect(blanks(p)).toEqual(expect.arrayContaining(['competencies:level:a:0', 'competencies:level:b:0']))
     expect(p.blanks.find(b => b.id.endsWith('a:0'))?.label).toEqual({ en: 'English', id: 'English' })
     expect(blanks(page(strong(), 'competencies'))).toEqual(['competencies:wanted'])
+  })
+  it('keeps guidance for a newly added empty skills item without narrating an empty collection', () => {
+    const doc = emptyDocument(); doc.content.skills = [skills.emptyItem()]
+    const before = structuredClone(doc)
+    const p = page(doc, 'competencies')
+    expect(blanks(p)).toEqual(blanks(page(emptyDocument(), 'competencies')))
+    expect(prose(p)).not.toContain('In their collection')
+    expect(doc).toEqual(before)
+  })
+  it.each([
+    ['Engineering', [], 'hardItems'],
+    ['Tools', [], 'tools'],
+    ['Soft Skills', [' ', ''], 'soft'],
+    ['Languages', [], 'languages'],
+    ['  ', ['Design'], 'hardItems'],
+  ] satisfies [string, string[], string][])('treats incomplete group %s as missing without empty narration', (title, items, slot) => {
+    const doc = emptyDocument()
+    doc.content.skills = [{ id: 'incomplete', text: localized({ title, items }) }]
+    const before = structuredClone(doc)
+    const p = page(doc, 'competencies')
+    expect(blanks(p)).toContain(`competencies:${slot}`)
+    expect(prose(p)).not.toContain('In their collection')
+    expect(doc).toEqual(before)
+  })
+  it('filters blank items from narration while preserving populated language indices and text', () => {
+    const doc = emptyDocument()
+    doc.content.skills = [{ id: 'languages', text: localized({ title: 'Languages', items: ['', ' English ', '  ', 'Indonesian'] }) }]
+    const before = structuredClone(doc)
+    const p = page(doc, 'competencies')
+    expect(blanks(p).filter(id => id.includes(':level:'))).toEqual(['competencies:level:languages:1', 'competencies:level:languages:3'])
+    expect(blanks(p)).not.toContain('competencies:languages')
+    expect(p.paragraphs[0]!.filter(s => s.kind === 'resume').map(s => s.text)).toEqual(['Languages', ' English ', 'Indonesian'])
+    expect(prose(p)).toContain(' English  and Indonesian')
+    expect(doc).toEqual(before)
   })
   it('covers job fields, conditional dates, reflection and ordering', () => {
     const doc = emptyDocument(); doc.content.experience = [job('old'), job('new')]
