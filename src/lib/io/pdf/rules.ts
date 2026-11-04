@@ -232,6 +232,9 @@ export interface FoundContact {
   to: number
 }
 
+/** A label that ends just before a contact: "Email: ", "Phone ", "LinkedIn:". */
+export const CONTACT_LABEL = /\b(?:e-?mail|phone|telephone|tel|telepon|ponsel|portfolio|portofolio|website|github|linkedin)\s*:?\s*$/i
+
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g
 const URL_PATTERN =
   /(?:https?:\/\/|www\.)[^\s|,;<>()]+|(?<![@\w.])(?:[a-z0-9-]+\.)+(?:com|id|io|dev|net|org|me|co|app|design|ai|xyz|tech|site|page|info|biz|my)(?:\/[^\s|,;<>()]*)?(?![\w@])/gi

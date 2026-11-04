@@ -12,7 +12,7 @@ import type {
   ResumeDocument,
   SkillGroup,
 } from '$lib/model/types'
-import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isCertificate, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, splitTitleIssuer, splitTrailingLocation, stripBullet, type FoundRange, type HeadingKind } from './rules'
+import { CONTACT_LABEL, findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isCertificate, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, splitTitleIssuer, splitTrailingLocation, stripBullet, type FoundRange, type HeadingKind } from './rules'
 import { buildOutline, type Outline, type OutlineRole } from './outline'
 import { associateDateRows, joinListContinuations, joinSourceLines, partsOf, sliceSegment, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
 import type { Extraction } from './types'
@@ -391,8 +391,8 @@ const courseRows = (blocks: SourceBlock[], roleOf: Map<SourceBlock, OutlineRole>
 
 /**
  * References: a name line starts an entry, and `lines(i)` says how many of the
- * following lines belong to it. The first of them, up to its first contact,
- * is the position; the first phone and email in any of them fill those
+ * following lines belong to it. The first of them, up to its first contact
+ * and that contact's label ("Phone:"), is the position; the first phone and email in any of them fill those
  * fields; another line without contacts is the note. A line outside an entry
  * becomes a note entry, unless it holds contacts: then it stays unplaced.
  */
@@ -415,10 +415,13 @@ const mapReferences = (blocks: SourceBlock[], lines: (index: number) => number |
           const found = contacts.find((contact) => contact.field === field)
           if (!found || item[field]) continue
           item[field] = found.value
-          usage.take(line, found.from, found.to)
+          const label = CONTACT_LABEL.exec(line.text.slice(0, found.from))
+          usage.take(line, label ? label.index : found.from, found.to)
           ref(path(field), line)
         }
-        const end = contacts[0]?.from ?? line.text.length
+        // A contact's label ("Phone:") is never the position.
+        const before = line.text.slice(0, contacts[0]?.from ?? line.text.length)
+        const end = contacts.length ? CONTACT_LABEL.exec(before)?.index ?? before.length : before.length
         const lead = trimPiece(stripBullet(line.text.slice(0, end)).text)
         if (!/[\p{L}\p{N}]/u.test(lead)) return
         if (index === 0) {
@@ -474,7 +477,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
       if (document.contact[found.field]) continue
       document.contact[found.field] = found.value
       usage.take(block, found.from, found.to)
-      const label = /(?:e-?mail|phone|telephone|tel|telepon|ponsel|portfolio|portofolio|website|github|linkedin)\s*:?\s*$/i.exec(block.text.slice(0, found.from))
+      const label = CONTACT_LABEL.exec(block.text.slice(0, found.from))
       if (label) usage.take(block, label.index, found.from)
       ref(`contact.${found.field}`, block)
     }
@@ -585,7 +588,8 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         const headed = outline.confidence === 'typography' && blocks.some((block) => roleOf.get(block) === 'h3')
         const contact = (i: number) => i < blocks.length && findContacts(blocks[i]!.text).length > 0
         // Typography: every line up to the next h3. Rules path: a name-like line
-        // followed by a contact line, or by a position line and then one.
+        // followed by a contact line, or by a position line and then one, and
+        // any contact lines directly after.
         const lines = (i: number): number | null => {
           const block = blocks[i]!
           if (headed) {
@@ -594,8 +598,11 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
             return (next < 0 ? blocks.length : next) - i - 1
           }
           if (isBullet(block) || !isNameLike(block.text.trim())) return null
-          if (contact(i + 1)) return 1
-          return i + 2 < blocks.length && !isBullet(blocks[i + 1]!) && contact(i + 2) && lines(i + 1) === null ? 2 : null
+          let count = contact(i + 1) ? 1 : i + 2 < blocks.length && !isBullet(blocks[i + 1]!) && contact(i + 2) && lines(i + 1) === null ? 2 : 0
+          if (!count) return null
+          // Further contact lines ("Email: …" under "Phone: …") belong to it too.
+          while (contact(i + count + 1)) count++
+          return count
         }
         mapReferences(blocks, lines, document, locale, usage, ref)
         break

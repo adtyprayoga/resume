@@ -670,6 +670,26 @@ describe('PDF outline certifications and references', () => {
     expect(proposal.unmatched).toEqual([])
   })
 
+  it.each(['typography', 'fallback'])('strips contact labels and keeps labelled contact lines with the reference (%s)', (mode) => {
+    const nameLine = (id: string) => mode === 'typography' ? s(id, 'Anggi Pratiwi', 'text', S('f2', 10)) : b(id, 'Anggi Pratiwi')
+    const line = (id: string, text: string) => mode === 'typography' ? s(id, text, 'text', body) : b(id, text)
+    const heading = mode === 'typography' ? [name(), h2('b2', 'References')] : [header(), b('b2', 'References', 'section_header')]
+    const contactsOnly = mapExtraction(source(...heading, nameLine('b3'),
+      line('b4', 'Phone: +62 812 0000 1111'), line('b5', 'Email: anggi@example.com'),
+    ), 'en')
+    expect(refsOf(contactsOnly)).toEqual([{ ...anggi, position: '' }])
+    expect(contactsOnly.unmatched).toEqual([])
+
+    const withPosition = mapExtraction(source(...heading, nameLine('b3'),
+      line('b4', 'HR Manager, PT Contoh Abadi'), line('b5', 'Phone: +62 812 0000 1111'), line('b6', 'Email: anggi@example.com'),
+    ), 'en')
+    expect(refsOf(withPosition)).toEqual([{ ...anggi, position: 'HR Manager, PT Contoh Abadi' }])
+    expect(withPosition.unmatched).toEqual([])
+
+    const hotel = mapExtraction(source(...heading, nameLine('b3'), line('b4', 'Front Office Manager at Contoh Hotel +62 812 0000 1111')), 'en')
+    expect(refsOf(hotel)[0]!.position).toBe('Front Office Manager at Contoh Hotel')
+  })
+
   it('never makes a contact line a note', () => {
     const proposal = mapExtraction(source(header(), b('b2', 'References', 'section_header'), b('b3', '+62 812 0000 1111 | anggi@example.com')), 'en')
     expect(proposal.document.content.references).toEqual([])
