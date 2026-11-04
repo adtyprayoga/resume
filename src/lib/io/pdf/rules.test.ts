@@ -125,6 +125,14 @@ describe('findContacts', () => {
     expect(findContacts('05/2018 — 11/2020')).toEqual([])
   })
 
+  it.each(['+62 812 3456 2019', '0812 3456 2020', '+1 415 555 1999'])('keeps the phone number %j', (text) => {
+    expect(findContacts(text).map((c) => [c.field, c.value])).toEqual([['phone', text]])
+  })
+
+  it.each(['2013 - 2017', '2019 – 2020', 'Jan 2019 - Dec 2020'])('still ignores the date range %j', (text) => {
+    expect(findContacts(text)).toEqual([])
+  })
+
   it('drops unsafe schemes', () => {
     expect(findContacts('javascript:alert(1)')).toEqual([])
   })
