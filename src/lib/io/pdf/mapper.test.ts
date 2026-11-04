@@ -390,6 +390,42 @@ describe('mapExtraction: conservative rules', () => {
     expect(proposal.unmatched).toEqual([])
   })
 
+  it('starts a new entry at a text-labelled title even when another title is a heading', () => {
+    const proposal = mapExtraction(
+      extraction(
+        block('Experience', 'section_header'),
+        block('Engineer at Foo', 'section_header'), block('2019 - 2020'), block('Built Foo', 'list_item', 'g1'),
+        block('Analyst at Bar'), block('2017 - 2019'), block('Built Bar', 'list_item', 'g2'),
+      ),
+      'en',
+    )
+    expect(proposal.document.content.experience.map((e) => [e.company, e.text.en.bullets])).toEqual([
+      ['Foo', ['Built Foo']],
+      ['Bar', ['Built Bar']],
+    ])
+  })
+
+  it('keeps a heading title, a location line and its date line as one entry', () => {
+    const proposal = mapExtraction(
+      extraction(block('Experience', 'section_header'), block('Engineer at Foo', 'section_header'), block('Jakarta'), block('2019 - 2020')),
+      'en',
+    )
+    expect(proposal.document.content.experience).toHaveLength(1)
+    expect(proposal.document.content.experience[0]!.dates).toEqual({ start: '2019', end: '2020' })
+  })
+
+  it('starts later text-labelled entries after an undated heading entry', () => {
+    const proposal = mapExtraction(
+      extraction(
+        block('Experience', 'section_header'),
+        block('Engineer at Foo', 'section_header'), block('Built Foo', 'list_item', 'g1'),
+        block('Analyst at Bar'), block('2017 - 2019'),
+      ),
+      'en',
+    )
+    expect(proposal.document.content.experience.map((e) => e.company)).toEqual(['Foo', 'Bar'])
+  })
+
   it('reports everything unmatched when nothing is recognised', () => {
     const proposal = mapExtraction(extraction(block('Lorem ipsum dolor'), block('sit amet')), 'en')
     expect(proposal.warnings).toContainEqual({ code: 'nothing_recognised', blocks: [] })

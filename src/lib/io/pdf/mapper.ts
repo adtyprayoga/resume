@@ -178,18 +178,24 @@ const ENTRY_KINDS = ['experience', 'education', 'projects', 'awards'] as const
 type EntryKind = (typeof ENTRY_KINDS)[number]
 
 /**
- * Splits a section into entries at title-like blocks, or failing that at the
- * line before each date-only line. Blocks before the first entry are returned
- * separately; null means no boundary at all could be found.
+ * Splits a section into entries. A block starts an entry when the layout calls
+ * it a heading, or when it is a plain line directly before a date-only line and
+ * the current entry already has content (a date or a bullet), so a title
+ * followed by a location and then its dates stays one entry. Blocks before the
+ * first entry are returned separately; null means no boundary was found.
  */
 const splitEntries = (blocks: SourceBlock[]): { lead: SourceBlock[]; entries: SourceBlock[][] } | null => {
-  let starts = blocks.flatMap((block, i) => (isHeaderLabel(block) ? [i] : []))
-  if (!starts.length) {
-    starts = blocks.flatMap((block, i) => {
-      const next = blocks[i + 1]
-      return next && isDateLine(next) && !isDateLine(block) && !isBullet(block) ? [i] : []
-    })
-  }
+  const starts: number[] = []
+  let content = false
+  blocks.forEach((block, i) => {
+    const next = blocks[i + 1]
+    const titleBeforeDate = next !== undefined && isDateLine(next) && !isDateLine(block) && !isBullet(block)
+    if (isHeaderLabel(block) || (titleBeforeDate && (!starts.length || content))) {
+      starts.push(i)
+      content = false
+    }
+    if (isDateLine(block) || isBullet(block)) content = true
+  })
   if (!starts.length) return null
   return {
     lead: blocks.slice(0, starts[0]),
