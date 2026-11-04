@@ -261,6 +261,46 @@ try {
         await clickButton('Cancel')
       }
     }
+
+    await viewport(1440, 900)
+    await load()
+    await openImport(IMPORT_LABEL)
+    await choosePdf('progression')
+    await clickButton('Convert PDF')
+    if (await waitFor(`document.querySelector('[role=dialog] h2')?.textContent.trim() === 'Review PDF import'`, 'progression review')) {
+      const counts = await evaluate(`(() => {
+        const names = [...document.querySelectorAll('.pdf-entry legend')].map(el => el.textContent.trim())
+        return ['Experience', 'Projects', 'Education', 'Skills', 'Awards'].map(kind => names.filter(name => name.startsWith(kind + ' entry ')).length)
+      })()`)
+      check(JSON.stringify(counts) === JSON.stringify([4, 5, 2, 7, 1]), 'progression: four roles, five projects, two schools, seven skill groups and one award')
+      await clickButton('Replace resume')
+      check(await evaluate(`document.querySelector('[role=alert]')?.textContent.includes('unplaced text') ?? false`), 'progression: unplaced text still requires acknowledgment')
+      await evaluate(`document.querySelector('.pdf-acknowledge input').click()`)
+      await clickButton('Replace resume')
+      const saved = await evaluate(`(() => {
+        const doc = JSON.parse(localStorage.getItem('resume-document-v1'))
+        return { dates: doc.content.experience.map(item => item.dates.start), bullets: doc.content.experience.map(item => item.text.en.bullets.length), company: doc.content.experience[3].company }
+      })()`)
+      check(JSON.stringify(saved.dates) === JSON.stringify(['2022-01', '2018-03', '2018-03', '2022-02']) && JSON.stringify(saved.bullets) === JSON.stringify([5, 4, 2, 2]) && saved.company === '', 'progression: confirmed draft retains role dates, page continuation and independent instructor')
+
+      for (const themeKey of ['minimal', 'ats']) {
+        await evaluate(`(() => {
+          const preferences = JSON.parse(localStorage.getItem('resume-preferences-v1') ?? '{}')
+          localStorage.setItem('resume-preferences-v1', JSON.stringify({ ...preferences, themeKey: ${JSON.stringify(themeKey)} }))
+        })()`)
+        const loaded = cdp.once('Page.loadEventFired')
+        await cdp.send('Page.reload')
+        await loaded
+        await settle()
+        const { data } = await cdp.send('Page.printToPDF', { preferCSSPageSize: true, displayHeaderFooter: false })
+        const path = join(work, `progression-${themeKey}.pdf`)
+        writeFileSync(path, Buffer.from(data, 'base64'))
+        const extracted = Bun.spawnSync(['pdftotext', path, '-'])
+        const text = new TextDecoder().decode(extracted.stdout)
+        check(extracted.exitCode === 0 && text.includes('MAYA NUSANTARA') && text.includes('Coordinated delivery with public-sector stakeholders.') && text.includes('Certificate System'), `progression ${themeKey}: imported text survives PDF export`)
+        check(!/Review PDF import|All extracted text|Text not placed/.test(text), `progression ${themeKey}: review controls stay out of print`)
+      }
+    }
   }
 } catch (error) {
   check(false, String(error))

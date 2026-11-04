@@ -162,6 +162,73 @@ def write_five_page(path: Path) -> None:
     c.save()
 
 
+def write_progression(path: Path) -> None:
+    """Two-page synthetic CV with mixed employer and role date geometry."""
+    c = canvas.Canvas(str(path), pagesize=A4, invariant=1)
+    w = Writer(c)
+    w.title("MAYA NUSANTARA")
+    w.line("Technical Lead/Senior Engineer (Python & TypeScript) - IT Instructor", size=10)
+    w.line("Bandung, Indonesia - Email maya@example.com - Phone +62 811 0000 1234", size=9)
+    w.line("Portfolio https://example.com/maya", size=9)
+    w.heading("Summary")
+    w.line("Technical leader delivering public-service software and engineering training.")
+    w.heading("Impact Highlights")
+    w.bullet("Reduced reporting turnaround while mentoring delivery teams.")
+    w.heading("Core Competencies")
+    for text in ["Backend: Python, Django, REST APIs", "Frontend: TypeScript, Vue", "Database: PostgreSQL, MySQL",
+                 "Infrastructure: Docker, Linux", "Quality: Testing, Code Review", "Leadership: Mentoring, Planning",
+                 "Domain: Public services, Education (training, coaching),", "Workflow modernization"]:
+        w.line(text, size=9)
+    w.heading("Experience")
+    w.line("Contoh Learning / PT Contoh Teknologi", bold=True)
+    w.line("Role Progression: Training Staff, Software Staff, Engineering Lead", size=9)
+    c.setFont("Helvetica", 9)
+    c.drawRightString(WIDTH - MARGIN, w.y + 30, "Mar 2018 - Present")
+    w.line("Engineering Lead / Software Manager", bold=True)
+    c.setFont("Helvetica", 9)
+    c.drawRightString(WIDTH - MARGIN, w.y + 15, "Jan 2022 - Present")
+    for line in ["Led a multidisciplinary engineering team.", "Established service reliability practices.",
+                 "Reviewed architecture and delivery plans.", "Mentored developers across teams."]:
+        w.bullet(line)
+    c.showPage()
+    w = Writer(c)
+    w.bullet("Coordinated delivery with public-sector stakeholders.")
+    for title, dates, bullets in [
+        ("Software Staff (Full Stack Developer)", "Mar 2018 - Jan 2022", ["Built online application workflows.", "Integrated external service APIs.", "Optimized database performance.", "Maintained deployment tooling."]),
+        ("Training Staff (Software Engineer Focus)", "Mar 2018 - Dec 2018", ["Prepared engineering course materials.", "Supported practical learning sessions."]),
+    ]:
+        w.line(title, bold=True)
+        c.setFont("Helvetica", 9)
+        c.drawRightString(WIDTH - MARGIN, w.y + 15, dates)
+        for line in bullets:
+            w.bullet(line)
+    w.heading("Additional Experience")
+    w.line("IT Course Instructor", bold=True)
+    c.setFont("Helvetica", 9)
+    c.drawRightString(WIDTH - MARGIN, w.y + 15, "Feb 2022 - Present")
+    w.bullet("Taught practical backend engineering.")
+    w.bullet("Developed hands-on programming exercises.")
+    w.heading("Selected Projects")
+    for title, dates, description in [
+        ("Personnel Portal (CIVIC) (Programmer - Django, Vue, PostgreSQL)", "2020-2021", "Modernized personnel workflows."),
+        ("Storm Tracker (METEO) (Programmer - Python, PostgreSQL)", "2021", "Computed nearby lightning coordinates."),
+        ("Submission Hub (CIVIC) (Senior Programmer - REST APIs)", "2021-2023", "Reduced submission processing time."),
+        ("Lake Atlas (RESEARCH) (Tech Lead - Django, Vue)", "2023", "Centralized environmental records."),
+        ("Certificate System (SKILLS) (Tech Lead - Django, MySQL)", "2024-Present", "Directed digital signing delivery."),
+    ]:
+        w.line(f"{title} {dates}", size=8)
+        w.line(description, size=8)
+    w.heading("Education")
+    w.line("Universitas Contoh - B.Sc. Information Technology 2019 - 2025", size=9)
+    w.line("SMK Contoh - Computer & Information Sciences 2015 - 2018", size=9)
+    w.heading("Certifications & Awards")
+    w.line("Foundation Testing Certificate, Example Board, 2024", size=9)
+    w.line("National Service Gold Pin, Civic Agency, 2021", size=9)
+    w.heading("Languages")
+    w.line("Bahasa Indonesia (Native); English (Conversational)", size=9)
+    c.save()
+
+
 def write_blank(path: Path) -> None:
     c = canvas.Canvas(str(path), pagesize=A4)
     c.showPage()
@@ -217,6 +284,7 @@ def main() -> None:
     write_id(PDF_DIR / "id_single.pdf")
     write_two_column(PDF_DIR / "two_column.pdf")
     write_five_page(PDF_DIR / "five_page.pdf")
+    write_progression(PDF_DIR / "progression.pdf")
     write_scanned(PDF_DIR / "scanned.pdf")
     write_mixed(PDF_DIR / "mixed.pdf")
     write_blank(PDF_DIR / "blank.pdf")

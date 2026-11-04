@@ -37,7 +37,7 @@ from app.settings import Settings  # noqa: E402  (needs ROOT on sys.path)
 
 MAX_PAGES = Settings().max_pages
 FIXTURES = ROOT / "tests" / "fixtures" / "pdf"
-CV_FIXTURES = ["en_single", "id_single", "two_column", "scanned", "mixed", "five_page"]
+CV_FIXTURES = ["en_single", "id_single", "two_column", "scanned", "mixed", "five_page", "progression"]
 PEAK_LIMIT = 2_300_000_000
 TIMEOUT = 180
 CGROUP = Path("/sys/fs/cgroup")

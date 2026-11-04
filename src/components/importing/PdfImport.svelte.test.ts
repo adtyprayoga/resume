@@ -152,6 +152,62 @@ describe('PDF import source', () => {
 })
 
 describe('PDF review', () => {
+  it('reviews and confirms the real progression fixture without changing stored work early', async () => {
+    service(load('extraction_progression.json'))
+    const before = JSON.stringify(resumeDoc.snapshot())
+    localStorage.setItem(DOCUMENT_KEY, before)
+    const { closed } = mount()
+    const user = await review()
+    expect(screen.getByLabelText('Headline')).toHaveValue('Technical Lead/Senior Engineer (Python & TypeScript) - IT Instructor')
+    expect(screen.getAllByLabelText('Location')[0]).toHaveValue('Bandung, Indonesia')
+    expect(screen.getAllByLabelText('Company').map((element) => (element as HTMLInputElement).value)).toEqual([
+      'Contoh Learning / PT Contoh Teknologi', 'Contoh Learning / PT Contoh Teknologi', 'Contoh Learning / PT Contoh Teknologi', '',
+    ])
+    const lead = screen.getByRole('group', { name: 'Experience entry 1' })
+    expect(within(lead).getByText('Coordinated delivery with public-sector stakeholders.')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Projects entry 5' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Education entry 2' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Awards entry 1' })).toBeInTheDocument()
+
+    const headline = screen.getByLabelText('Headline')
+    await user.clear(headline)
+    await user.type(headline, 'Engineering Lead and Instructor')
+    expect(JSON.stringify(resumeDoc.snapshot())).toBe(before)
+    expect(localStorage.getItem(DOCUMENT_KEY)).toBe(before)
+    await user.click(screen.getByRole('button', { name: 'Replace resume' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Confirm that you have checked the unplaced text first.')
+    expect(JSON.stringify(resumeDoc.snapshot())).toBe(before)
+    expect(localStorage.getItem(DOCUMENT_KEY)).toBe(before)
+
+    await user.click(screen.getByLabelText('I have checked the text that was not placed in any field'))
+    await user.click(screen.getByRole('button', { name: 'Replace resume' }))
+    expect(closed).toHaveBeenCalledOnce()
+    const result = resumeDoc.snapshot()
+    expect(result.profile.text.en.headline).toBe('Engineering Lead and Instructor')
+    expect(result.content.experience).toHaveLength(4)
+    expect(result.content.experience.map((item) => item.text.en.bullets.length)).toEqual([5, 4, 2, 2])
+    expect(result.content.projects).toHaveLength(5)
+    expect(result.content.education).toHaveLength(2)
+    expect(result.content.awards).toHaveLength(1)
+    expect(JSON.parse(localStorage.getItem(DOCUMENT_KEY)!)).toEqual(result)
+  })
+
+  it('shows conflicting-date guidance in both interface languages', async () => {
+    service({ contract_version: 1, pages: 1, blocks: [
+      { id: 'b1', page: 1, label: 'title', group: null, text: 'MAYA CONTOH', bbox: null },
+      { id: 'b2', page: 1, label: 'section_header', group: null, text: 'Experience', bbox: null },
+      { id: 'b3', page: 1, label: 'section_header', group: null, text: 'Software Engineer at Example Systems', bbox: { l: 40, t: 100, r: 300, b: 112 } },
+      { id: 'b4', page: 1, label: 'text', group: null, text: '2020 – 2022', bbox: { l: 330, t: 100, r: 420, b: 112 } },
+      { id: 'b5', page: 1, label: 'text', group: null, text: '2021 – 2023', bbox: { l: 430, t: 100, r: 530, b: 112 } },
+      { id: 'b6', page: 1, label: 'list_item', group: null, text: 'Built a search service.', bbox: null },
+    ] })
+    mount()
+    await review()
+    expect(screen.getByText('Some entries have conflicting dates. Their periods are blank and the source dates are listed below for review.')).toBeInTheDocument()
+    prefs.uiLocale = 'id'
+    expect(await screen.findByText('Beberapa entri memiliki tanggal yang bertentangan. Periodenya dikosongkan dan tanggal sumber tercantum di bawah untuk diperiksa.')).toBeInTheDocument()
+  })
+
   it('shows the proposal without touching the current document or storage', async () => {
     service()
     const stored = JSON.stringify(resumeDoc.snapshot())

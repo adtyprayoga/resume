@@ -83,6 +83,49 @@ class TestBlocksFromDocument:
         assert [(b.label, b.text) for b in blocks] == [("table", "Go  5 years\nSQL")]
         assert blocks_from_document(empty) == []
 
+    @pytest.mark.parametrize("label", [DocItemLabel.TEXT, DocItemLabel.SECTION_HEADER])
+    def test_splits_provenance_spans_with_their_own_geometry(self, label) -> None:
+        doc = DoclingDocument(name="progression")
+        doc.add_page(page_no=1, size=Size(width=600, height=800))
+        doc.add_page(page_no=2, size=Size(width=600, height=800))
+        text = "Engineering Lead 2018 - Present Jan 2022 - Present"
+        item = doc.add_text(label=label, text=text)
+        spans = [(0, 16, 1, 50, 700), (17, 31, 1, 400, 720), (32, len(text), 2, 400, 700)]
+        for start, end, page, left, top in spans:
+            provenance = prov(page, left, top, left + 150, top - 10, text)
+            provenance.charspan = (start, end)
+            item.prov.append(provenance)
+        blocks = blocks_from_document(doc)
+        assert [b.text for b in blocks] == ["Engineering Lead", "2018 - Present", "Jan 2022 - Present"]
+        assert [b.id for b in blocks] == ["b1", "b2", "b3"]
+        assert [b.page for b in blocks] == [1, 1, 2]
+        assert [(b.bbox.l, b.bbox.t) for b in blocks] == [(50, 100), (400, 80), (400, 100)]
+        assert blocks[0].group is not None
+        assert len({b.group for b in blocks}) == 1
+
+    @pytest.mark.parametrize("spans", [[(0, 4), (3, 9)], [(0, 3), (5, 9)], [(0, 4), (4, 99)], [(5, 9), (0, 5)]])
+    def test_unsafe_provenance_falls_back_without_losing_text(self, spans) -> None:
+        doc = DoclingDocument(name="unsafe")
+        doc.add_page(page_no=1, size=Size(width=600, height=800))
+        item = doc.add_text(label=DocItemLabel.TEXT, text="AlphaBeta")
+        for span in spans:
+            provenance = prov(1, 50, 700, 250, 690, item.text)
+            provenance.charspan = span
+            item.prov.append(provenance)
+        blocks = blocks_from_document(doc)
+        assert [b.text for b in blocks] == ["AlphaBeta"]
+
+    def test_wrapped_list_item_stays_one_semantic_block(self) -> None:
+        doc = DoclingDocument(name="wrapped-bullet")
+        doc.add_page(page_no=1, size=Size(width=600, height=800))
+        bullets = doc.add_group(label=GroupLabel.LIST, name="list")
+        item = doc.add_list_item(text="Built reliable systems", parent=bullets)
+        for span in [(0, 14), (15, 22)]:
+            provenance = prov(1, 50, 700, 250, 690, item.text)
+            provenance.charspan = span
+            item.prov.append(provenance)
+        assert [b.text for b in blocks_from_document(doc)] == ["Built reliable systems"]
+
     def test_extraction_model_carries_contract_version(self) -> None:
         extraction = Extraction(pages=2, blocks=blocks_from_document(sample_document()))
         assert extraction.contract_version == CONTRACT_VERSION == 1
@@ -138,6 +181,16 @@ class TestRealExtraction:
         page2 = normalized("\n".join(b.text for b in extraction.blocks if b.page == 2))
         assert "jane doe" in page1
         assert "budi santoso" in page2 and "pendidikan" in page2
+
+    def test_progression_cv_preserves_cross_page_roles_and_inline_entries(self) -> None:
+        extraction = extract_pdf(PDF / "progression.pdf")
+        joined = texts(extraction)
+        for phrase in ["MAYA NUSANTARA", "Core Competencies", "Software Staff", "Training Staff", "Additional Experience", "Personnel Portal", "Universitas Contoh", "Certifications & Awards", "Bahasa Indonesia"]:
+            assert phrase in joined
+        assert extraction.pages == 2
+        continuation = next(b for b in extraction.blocks if "Coordinated delivery" in b.text)
+        assert continuation.page == 2
+        assert any("Jan 2022" in b.text and b.bbox is not None for b in extraction.blocks)
 
     def test_five_page_cv_covers_every_page_in_order(self) -> None:
         extraction = extract_pdf(PDF / "five_page.pdf")
