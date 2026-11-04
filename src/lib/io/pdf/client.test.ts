@@ -143,6 +143,20 @@ describe('convertPdf', () => {
     expect(calls.at(-1)).toBe(`DELETE /api/pdf-import/jobs/${ID}`)
   })
 
+  it('reports cancellation when the user cancels while the result is being cleaned up', async () => {
+    const controller = new AbortController()
+    const { fetch } = server((method) => {
+      if (method === 'POST') return json(processing, 202)
+      if (method === 'DELETE') {
+        controller.abort()
+        return new Response(null, { status: 204 })
+      }
+      return json(completed)
+    })
+    const result = await convertPdf(pdf(), { fetch, signal: controller.signal, pollMs: 0, onStage: () => {} })
+    expect(result).toMatchObject({ ok: false, messageKey: 'pdf.error.cancelled' })
+  })
+
   it('rejects an oversized file before uploading', async () => {
     const { fetch, calls } = server(() => json(processing, 202))
     const big = new File(['x'], 'cv.pdf', { type: 'application/pdf' })

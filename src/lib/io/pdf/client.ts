@@ -154,7 +154,8 @@ export const convertPdf = async (file: File, options: ConvertOptions): Promise<R
     }
     onStage('reading')
     await forget()
-    return ok(status.result)
+    // Cancel may land while the cleanup request is in flight; it still wins.
+    return signal.aborted ? failure('cancelled') : ok(status.result)
   } catch (error) {
     await forget()
     if (isAbort(error) || signal.aborted) return failure('cancelled')
