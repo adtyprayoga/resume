@@ -1,0 +1,127 @@
+{
+  "locale": "en",
+  "profile": {
+    "name": "Jane Doe",
+    "headline": "Senior Backend Engineer",
+    "location": "Jakarta, Indonesia",
+    "summary": "Backend engineer with eight years of experience building payment systems."
+  },
+  "contact": {
+    "email": "jane.doe@example.com",
+    "phone": "+62 812 3456 7890",
+    "website": "",
+    "github": "https://github.com/janedoe",
+    "linkedin": "",
+    "avatar": ""
+  },
+  "sections": {
+    "experience": [
+      {
+        "company": "Example Payments",
+        "role": "Senior Backend Engineer",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2021-01",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Led the migration of settlement jobs to an event-driven pipeline.",
+          "Reduced reconciliation time from six hours to forty minutes."
+        ]
+      },
+      {
+        "company": "Sample Logistics",
+        "role": "Software Engineer",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2017",
+          "end": "2020"
+        },
+        "bullets": [
+          "Built the courier routing service used in twelve cities."
+        ]
+      },
+      {
+        "company": "Toko Contoh",
+        "role": "Analis Data Senior",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2022-03",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Membangun dasbor penjualan harian untuk tiga ratus cabang.",
+          "Menurunkan waktu pembuatan laporan bulanan dari tiga hari menjadi empat jam."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Universitas Contoh",
+        "degree": "Bachelor of Computer Science",
+        "field": "",
+        "gpa": "",
+        "description": "",
+        "dates": {
+          "start": "2013",
+          "end": "2017"
+        }
+      },
+      {
+        "school": "Institut Teknologi Contoh",
+        "degree": "Sarjana Statistika",
+        "field": "",
+        "gpa": "",
+        "description": "",
+        "dates": {
+          "start": "2015",
+          "end": "2019"
+        }
+      }
+    ],
+    "projects": [],
+    "skills": [
+      {
+        "title": "Languages",
+        "items": [
+          "Go",
+          "Python",
+          "TypeScript"
+        ]
+      },
+      {
+        "title": "Infrastructure",
+        "items": [
+          "PostgreSQL",
+          "Kafka",
+          "Kubernetes"
+        ]
+      },
+      {
+        "title": "",
+        "items": [
+          "SQL",
+          "Python",
+          "Tableau",
+          "Statistik Inferensial"
+        ]
+      }
+    ],
+    "awards": [
+      {
+        "title": "Juara 1 Kompetisi Analitik Nasional",
+        "issuer": "",
+        "date": "2018",
+        "description": ""
+      }
+    ],
+    "certifications": [],
+    "references": []
+  },
+  "unplaced": 5
+}

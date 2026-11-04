@@ -1,0 +1,77 @@
+{
+  "locale": "en",
+  "profile": {
+    "name": "Rina Putri",
+    "headline": "",
+    "location": "",
+    "summary": ""
+  },
+  "contact": {
+    "email": "rina.putri@example.com",
+    "phone": "+62 811 2222 3333",
+    "website": "",
+    "github": "",
+    "linkedin": "https://linkedin.com/in/rinaputri",
+    "avatar": ""
+  },
+  "sections": {
+    "experience": [
+      {
+        "company": "Contoh Studio",
+        "role": "Product Designer",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2020-02",
+          "end": null,
+          "current": true
+        },
+        "bullets": [
+          "Redesigned onboarding, raising activation by a fifth.",
+          "Maintained the shared component library."
+        ]
+      },
+      {
+        "company": "Sample Agency",
+        "role": "Junior Designer",
+        "team": "",
+        "location": "",
+        "dates": {
+          "start": "2018",
+          "end": "2020"
+        },
+        "bullets": [
+          "Produced campaign layouts for retail clients."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Sample Institute of Art",
+        "degree": "Bachelor of Visual Communication",
+        "field": "",
+        "gpa": "",
+        "description": "",
+        "dates": {
+          "start": "2014",
+          "end": "2018"
+        }
+      }
+    ],
+    "projects": [],
+    "skills": [
+      {
+        "title": "",
+        "items": [
+          "Figma",
+          "User Research",
+          "Design Systems"
+        ]
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "references": []
+  },
+  "unplaced": 0
+}

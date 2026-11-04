@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "verify:print": "bash scripts/verify-print.sh",
     "verify:ats": "bun scripts/verify-ats.ts",
-    "verify:pdf-import": "bun scripts/verify-pdf-import.ts"
+    "verify:pdf-import": "bun scripts/verify-pdf-import.ts",
+    "bench:import": "BENCH_REPORT=1 vitest run src/lib/io/pdf/accuracy.bench.test.ts --silent=false"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "7.3.1",
