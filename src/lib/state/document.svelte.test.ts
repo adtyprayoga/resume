@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { resumeDoc } from './document.svelte'
+import { HISTORY_LIMIT, resumeDoc } from './document.svelte'
 import { sampleDocument } from '../../data/sample'
 import { emptyDocument } from '$lib/model/document'
 import { validateDocument } from '$lib/model/document'
 
 beforeEach(() => {
-  resumeDoc.replace(sampleDocument())
+  resumeDoc.load(sampleDocument())
 })
 
 describe('snapshot', () => {
@@ -186,5 +186,109 @@ describe('moveSectionTo', () => {
     // @ts-expect-error probing the runtime guard
     resumeDoc.moveSectionTo('nope', 0)
     expect(resumeDoc.current.sections.map((s) => s.kind)).toEqual(before)
+  })
+})
+
+describe('history', () => {
+  const json = () => JSON.stringify(resumeDoc.snapshot())
+
+  it('undoes and redoes an item removal', () => {
+    const id = resumeDoc.current.content.experience[0]!.id
+    resumeDoc.removeItem('experience', id)
+    expect(resumeDoc.canUndo).toBe(true)
+    expect(resumeDoc.undo()).toBe(true)
+    expect(resumeDoc.current.content.experience[0]!.id).toBe(id)
+    expect(resumeDoc.canRedo).toBe(true)
+    expect(resumeDoc.redo()).toBe(true)
+    expect(resumeDoc.current.content.experience.some((item) => item.id === id)).toBe(false)
+  })
+
+  it('records nothing for a change that changes nothing', () => {
+    const last = resumeDoc.current.sections.at(-1)!
+    resumeDoc.moveSection(last.kind, 1)
+    resumeDoc.setSectionEnabled(last.kind, last.enabled)
+    expect(resumeDoc.canUndo).toBe(false)
+  })
+
+  it('folds nested changes into one step', () => {
+    const before = json()
+    resumeDoc.change(() => {
+      resumeDoc.addItem('skills')
+      resumeDoc.moveSection('skills', -1)
+    })
+    resumeDoc.undo()
+    expect(json()).toBe(before)
+    expect(resumeDoc.canUndo).toBe(false)
+  })
+
+  it('clears redo when a new change is recorded', () => {
+    resumeDoc.addItem('skills')
+    resumeDoc.undo()
+    resumeDoc.addItem('awards')
+    expect(resumeDoc.canRedo).toBe(false)
+  })
+
+  it('keeps at most HISTORY_LIMIT steps, dropping the oldest', () => {
+    const sampleSkillCount = resumeDoc.current.content.skills.length
+    for (let i = 0; i < HISTORY_LIMIT + 5; i += 1) resumeDoc.addItem('skills')
+    let undone = 0
+    while (resumeDoc.undo()) undone += 1
+    expect(undone).toBe(HISTORY_LIMIT)
+    expect(resumeDoc.current.content.skills.length).toBe(sampleSkillCount + 5)
+  })
+
+  it('records replace() as one undoable step and bumps generation on undo', () => {
+    const name = resumeDoc.current.profile.text.en.name
+    resumeDoc.replace(emptyDocument())
+    const generation = resumeDoc.generation
+    resumeDoc.undo()
+    expect(resumeDoc.current.profile.text.en.name).toBe(name)
+    expect(resumeDoc.generation).toBe(generation + 1)
+  })
+
+  it('load() clears both stacks', () => {
+    resumeDoc.addItem('skills')
+    resumeDoc.addItem('skills')
+    resumeDoc.undo()
+    resumeDoc.load(emptyDocument())
+    expect(resumeDoc.canUndo).toBe(false)
+    expect(resumeDoc.canRedo).toBe(false)
+  })
+
+  it('undo and redo return false on an empty stack', () => {
+    expect(resumeDoc.undo()).toBe(false)
+    expect(resumeDoc.redo()).toBe(false)
+  })
+
+  it('kept snapshots are not aliased to the live document', () => {
+    const name = resumeDoc.current.profile.text.en.name
+    resumeDoc.addItem('skills')
+    resumeDoc.undo()
+    resumeDoc.current.profile.text.en.name = 'mutated'
+    resumeDoc.redo()
+    expect(resumeDoc.current.profile.text.en.name).toBe(name)
+  })
+
+  it.each([
+    ['moveItem', () => resumeDoc.moveItem('experience', resumeDoc.current.content.experience[0]!.id, 1)],
+    ['moveSectionTo', () => resumeDoc.moveSectionTo(resumeDoc.current.sections[0]!.kind, 2)],
+    ['setSectionEnabled', () => resumeDoc.setSectionEnabled(resumeDoc.current.sections[0]!.kind, !resumeDoc.current.sections[0]!.enabled)],
+  ])('%s is one undoable step', (_name, act) => {
+    const before = json()
+    act()
+    expect(resumeDoc.canUndo).toBe(true)
+    resumeDoc.undo()
+    expect(json()).toBe(before)
+  })
+
+  it('fillUntranslated is one undoable step', () => {
+    const doc = sampleDocument()
+    doc.profile.text.id.summary = ''
+    resumeDoc.load(doc)
+    const before = json()
+    resumeDoc.fillUntranslated('en', 'id')
+    expect(resumeDoc.canUndo).toBe(true)
+    resumeDoc.undo()
+    expect(json()).toBe(before)
   })
 })
