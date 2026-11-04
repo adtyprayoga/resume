@@ -153,3 +153,5 @@ export const parseErrorBody = (value: unknown): JobError | null => {
     throw error
   }
 }
+
+export const parseExtraction = (value: unknown): Result<Extraction> => guard(() => extraction(value))

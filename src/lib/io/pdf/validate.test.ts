@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { parseErrorBody, parseHealth, parseJobStatus } from './validate'
+import { parseErrorBody, parseExtraction, parseHealth, parseJobStatus } from './validate'
 import { MAX_BLOCKS } from './types'
 
 // Shared with services/pdf-import/tests/test_api.py::TestContractFixtures.
@@ -13,7 +13,7 @@ describe('PDF import contract', () => {
   it('accepts every valid backend fixture', () => {
     for (const name of files('valid')) {
       const data = load('valid', name)
-      const result = name.startsWith('health') ? parseHealth(data) : parseJobStatus(data)
+      const result = name.startsWith('health') ? parseHealth(data) : name.startsWith('extraction') ? parseExtraction(data) : parseJobStatus(data)
       expect(result.ok, name).toBe(true)
     }
   })
