@@ -92,6 +92,21 @@ describe('buildOutline', () => {
     expect(roles([...doc, b('b14', paragraph, 'text', S('f2', 16))]).at(-1)).toBe('body')
   })
 
+  it('takes a long entry heading as h3 while h2 stays short', () => {
+    const school = 'Contoh Sea College of Trade and Logistics (CSCTL) - Lae, Papua New Guinea'
+    // A body-font bullet keeps the body class ahead of the longer entry line by letter count.
+    const bullet = b('b14', 'Trained forty new hires on the branch ledger and the customer service script.', 'list_item', S('f1', 10))
+    const blocks = [...doc, bullet, b('b15', school, 'text', S('f2', 10)), b('b16', school, 'text', S('f2', 16))]
+    expect(roles(blocks).slice(-2)).toEqual(['h3', 'body'])
+  })
+
+  it('keeps a long one-sentence highlight in the entry style as body', () => {
+    const highlight = 'Cut onboarding time for branch staff by a third in one year.'
+    const bullet = b('b14', 'Trained forty new hires on the branch ledger and the customer service script.', 'list_item', S('f1', 10))
+    const blocks = [...doc, bullet, b('b15', highlight, 'text', S('f2', 10))]
+    expect(roles(blocks).at(-1)).toBe('body')
+  })
+
   it('does not take a company style far from body size as h3', () => {
     const blocks = doc.map((block) => (block.style?.font === 'f2' && block.style.size === 10 ? { ...block, style: S('f2', 12) } : block))
     const result = roles(blocks)

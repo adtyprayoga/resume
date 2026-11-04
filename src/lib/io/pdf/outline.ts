@@ -25,6 +25,12 @@ export interface Outline {
 
 /** Headings are short: a line with more letter tokens is prose, whatever its style. */
 const MAX_HEADING_WORDS = 8
+/**
+ * Entry headings (h3) name a school, employer or course, often with its city
+ * and country ("Sea College of … (CSCTL) - Lae, Papua New Guinea"), so they
+ * may run longer; a wrapped paragraph in an entry style still exceeds this.
+ */
+const MAX_ENTRY_WORDS = 16
 /** Entry headings (h3/h4) stay within this fraction of the body size. */
 const NEAR_BODY = 0.15
 
@@ -32,15 +38,15 @@ const classOf = (block: SourceSegment): string | null => (block.style ? `${block
 const letters = (text: string) => text.match(/\p{L}/gu)?.length ?? 0
 const isBullet = (block: SourceSegment) => block.label === 'list_item' || stripBullet(block.text).from > 0
 
-/** Not a list item, at most eight letter tokens, and no date range except one that ends the line. */
-const shortStandalone = (block: SourceSegment) => {
+/** Not a list item, at most `maxWords` letter tokens, and no date range except one that ends the line. */
+const shortStandalone = (block: SourceSegment, maxWords = MAX_HEADING_WORDS) => {
   if (isBullet(block)) return false
-  if (block.text.split(/\s+/).filter((token) => /\p{L}/u.test(token)).length > MAX_HEADING_WORDS) return false
+  if (block.text.split(/\s+/).filter((token) => /\p{L}/u.test(token)).length > maxWords) return false
   const ranges = findDateRanges(block.text)
   return ranges.length === 0 || (ranges.length === 1 && !/[\p{L}\p{N}]/u.test(block.text.slice(ranges[0]!.to)))
 }
 /** A line that may carry a heading role; a line that is only a date never does. */
-const headingLike = (block: SourceSegment) => shortStandalone(block) && !dateOnly(block)
+const headingLike = (block: SourceSegment, maxWords = MAX_HEADING_WORDS) => shortStandalone(block, maxWords) && !dateOnly(block)
 
 const nameLike = (block: SourceSegment) => {
   const text = block.text.trim()
@@ -79,7 +85,7 @@ const headingClass = (styled: SourceSegment[], body: string): string | null => {
   for (const block of styled) members.set(classOf(block)!, [...(members.get(classOf(block)!) ?? []), block])
   let best: SourceSegment[] | null = null
   for (const [key, group] of members) {
-    if (key === body || group.length < 2 || !group.every(headingLike)) continue
+    if (key === body || group.length < 2 || !group.every((block) => headingLike(block))) continue
     if (!best || group[0]!.style!.size > best[0]!.style!.size) best = group
   }
   return best ? classOf(best[0]!) : null
@@ -104,11 +110,14 @@ export const buildOutline = (blocks: SourceSegment[]): Outline => {
   const first = blocks.findIndex((block, i) => (firstH2 < 0 || i < firstH2) && !isDocumentTitle(block.text))
   if (first >= 0 && blocks[first]!.page === 1 && roles[first] === 'body' && nameLike(blocks[first]!)) roles[first] = 'name'
 
-  // A short line in a non-body, non-heading class inside a section may head an entry.
+  // A short line in a non-body, non-heading class inside a section may head an
+  // entry. Past the h2 limit, a line ending in sentence punctuation reads as a
+  // highlight sentence set in the entry style, not as a heading.
   const entryLine = (i: number) => {
     const block = blocks[i]!
     const key = classOf(block)
-    return firstH2 >= 0 && i > firstH2 && roles[i] === 'body' && key !== null && key !== body && key !== h2 && headingLike(block)
+    if (!(firstH2 >= 0 && i > firstH2 && roles[i] === 'body' && key !== null && key !== body && key !== h2 && headingLike(block, MAX_ENTRY_WORDS))) return false
+    return headingLike(block) || !/[.!?]$/.test(block.text.trim())
   }
   const previousLine = (i: number) => {
     let j = i - 1

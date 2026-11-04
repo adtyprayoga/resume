@@ -676,6 +676,35 @@ describe('PDF outline certifications and references', () => {
     expect(leftovers(proposal)).toContain('anggi@example.com')
   })
 
+  it('keeps long entry rows and a first course row in another font as entries', () => {
+    const row = S('f2', 10)
+    const proposal = mapExtraction(source(name(), h2('b2', 'Profile Summary'),
+      s('b3', 'I have 6 years of experience designing learning programmes for banks, retailers and public agencies. I map needs, write curricula and modules, and deliver workshops for audiences from new staff to senior leaders, with dashboards that track outcomes.', 'text', body),
+      h2('b4', 'Education Background'),
+      s('b5', 'Universitas Contoh Raya - Bandung, Indonesia', 'text', row), s('b6', '2015 - 2019', 'text', row),
+      s('b7', 'Bachelor of Invented Studies - GPA: 3.60/4.00', 'text', body),
+      s('b8', 'Contoh Sea College of Trade and Logistics (CSCTL) - Lae, Papua New Guinea', 'text', row), s('b9', '2018', 'text', row),
+      s('b10', 'Summer Semester Programme - Credits: 18', 'text', body),
+      h2('b11', 'Certifications'),
+      s('b12', 'Public Speaking Training - Contoh Speaking Club', 'text', S('f3', 10)), s('b13', 'Jun 2025', 'text', S('f3', 10)),
+      s('b14', 'Overall Score 85/100', 'text', body),
+      s('b15', 'Spreadsheet Modelling for Small Farms: Budgets, Yields & Forecasts - Contoh Agri School', 'text', row), s('b16', 'May 2025', 'text', row),
+      s('b17', 'Crop budgets and seasonal cash flow', 'text', body),
+      s('b18', 'Project Management Basics - Contoh Institute', 'text', row), s('b19', 'May 2024', 'text', row),
+      s('b20', 'Final Score 90/100', 'text', body),
+    ), 'en')
+    expect(proposal.document.content.education.map((item) => [item.text.en.school, item.dates.start, item.text.en.description])).toEqual([
+      ['Universitas Contoh Raya - Bandung, Indonesia', '2015', ''],
+      ['Contoh Sea College of Trade and Logistics (CSCTL) - Lae, Papua New Guinea', '2018', ''],
+    ])
+    expect(certsOf(proposal)).toEqual([
+      ['Public Speaking Training', 'Contoh Speaking Club', '2025-06', 'Overall Score 85/100'],
+      ['Spreadsheet Modelling for Small Farms: Budgets, Yields & Forecasts', 'Contoh Agri School', '2025-05', 'Crop budgets and seasonal cash flow'],
+      ['Project Management Basics', 'Contoh Institute', '2024-05', 'Final Score 90/100'],
+    ])
+    expect(proposal.unmatched).toEqual([])
+  })
+
   it('keeps a skills group labelled "Certifications:" in skills', () => {
     const proposal = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
       b('b3', 'Certifications:'), b('b4', 'AWS Solutions Architect, CKA'),

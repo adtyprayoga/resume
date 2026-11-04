@@ -350,6 +350,11 @@ const outlineUnits = (blocks: SourceBlock[], kind: EntryKind, roleOf: Map<Source
     else if (kind === 'experience' && role === 'h4' && roleLine(block)) units.push({ blocks: [block], role: true })
     else units.at(-1)!.blocks.push(block)
   }
+  // Lines before the first entry heading that the rules path reads wholly as
+  // entries (a first course row set in another font, then its date line) are
+  // entries too; otherwise they stay the unplaced lead.
+  const early = lead.length ? splitEntries(kind === 'education' ? splitEducationRows(lead) : lead, kind) : null
+  if (early && !early.lead.length) return { lead: [], units: linkEmployers([...early.entries.map((blocks) => ({ blocks })), ...units], kind, () => true) }
   return { lead, units: linkEmployers(units, kind, () => true) }
 }
 
