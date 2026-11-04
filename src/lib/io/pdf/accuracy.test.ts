@@ -58,8 +58,8 @@ describe('import accuracy', () => {
     expect(scoreProposal({ ...golden(), profile: {}, sections: { skills: [{ items: [''] }] } }, proposal)).toMatchObject({ expected: 1, filled: 1, correct: 1, outcomes: { 'skills.0.items.0': 'correct' } })
   })
   it('strips styles without touching anything else', () => {
-    const extraction = { contract_version: 1 as const, pages: 1, blocks: [{ id: 'b1', page: 1, label: 'text', group: null, text: 'Hello', bbox: null, style: { bold: true } }] }
+    const extraction = { contract_version: 1 as const, pages: 1, blocks: [{ id: 'b1', page: 1, label: 'text', group: null, text: 'Hello', bbox: null, style: { font: 'f1', size: 10, bold: true, italic: null } }] }
     expect(stripStyles(extraction)).toEqual({ ...extraction, blocks: [{ id: 'b1', page: 1, label: 'text', group: null, text: 'Hello', bbox: null }] })
-    expect(extraction.blocks[0]!.style).toEqual({ bold: true })
+    expect(extraction.blocks[0]!.style).toEqual({ font: 'f1', size: 10, bold: true, italic: null })
   })
 })

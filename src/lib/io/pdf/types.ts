@@ -15,6 +15,13 @@ export interface BBox {
   b: number
 }
 
+export interface BlockStyle {
+  font: string
+  size: number
+  bold: boolean | null
+  italic: boolean | null
+}
+
 export interface SourceBlock {
   /** `b1`, `b2`, … in reading order. */
   id: string
@@ -25,6 +32,7 @@ export interface SourceBlock {
   group: string | null
   text: string
   bbox: BBox | null
+  style?: BlockStyle | null
 }
 
 export interface Extraction {

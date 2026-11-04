@@ -6,6 +6,7 @@ import {
   MAX_BLOCK_TEXT,
   MAX_BLOCKS,
   type BBox,
+  type BlockStyle,
   type ErrorCode,
   type Extraction,
   type Health,
@@ -56,9 +57,24 @@ const bbox = (value: unknown): BBox | null => {
   return { l: num(raw.l, 'bbox.l'), t: num(raw.t, 'bbox.t'), r: num(raw.r, 'bbox.r'), b: num(raw.b, 'bbox.b') }
 }
 
+const blockStyle = (value: unknown): BlockStyle | null => {
+  if (value === null) return null
+  const raw = record(value, 'style')
+  keys(raw, ['font', 'size', 'bold', 'italic'], 'style')
+  if (typeof raw.font !== 'string' || !/^f[1-9]\d*$/.test(raw.font)) fail('style.font')
+  const size = num(raw.size, 'style.size')
+  if (size <= 0) fail('style.size: out of range')
+  return {
+    font: raw.font as string,
+    size,
+    bold: raw.bold === null ? null : bool(raw.bold, 'style.bold'),
+    italic: raw.italic === null ? null : bool(raw.italic, 'style.italic'),
+  }
+}
+
 const block = (value: unknown): SourceBlock => {
   const raw = record(value, 'block')
-  keys(raw, ['id', 'page', 'label', 'group', 'text', 'bbox'], 'block')
+  keys(raw, ['id', 'page', 'label', 'group', 'text', 'bbox', 'style'], 'block')
   const { id, label, group, text } = raw
   if (typeof id !== 'string' || !/^b[1-9][0-9]*$/.test(id)) fail('block.id')
   if (typeof label !== 'string' || label.length > 64) fail('block.label')
@@ -71,6 +87,7 @@ const block = (value: unknown): SourceBlock => {
     group: (group as string | null | undefined) ?? null,
     text: text as string,
     bbox: bbox(raw.bbox),
+    ...(Object.hasOwn(raw, 'style') ? { style: blockStyle(raw.style) } : {}),
   }
 }
 

@@ -148,7 +148,7 @@ export const convertPdf = async (file: File, options: ConvertOptions): Promise<R
     while (status.status === 'processing') {
       onStage(status.stage === 'queued' ? 'queued' : 'extracting')
       await sleep(pollMs * (1 + Math.min(limited, 4)), signal)
-      const polled = await request(`/jobs/${jobId}?progress=1`)
+      const polled = await request(`/jobs/${jobId}?progress=1&styles=1`)
       // The service never rate-limits status reads; a 429 here is the proxy's
       // shared limit, so wait it out rather than abandon a healthy job.
       if (polled.status === 429 && limited < MAX_RATE_LIMITED_POLLS) {
