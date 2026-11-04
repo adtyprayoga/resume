@@ -13,6 +13,7 @@ import {
   type JobStatus,
   type SourceBlock,
   type Stage,
+  type PdfProgress,
 } from './types'
 
 /**
@@ -106,21 +107,39 @@ const guard = <T>(parse: () => T): Result<T> => {
   }
 }
 
+const progressOf = (value: unknown): PdfProgress | null => {
+  try {
+    const raw = record(value, 'progress')
+    keys(raw, ['phase', 'percent', 'completed_pages', 'total_pages'], 'progress')
+    if (!['initializing', 'extracting', 'assembling', 'finalizing', 'done'].includes(raw.phase as string)) return null
+    const percent = int(raw.percent, 'percent', 0)
+    const completed_pages = int(raw.completed_pages, 'completed_pages', 0)
+    const total_pages = raw.total_pages === null ? null : int(raw.total_pages, 'total_pages', 1)
+    if (percent > 100 || (total_pages === null ? completed_pages !== 0 : completed_pages > total_pages)) return null
+    if ((raw.phase === 'done') !== (percent === 100)) return null
+    return { phase: raw.phase as PdfProgress['phase'], percent, completed_pages, total_pages }
+  } catch (error) {
+    if (error instanceof Invalid) return null
+    throw error
+  }
+}
+
 export const parseJobStatus = (value: unknown): Result<JobStatus> =>
   guard(() => {
     const raw = record(value, 'job')
-    keys(raw, ['contract_version', 'id', 'status', 'stage', 'result', 'error'], 'job')
+    keys(raw, ['contract_version', 'id', 'status', 'stage', 'result', 'error', 'progress'], 'job')
     version(raw)
     const id = typeof raw.id === 'string' && /^[A-Za-z0-9_-]{43}$/.test(raw.id) ? raw.id : fail('job.id')
     const stage = (raw.stage ?? null) as Stage | null
     if (!STAGES.includes(stage)) fail('job.stage')
+    const telemetry = raw.progress === undefined ? {} : { progress: progressOf(raw.progress) }
     switch (raw.status) {
       case 'processing':
-        return { id, status: 'processing', stage }
+        return { ...telemetry, id, status: 'processing', stage }
       case 'completed':
-        return { id, status: 'completed', stage, result: extraction(raw.result) }
+        return { ...telemetry, id, status: 'completed', stage, result: extraction(raw.result) }
       case 'failed':
-        return { id, status: 'failed', stage, error: jobError(raw.error) }
+        return { ...telemetry, id, status: 'failed', stage, error: jobError(raw.error) }
       default:
         return fail('job.status')
     }

@@ -76,11 +76,29 @@ class JobError(Strict):
     retryable: bool
 
 
+class PdfProgress(Strict):
+    phase: Literal["initializing", "extracting", "assembling", "finalizing", "done"]
+    percent: int = Field(ge=0, le=100)
+    completed_pages: int = Field(ge=0)
+    total_pages: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def consistent(self) -> PdfProgress:
+        if self.total_pages is None and self.completed_pages != 0:
+            raise ValueError("unknown total with completed pages")
+        if self.total_pages is not None and self.completed_pages > self.total_pages:
+            raise ValueError("completed pages beyond total")
+        if (self.phase == "done") != (self.percent == 100):
+            raise ValueError("only validated completion reaches 100")
+        return self
+
+
 class JobStatus(Strict):
     contract_version: Literal[1] = CONTRACT_VERSION
     id: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
     status: Literal["processing", "completed", "failed"]
     stage: Literal["queued", "extracting", "done"] | None = None
+    progress: PdfProgress | None = None
     result: Extraction | None = None
     error: JobError | None = None
 

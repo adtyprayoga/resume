@@ -1,0 +1,14 @@
+{
+  "contract_version": 1,
+  "id": "Q2xhdWRlLXRlc3Qtam9iLWlkLTAwMDAwMDAwMDAwMDA",
+  "status": "processing",
+  "stage": "extracting",
+  "result": null,
+  "error": null,
+  "progress": {
+    "phase": "extracting",
+    "percent": 25,
+    "completed_pages": 1,
+    "total_pages": 5
+  }
+}

@@ -49,8 +49,8 @@ describe('convertPdf', () => {
     expect(stages).toEqual(['uploading', 'queued', 'extracting', 'reading'])
     expect(calls).toEqual([
       'POST /api/pdf-import/jobs',
-      `GET /api/pdf-import/jobs/${ID}`,
-      `GET /api/pdf-import/jobs/${ID}`,
+      `GET /api/pdf-import/jobs/${ID}?progress=1`,
+      `GET /api/pdf-import/jobs/${ID}?progress=1`,
       `DELETE /api/pdf-import/jobs/${ID}`,
     ])
   })
@@ -165,4 +165,20 @@ describe('convertPdf', () => {
     expect(result).toMatchObject({ ok: false, messageKey: 'pdf.error.too_large' })
     expect(calls).toEqual([])
   })
+})
+
+it('opts into progress, retains monotonic telemetry and supports legacy polls', async () => {
+  const first = { phase: 'extracting', percent: 25, completed_pages: 1, total_pages: 5 }
+  const final = { phase: 'done', percent: 100, completed_pages: 5, total_pages: 5 }
+  const responses = [
+    { ...processing, progress: first }, processing,
+    { ...processing, progress: { ...first, percent: 12, completed_pages: 0 } },
+    { ...completed, progress: final },
+  ]
+  const seen: unknown[] = []
+  const { fetch, calls } = server((method) => method === 'POST' ? json(processing, 202) : method === 'DELETE' ? new Response(null, { status: 204 }) : json(responses.shift()))
+  const result = await convertPdf(pdf(), { fetch, signal: new AbortController().signal, pollMs: 0, onStage: () => {}, onProgress: (p) => seen.push(p) })
+  expect(result.ok).toBe(true)
+  expect(seen).toEqual([null, first, first, first, final])
+  expect(calls.filter((c) => c.startsWith('GET')).every((c) => c.endsWith('?progress=1'))).toBe(true)
 })

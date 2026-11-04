@@ -1,6 +1,6 @@
 import type { UiStringKey } from '$lib/i18n/ui'
 import { err, ok, type Result } from '$lib/model/result'
-import type { ErrorCode, Extraction, JobStatus } from './types'
+import type { ErrorCode, Extraction, JobStatus, PdfProgress } from './types'
 import { parseErrorBody, parseJobStatus } from './validate'
 
 /**
@@ -24,6 +24,7 @@ type Failure = ErrorCode | 'unavailable' | 'contract'
 export interface ConvertOptions {
   signal: AbortSignal
   onStage: (stage: PdfStage) => void
+  onProgress?: (progress: PdfProgress | null) => void
   fetch?: typeof globalThis.fetch
   pollMs?: number
   base?: string
@@ -103,6 +104,16 @@ export const convertPdf = async (file: File, options: ConvertOptions): Promise<R
   if (file.size > MAX_PDF_BYTES) return failure('too_large')
 
   let jobId: string | null = null
+  let lastProgress: PdfProgress | null = null
+  const reportProgress = (status: JobStatus) => {
+    const next = status.progress
+    if (next && (!lastProgress || (
+      next.percent >= lastProgress.percent &&
+      next.completed_pages >= lastProgress.completed_pages &&
+      (lastProgress.total_pages === null || next.total_pages === lastProgress.total_pages)
+    ))) lastProgress = next
+    if (!signal.aborted) options.onProgress?.(lastProgress)
+  }
   const request = async (path: string, init: RequestInit = {}) => {
     try {
       return await fetch(`${base}${path}`, { ...init, signal, cache: 'no-store', credentials: 'same-origin' })
@@ -131,12 +142,13 @@ export const convertPdf = async (file: File, options: ConvertOptions): Promise<R
     if (created.status !== 202) throw new Stop(await codeOf(created))
     let status = statusOf(await readJson(created))
     jobId = status.id
+    reportProgress(status)
 
     let limited = 0
     while (status.status === 'processing') {
       onStage(status.stage === 'queued' ? 'queued' : 'extracting')
       await sleep(pollMs * (1 + Math.min(limited, 4)), signal)
-      const polled = await request(`/jobs/${jobId}`)
+      const polled = await request(`/jobs/${jobId}?progress=1`)
       // The service never rate-limits status reads; a 429 here is the proxy's
       // shared limit, so wait it out rather than abandon a healthy job.
       if (polled.status === 429 && limited < MAX_RATE_LIMITED_POLLS) {
@@ -146,6 +158,7 @@ export const convertPdf = async (file: File, options: ConvertOptions): Promise<R
       if (!polled.ok) throw new Stop(await codeOf(polled))
       limited = 0
       status = statusOf(await readJson(polled))
+      reportProgress(status)
     }
 
     if (status.status === 'failed') {
