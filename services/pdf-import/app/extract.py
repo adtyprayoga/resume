@@ -6,12 +6,15 @@ time and every byte of memory is returned to the OS when the child exits.
 
 from __future__ import annotations
 
+import argparse
 import os
 from pathlib import Path
 
 from docling_core.types.doc import DoclingDocument, GroupItem, TableItem, TextItem
 
-from .models import MAX_BLOCK_TEXT, MAX_BLOCKS, BBox, Extraction, SourceBlock
+from .models import EXIT, EXIT_CODES, MAX_BLOCK_TEXT, MAX_BLOCKS, BBox, Extraction, SourceBlock
+
+__all__ = ["EXIT_CODES", "blocks_from_document", "extract_pdf", "main"]
 
 INFERENCE_THREADS = 2
 OCR_LANGUAGES = ["eng", "ind"]
@@ -99,19 +102,58 @@ def build_converter():
     )
 
 
-def extract_pdf(path: Path) -> Extraction:
-    result = build_converter().convert(path, raises_on_error=True)
+def extract_pdf(path: Path, max_pages: int = 5) -> Extraction:
+    result = build_converter().convert(path, raises_on_error=True, max_num_pages=max_pages)
     doc = result.document
     return Extraction(pages=max(1, len(doc.pages)), blocks=blocks_from_document(doc))
 
 
+
+
+def check_pdf(path: Path, max_pages: int) -> int | None:
+    """Opens the file with PDFium before any model loads. Returns an exit code
+    for a file we refuse, or None when it is a readable PDF within limits."""
+    import pypdfium2 as pdfium
+
+    try:
+        with path.open("rb") as handle:
+            if not handle.read(1024).lstrip().startswith(b"%PDF-"):
+                return EXIT["invalid_file"]
+        document = pdfium.PdfDocument(str(path))
+    except pdfium.PdfiumError as error:
+        if getattr(error, "err_code", None) == pdfium.raw.FPDF_ERR_PASSWORD:
+            return EXIT["encrypted"]
+        return EXIT["invalid_file"]
+    try:
+        pages = len(document)
+        if pages < 1:
+            return EXIT["invalid_file"]
+        if pages > max_pages:
+            return EXIT["too_many_pages"]
+    finally:
+        document.close()
+    return None
+
+
 def main(argv: list[str]) -> int:
-    """Child-process entry: `python -m app.extract IN.pdf OUT.json`."""
-    source, target = Path(argv[0]), Path(argv[1])
-    extraction = extract_pdf(source)
-    tmp = target.with_suffix(".partial")
+    """Child-process entry: `python -m app.extract IN.pdf OUT.json --max-pages N`.
+    Writes nothing to stdout/stderr that contains CV text."""
+    parser = argparse.ArgumentParser(prog="app.extract")
+    parser.add_argument("source", type=Path)
+    parser.add_argument("target", type=Path)
+    parser.add_argument("--max-pages", type=int, required=True)
+    args = parser.parse_args(argv)
+
+    refused = check_pdf(args.source, args.max_pages)
+    if refused is not None:
+        return refused
+
+    extraction = extract_pdf(args.source, args.max_pages)
+    if not extraction.blocks:
+        return EXIT["empty_extraction"]
+    tmp = args.target.with_suffix(".partial")
     tmp.write_text(extraction.model_dump_json())
-    tmp.replace(target)
+    tmp.replace(args.target)
     return 0
 
 

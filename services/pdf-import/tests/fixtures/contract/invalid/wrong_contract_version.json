@@ -1,0 +1,34 @@
+{
+  "contract_version": 2,
+  "id": "Q2xhdWRlLXRlc3Qtam9iLWlkLTAwMDAwMDAwMDAwMDA",
+  "status": "completed",
+  "stage": "done",
+  "result": {
+    "contract_version": 1,
+    "pages": 1,
+    "blocks": [
+      {
+        "id": "b1",
+        "page": 1,
+        "label": "title",
+        "group": null,
+        "text": "Jane Doe",
+        "bbox": {
+          "l": 56.0,
+          "t": 40.0,
+          "r": 160.0,
+          "b": 62.0
+        }
+      },
+      {
+        "id": "b2",
+        "page": 1,
+        "label": "list_item",
+        "group": "g1",
+        "text": "Led migration",
+        "bbox": null
+      }
+    ]
+  },
+  "error": null
+}

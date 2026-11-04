@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 CONTRACT_VERSION = 1
 
@@ -16,7 +16,7 @@ MAX_BLOCK_TEXT = 20_000
 
 
 class Strict(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
 class BBox(Strict):
@@ -42,6 +42,14 @@ class Extraction(Strict):
     pages: int = Field(ge=1)
     blocks: list[SourceBlock] = Field(max_length=MAX_BLOCKS)
 
+    @model_validator(mode="after")
+    def references_are_consistent(self) -> Extraction:
+        if len({b.id for b in self.blocks}) != len(self.blocks):
+            raise ValueError("duplicate block id")
+        if any(b.page > self.pages for b in self.blocks):
+            raise ValueError("block page beyond page count")
+        return self
+
 
 ErrorCode = Literal[
     "invalid_file",
@@ -57,6 +65,12 @@ ErrorCode = Literal[
 ]
 
 
+# Child-process exit codes (app.extract) for files refused before conversion.
+EXIT_CODES: dict[int, ErrorCode] = {10: "invalid_file", 11: "encrypted", 12: "too_many_pages", 13: "empty_extraction"}
+EXIT: dict[str, int] = {code: number for number, code in EXIT_CODES.items()}
+RETRYABLE: frozenset[str] = frozenset({"busy", "timeout", "conversion_failed", "not_found"})
+
+
 class JobError(Strict):
     code: ErrorCode
     retryable: bool
@@ -64,7 +78,7 @@ class JobError(Strict):
 
 class JobStatus(Strict):
     contract_version: Literal[1] = CONTRACT_VERSION
-    id: str
+    id: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
     status: Literal["processing", "completed", "failed"]
     stage: Literal["queued", "extracting", "done"] | None = None
     result: Extraction | None = None

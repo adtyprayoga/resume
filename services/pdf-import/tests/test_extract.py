@@ -84,7 +84,7 @@ class TestBlocksFromDocument:
         assert blocks_from_document(empty) == []
 
     def test_extraction_model_carries_contract_version(self) -> None:
-        extraction = Extraction(pages=1, blocks=blocks_from_document(sample_document()))
+        extraction = Extraction(pages=2, blocks=blocks_from_document(sample_document()))
         assert extraction.contract_version == CONTRACT_VERSION == 1
 
 
@@ -154,7 +154,37 @@ def test_child_entry_point_writes_extraction_json(tmp_path: Path) -> None:
     import sys
 
     out = tmp_path / "result.json"
-    done = subprocess.run([sys.executable, "-m", "app.extract", str(PDF / "en_single.pdf"), str(out)], capture_output=True, timeout=180)
+    done = subprocess.run([sys.executable, "-m", "app.extract", str(PDF / "en_single.pdf"), str(out), "--max-pages", "5"], capture_output=True, timeout=180)
     assert done.returncode == 0, done.stderr[-2000:]
     extraction = Extraction.model_validate_json(out.read_text())
     assert any(b.text == "Jane Doe" for b in extraction.blocks)
+
+
+class TestChildValidation:
+    """`main` checks the file with PDFium before Docling is imported, so bad
+    uploads fail fast with a stable exit code and never reach the pipeline."""
+
+    @pytest.mark.parametrize(
+        ("fixture", "code"),
+        [("not_a_pdf", 10), ("corrupt", 10), ("encrypted", 11), ("six_page", 12)],
+    )
+    def test_rejects_bad_files_with_stable_exit_codes(self, tmp_path: Path, fixture: str, code: int) -> None:
+        from app.extract import main
+
+        out = tmp_path / "out.json"
+        assert main([str(PDF / f"{fixture}.pdf"), str(out), "--max-pages", "5"]) == code
+        assert not out.exists()
+
+    def test_exit_codes_match_error_codes(self) -> None:
+        from app.extract import EXIT_CODES
+
+        assert EXIT_CODES == {10: "invalid_file", 11: "encrypted", 12: "too_many_pages", 13: "empty_extraction"}
+
+
+@pytest.mark.docling
+def test_blank_pdf_reports_empty_extraction(tmp_path: Path) -> None:
+    from app.extract import main
+
+    out = tmp_path / "out.json"
+    assert main([str(PDF / "blank.pdf"), str(out), "--max-pages", "5"]) == 13
+    assert not out.exists()
