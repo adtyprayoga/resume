@@ -229,6 +229,90 @@ def write_progression(path: Path) -> None:
     c.save()
 
 
+def write_guide_template(path: Path) -> None:
+    c = canvas.Canvas(str(path), pagesize=A4, invariant=1)
+    w = Writer(c)
+
+    def heading(text: str) -> None:
+        w.y -= 14
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(MARGIN, w.y, text)
+        w.y -= 24
+
+    def entry(text: str, dates: str) -> None:
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(MARGIN, w.y, text)
+        c.setFont("Helvetica", 10)
+        c.drawRightString(WIDTH - MARGIN, w.y, dates)
+        w.y -= 16
+
+    def italic(text: str) -> None:
+        c.setFont("Helvetica-Oblique", 10)
+        c.drawString(MARGIN, w.y, text)
+        w.y -= 18
+
+    def bullet(text: str) -> None:
+        c.setFont("Helvetica", 10)
+        c.drawString(MARGIN, w.y, "•")
+        c.drawString(MARGIN + 12, w.y, text)
+        w.y -= 15
+
+    c.setFont("Helvetica", 14)
+    c.drawCentredString(WIDTH / 2, w.y, "Rina Wulandari")
+    w.y -= 22
+    w.line("People Development | Learning & Development | Bilingual Facilitator")
+    w.line("Bandung, Indonesia | rina.w@example.com | +62 811 0000 5678 | LinkedIn: Rina Wulandari")
+    heading("Profile Summary")
+    for line in [
+        "I have 4 years of experience in the field of Learning & Development across diverse industries, including",
+        "banking, retail, and education. My expertise involves needs analysis, curriculum design, and training delivery.",
+        "I am known for being structured, adaptable, and detail-oriented.",
+    ]:
+        w.line(line)
+    heading("Competencies & Abilities")
+    for line in [
+        "-> Training Skills: Needs Analysis, Curriculum Design, Facilitation",
+        "-> Support Technical Skills: Office 365, Google Suites, Power BI",
+        "-> Soft Skills: Communication, Problem Solving",
+        "-> Languages: English (IELTS 7.0), Mandarin (HSK 3)",
+    ]:
+        w.line(line)
+    heading("Working Experience")
+    entry("Contoh Consulting - Bandung, Indonesia", "Sep 2024 - Present")
+    italic("Training Consultant")
+    bullet("Designed 12 training modules for banking clients.")
+    bullet("Facilitated 40 workshops with an average score of 4.7 out of 5.")
+    w.gap(18)
+    entry("Contoh Edu - Surabaya, Indonesia", "Sep 2022 - Sep 2024")
+    italic("Curriculum Designer")
+    bullet("Mapped 30 courses to national competency standards.")
+    w.y = MARGIN
+    bullet("Reviewed curriculum drafts before submission to the programme office")
+    c.showPage()
+    w = Writer(c)
+    c.setFont("Helvetica", 10)
+    c.drawString(MARGIN + 12, w.y, "for further review.")
+    w.y -= 30
+    entry("Contoh Retail - Semarang, Indonesia", "Aug 2021 - Aug 2022")
+    italic("People Development Officer")
+    bullet("Ran onboarding for 120 new store staff.")
+    heading("Education Background")
+    entry("Universitas Contoh - Semarang, Indonesia", "2017 - 2021")
+    italic("Bachelor Degree in English Literature - GPA: 3.60/4.00")
+    heading("Course")
+    w.line("Business English Training - Contoh Language Centre | Jun 2025")
+    w.line("Presentation, negotiation, and business writing")
+    w.gap()
+    w.line("Data Analysis with Power BI - Coursera | Mar 2024")
+    w.line("Dashboards, Power Query, and data modelling")
+    heading("References")
+    w.line("Anggi Pratiwi", bold=True)
+    w.line("HR Manager at PT Contoh Abadi - +62 812 0000 1111 | anggi@example.com")
+    heading("Hobbies")
+    w.line("Hiking and photography")
+    c.save()
+
+
 def write_blank(path: Path) -> None:
     c = canvas.Canvas(str(path), pagesize=A4)
     c.showPage()
@@ -285,6 +369,7 @@ def main() -> None:
     write_two_column(PDF_DIR / "two_column.pdf")
     write_five_page(PDF_DIR / "five_page.pdf")
     write_progression(PDF_DIR / "progression.pdf")
+    write_guide_template(PDF_DIR / "guide_template.pdf")
     write_scanned(PDF_DIR / "scanned.pdf")
     write_mixed(PDF_DIR / "mixed.pdf")
     write_blank(PDF_DIR / "blank.pdf")
