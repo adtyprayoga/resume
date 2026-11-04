@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bulletSentence, fill, GROUP_TITLES, hardGroupTitle, joinList, NARRATION, summarySentence, type SummaryAnswers } from './templates'
+import { bulletSentence, fill, GROUP_TITLES, hardGroupTitle, joinList, NARRATION, STORY, STORY_LABELS, summarySentence, type SummaryAnswers } from './templates'
 
 describe('joinList', () => {
   it.each([
@@ -87,4 +87,16 @@ it('provides bilingual narration for every key', () => {
 it('fills named placeholders', () => {
   expect(fill('{name} works with {team}. {name} leads.', { name: 'Ayu', team: 'Design' }))
     .toBe('Ayu works with Design. Ayu leads.')
+})
+
+
+describe('story vocabulary', () => {
+  it('provides both locales and matching interpolation slots for all narration and labels', () => {
+    for (const value of [...Object.values(STORY), ...Object.values(STORY_LABELS)]) {
+      expect(value.en.trim()).not.toBe('')
+      expect(value.id.trim()).not.toBe('')
+      const slots = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort()
+      expect(slots(value.en)).toEqual(slots(value.id))
+    }
+  })
 })
