@@ -374,7 +374,7 @@ try {
         const names = [...document.querySelectorAll('.pdf-entry legend')].map(el => el.textContent.trim())
         return ['Experience', 'Projects', 'Education', 'Skills', 'Awards', 'Courses & Certifications', 'References'].map(kind => names.filter(name => name.startsWith(kind + ' entry ')).length)
       })()`)
-      check(JSON.stringify(counts) === JSON.stringify([4, 5, 2, 7, 1, 0, 0]), 'progression: four roles, five projects, two schools, seven skill groups and one award')
+      check(JSON.stringify(counts) === JSON.stringify([4, 5, 2, 7, 1, 1, 0]), 'progression: four roles, five projects, two schools, seven skill groups, one award and one certification')
       await clickButton('Replace resume')
       check(await evaluate(`document.querySelector('[role=alert]')?.textContent.includes('unplaced text') ?? false`), 'progression: unplaced text still requires acknowledgment')
       await evaluate(`document.querySelector('.pdf-acknowledge input').click()`)
