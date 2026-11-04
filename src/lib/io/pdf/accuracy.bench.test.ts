@@ -8,6 +8,16 @@ import { parseExtraction } from './validate'
 const root = resolve(__dirname, '../../../../services/pdf-import')
 const baselinePath = resolve(root, 'bench-results/accuracy.json')
 const names = ['en_single', 'id_single', 'two_column', 'five_page', 'progression', 'scanned', 'mixed', 'guide_template']
+const assertNoRegression = (before: Pick<Score, 'outcomes'>, score: Pick<Score, 'outcomes'>, label: string) => {
+  for (const [path, outcome] of Object.entries(before.outcomes)) if (outcome === 'correct') expect(score.outcomes[path], `${label}/${path}`).toBe('correct')
+  const errors = (s: Pick<Score, 'outcomes'>) => Object.values(s.outcomes).filter(o => o === 'wrong' || o === 'extra').length
+  expect(errors(score), `${label} wrong + extra`).toBeLessThanOrEqual(errors(before))
+}
+it('rejects loss of a correct unit even when other units improve', () => {
+  const before = { outcomes: { name: 'correct', company: 'wrong', role: 'missing' } } as const
+  const after = { outcomes: { name: 'missing', company: 'correct', role: 'correct' } } as const
+  expect(() => assertNoRegression(before, after, 'fixture/rules')).toThrow()
+})
 it('preserves each correct baseline unit and does not add wrong or extra units', () => {
   const fixtures: Record<string, Record<string, Score>> = {}
   const baseline = process.env.BENCH_UPDATE === '1' ? null : JSON.parse(readFileSync(baselinePath, 'utf8')) as { fixtures: typeof fixtures }
@@ -23,9 +33,7 @@ it('preserves each correct baseline unit and does not add wrong or extra units',
       if (baseline) {
         const before = baseline.fixtures[name]?.[mode]
         if (!before) throw new Error(`Missing baseline: ${name}/${mode}`)
-        for (const [path, outcome] of Object.entries(before.outcomes)) if (outcome === 'correct') expect(score.outcomes[path], `${name}/${mode}/${path}`).toBe('correct')
-        const errors = (s: Score) => Object.values(s.outcomes).filter(o => o === 'wrong' || o === 'extra').length
-        expect(errors(score), `${name}/${mode} wrong + extra`).toBeLessThanOrEqual(errors(before))
+        assertNoRegression(before, score, `${name}/${mode}`)
       }
       rows.push(`| ${name} | ${mode} | ${ratio(score.correct, score.expected)} | ${ratio(score.correct, score.filled)} | ${score.unplaced} |`)
       for (const [section, counts] of Object.entries(score.bySection)) rows.push(`| ${name}: ${section} | ${mode} | ${ratio(counts.correct, counts.expected)} | ${ratio(counts.correct, counts.filled)} | — |`)

@@ -47,6 +47,16 @@ describe('import accuracy', () => {
     proposal.document.content.skills = [{ id: 'a', text: { en: { title: 'Tools', items: ['Git'] }, id: { title: '', items: [] } } }]
     expect(scoreProposal(golden(), proposal)).toMatchObject({ filled: 2, outcomes: { 'skills.0.title': 'extra', 'skills.0.items.0': 'extra' } })
   })
+  it('counts empty and whitespace list positions, including missing and extra slots', () => {
+    const proposal = proposalWith()
+    proposal.document.content.skills = [{ id: 'a', text: { en: { title: '', items: ['x', '', '  '] }, id: { title: '', items: [] } } }]
+    const score = scoreProposal({ ...golden(), profile: {}, sections: { skills: [{ items: ['x'] }] } }, proposal)
+    expect(score).toMatchObject({ expected: 1, filled: 3, correct: 1, outcomes: { 'skills.0.items.1': 'extra', 'skills.0.items.2': 'extra' } })
+    proposal.document.content.skills[0]!.text.en.items = []
+    expect(scoreProposal({ ...golden(), profile: {}, sections: { skills: [{ items: ['', '  '] }] } }, proposal)).toMatchObject({ expected: 2, filled: 0, correct: 0, outcomes: { 'skills.0.items.0': 'missing', 'skills.0.items.1': 'missing' } })
+    proposal.document.content.skills[0]!.text.en.items = [' ']
+    expect(scoreProposal({ ...golden(), profile: {}, sections: { skills: [{ items: [''] }] } }, proposal)).toMatchObject({ expected: 1, filled: 1, correct: 1, outcomes: { 'skills.0.items.0': 'correct' } })
+  })
   it('strips styles without touching anything else', () => {
     const extraction = { contract_version: 1 as const, pages: 1, blocks: [{ id: 'b1', page: 1, label: 'text', group: null, text: 'Hello', bbox: null, style: { bold: true } }] }
     expect(stripStyles(extraction)).toEqual({ ...extraction, blocks: [{ id: 'b1', page: 1, label: 'text', group: null, text: 'Hello', bbox: null }] })

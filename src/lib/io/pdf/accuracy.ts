@@ -30,8 +30,7 @@ export const scoreProposal = (golden: Golden, proposal: Proposal): Score => {
   const score: Score = { expected: 0, filled: 0, correct: 0, bySection: {}, outcomes: {}, unplaced: proposal.unmatched.length }
   const fields = (section: string, path: string, expected: Record<string, unknown>, actual: Record<string, unknown>, extra = false) => {
     const counts = score.bySection[section] ??= { expected: 0, filled: 0, correct: 0 }
-    const unit = (key: string, wanted: unknown, found: unknown, surplus: boolean) => {
-      const e = populated(wanted), f = populated(found)
+    const unit = (key: string, wanted: unknown, found: unknown, surplus: boolean, e = populated(wanted), f = populated(found)) => {
       if (!e && !f) return
       const correct = e && f && JSON.stringify(normalise(wanted)) === JSON.stringify(normalise(found))
       score.outcomes[key] = surplus ? 'extra' : correct ? 'correct' : f ? 'wrong' : 'missing'
@@ -41,7 +40,7 @@ export const scoreProposal = (golden: Golden, proposal: Proposal): Score => {
       const wanted = expected[key], found = actual[key]
       if (Array.isArray(wanted) || Array.isArray(found)) {
         const e = Array.isArray(wanted) ? wanted : [], a = Array.isArray(found) ? found : []
-        for (let i = 0; i < Math.max(e.length, a.length); i++) unit(`${path}.${key}.${i}`, e[i], a[i], extra || i >= e.length)
+        for (let i = 0; i < Math.max(e.length, a.length); i++) unit(`${path}.${key}.${i}`, e[i], a[i], extra || i >= e.length, i < e.length, i < a.length)
       } else unit(`${path}.${key}`, wanted, found, extra)
     }
   }
