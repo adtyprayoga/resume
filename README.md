@@ -384,7 +384,7 @@ from a newer schema version is refused rather than silently downgraded.
 ### How accurate is PDF import?
 
 Each synthetic test CV (invented people only) has a hand-written answer key.
-The benchmark maps every fixture twice, with typography and with the styles
+The benchmark maps every fixture with typography and with the styles
 stripped (text rules only), and scores each field: a value is correct if it
 matches after whitespace normalisation, and a list (bullets, skill items)
 scores matched items over the larger of the expected and imported counts.
@@ -404,9 +404,24 @@ Certifications and References sections.
 | `mixed` | 95.1% / 86.7% / 0 | 95.1% / 86.7% / 0 | 95.1% / 86.7% / 0 |
 | `guide_template` | 7.4% / 80.0% / 32 | 79.6% / 100.0% / 6 | 79.6% / 100.0% / 6 |
 
-Cells are recall / precision / unplaced. The synthetic fixtures use standard
-heading wording, so both modes score the same on them; typography matters when
-wording alone is ambiguous. On a real CV checked locally (not published), the
+Cells are recall / precision / unplaced. Docling labels the synthetic
+fixtures' headings as headings, so both modes score the same on them. To show
+what typography adds when those labels are missing, the benchmark also maps
+every fixture with its heading labels flattened to plain text:
+
+| Fixture | Labels flattened, typography | Labels flattened, text rules only |
+| --- | --- | --- |
+| `en_single` | 100.0% / 100.0% / 0 | 77.8% / 100.0% / 5 |
+| `id_single` | 100.0% / 100.0% / 0 | 70.0% / 100.0% / 5 |
+| `two_column` | 100.0% / 100.0% / 0 | 78.9% / 100.0% / 3 |
+| `five_page` | 100.0% / 100.0% / 0 | 98.9% / 100.0% / 1 |
+| `progression` | 95.0% / 99.0% / 4 | 68.0% / 74.7% / 6 |
+| `scanned` | 77.8% / 100.0% / 5 | 77.8% / 100.0% / 5 |
+| `mixed` | 87.8% / 85.7% / 2 | 73.2% / 83.3% / 7 |
+| `guide_template` | 79.6% / 100.0% / 6 | 57.4% / 88.6% / 11 |
+
+The scanned pages have no typography, so there both columns are the text
+rules. On a real CV checked locally (not published), the
 text rules alone left the name, headline and location blank, while typography
 filled them. In `guide_template`, Docling merges the school and degree lines
 into one block, which the mapper leaves for review rather than guessing.

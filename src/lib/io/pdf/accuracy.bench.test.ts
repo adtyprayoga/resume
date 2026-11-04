@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, it } from 'vitest'
-import { scoreProposal, stripStyles, type Golden, type Score } from './accuracy'
+import { flattenLabels, scoreProposal, stripStyles, type Golden, type Score } from './accuracy'
 import { mapExtraction } from './mapper'
 import { parseExtraction } from './validate'
 
@@ -28,8 +28,16 @@ it('preserves each correct baseline unit and does not add wrong or extra units',
     const parsed = parseExtraction(JSON.parse(readFileSync(resolve(root, `tests/fixtures/contract/valid/extraction_${name}.json`), 'utf8')))
     if (!parsed.ok) throw new Error(JSON.stringify(parsed))
     const scores: Record<string, Score> = fixtures[name] = {}
-    for (const mode of ['typography', 'rules']) {
-      const score = scores[mode] = scoreProposal(golden, mapExtraction(mode === 'rules' ? stripStyles(parsed.value) : parsed.value, golden.locale))
+    // Docling labels the fixtures' headings, so typography and rules agree on
+    // them; with the labels flattened only typography can still find structure.
+    const inputs: Record<string, typeof parsed.value> = {
+      typography: parsed.value,
+      rules: stripStyles(parsed.value),
+      'typography, labels flattened': flattenLabels(parsed.value),
+      'rules, labels flattened': stripStyles(flattenLabels(parsed.value)),
+    }
+    for (const [mode, input] of Object.entries(inputs)) {
+      const score = scores[mode] = scoreProposal(golden, mapExtraction(input, golden.locale))
       if (baseline) {
         const before = baseline.fixtures[name]?.[mode]
         if (!before) throw new Error(`Missing baseline: ${name}/${mode}`)

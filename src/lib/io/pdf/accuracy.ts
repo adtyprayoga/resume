@@ -64,3 +64,8 @@ export const stripStyles = (extraction: Extraction): Extraction => ({
     return rest
   }),
 })
+/** The extraction with Docling's heading labels taken away (title/section_header read as text); styles stay. */
+export const flattenLabels = (extraction: Extraction): Extraction => ({
+  ...extraction,
+  blocks: extraction.blocks.map(block => block.label === 'title' || block.label === 'section_header' ? { ...block, label: 'text' } : block),
+})
