@@ -421,13 +421,19 @@ pushes to the configured branch to deploy automatically. See
 ### With PDF import (Docker Compose)
 
 `compose.yaml` runs the same frontend image built with `VITE_PDF_IMPORT=1` and
-`nginx.pdf-import.conf`, plus the `pdf-import` service. Only the website port is
-published; nginx proxies `/api/pdf-import` to the service over the private
-Compose network.
+`nginx.pdf-import.conf`, plus the `pdf-import` service. nginx proxies
+`/api/pdf-import` to the service over the private Compose network; the service
+is never published.
+
+`compose.yaml` itself binds no host ports, so a platform proxy can route a
+domain to `web:80`. Locally, `docker compose` also loads
+`compose.override.yaml`, which publishes the site on `WEB_PORT` (default
+`8080`):
 
 ```bash
 cp .env.example .env   # optional; every value has a default
-docker compose up -d --build
+docker compose up -d --build              # http://localhost:8080
+WEB_PORT=8090 docker compose up -d --build  # if 8080 is taken
 ```
 
 | Limit | Default | Where |
@@ -453,9 +459,13 @@ The website does not depend on the service: if it is starting, unhealthy or
 stopped, the site, editing, JSON import and export keep working, and **Convert
 PDF** reports that conversion is unavailable and can be retried.
 
-On Coolify, deploy the repository as a **Docker Compose** resource using
-`compose.yaml`, assign the domain to the `web` service only (port `80`), and
-leave `pdf-import` without a domain. The proxy config trusts `X-Forwarded-For`
+On Coolify, switch the application's **Build Pack** to **Docker Compose** (or
+create a Docker Compose resource), with Base Directory `/` and Docker Compose
+Location `/compose.yaml`. Assign the domain to the `web` service only (it
+listens on port `80`) and leave `pdf-import` without a domain. Coolify deploys
+`compose.yaml` by name, so `compose.override.yaml` and its host port are not
+used there. The first build is slow and the backend image is several GB
+(PyTorch CPU and the layout model). The proxy config trusts `X-Forwarded-For`
 from private addresses only, so the upload and polling limits apply per visitor
 behind Coolify's proxy; if your proxy reaches the site from a public address,
 add it with `set_real_ip_from` in `nginx.pdf-import.conf`. The static-only deployment above is

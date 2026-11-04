@@ -1,0 +1,7 @@
+# Local runs only: `docker compose up` loads this file automatically and
+# publishes the website on the host. Platforms that deploy compose.yaml by
+# name (Coolify) do not load it, so nothing is bound to a host port there.
+services:
+  web:
+    ports:
+      - "${WEB_PORT:-8080}:80"
