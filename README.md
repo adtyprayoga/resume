@@ -419,8 +419,9 @@ the native text extraction of `en_single.pdf`: the character error rate
 ```bash
 bun run bench:import                     # prints the table; fails if any correct field is lost
 BENCH_UPDATE=1 bun run bench:import      # re-records services/pdf-import/bench-results/accuracy.json
-cd services/pdf-import
-docker run --rm -v "$PWD":/app/src -w /app/src pdf-import:test python scripts/ocr_accuracy.py  # writes bench-results/ocr.json
+docker run --rm -v "$PWD/services/pdf-import/app:/app/app" -v "$PWD/services/pdf-import/tests:/app/tests" \
+  -v "$PWD/services/pdf-import/scripts:/app/scripts" -v "$PWD/services/pdf-import/bench-results:/app/bench-results" \
+  pdf-import:test python scripts/ocr_accuracy.py  # writes services/pdf-import/bench-results/ocr.json
 ```
 
 Text recognition is Docling's: its layout model finds the blocks and reading
