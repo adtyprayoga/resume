@@ -4,7 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import ImportDialog from '../ImportDialog.svelte'
+import ResumePaper from '../preview/ResumePaper.svelte'
 import { sampleDocument } from '../../data/sample'
+import { resolve as resolveDocument } from '$lib/model/resolve'
 import { resumeDoc } from '$lib/state/document.svelte'
 import { editing } from '$lib/state/editing.svelte'
 import { prefs } from '$lib/state/preferences.svelte'
@@ -49,6 +51,8 @@ beforeEach(() => {
   editing.reset()
   prefs.uiLocale = 'en'
   prefs.documentLocale = 'en'
+  prefs.themeKey = 'minimal'
+  prefs.fontScale = 'standard'
   localStorage.clear()
 })
 
@@ -152,6 +156,37 @@ describe('PDF import source', () => {
 })
 
 describe('PDF review', () => {
+  it.each(['minimal', 'ats'])('preserves the existing photo and %s presentation when replacing from PDF', async (themeKey) => {
+    service()
+    const avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jG1sAAAAASUVORK5CYII='
+    resumeDoc.current.contact.avatar = avatar
+    prefs.themeKey = themeKey
+    prefs.fontScale = 'small'
+    const preferences = prefs.persistable()
+    mount()
+    const user = await review()
+    expect(resumeDoc.current.contact.avatar).toBe(avatar)
+    expect(prefs.persistable()).toEqual(preferences)
+
+    await user.click(screen.getByRole('button', { name: 'Replace resume' }))
+    expect(resumeDoc.current.profile.text.en.name).toBe('Jane Doe')
+    expect(resumeDoc.current.contact.avatar).toBe(avatar)
+    expect(JSON.parse(localStorage.getItem(DOCUMENT_KEY)!).contact.avatar).toBe(avatar)
+    expect(prefs.persistable()).toEqual(preferences)
+
+    const { container } = render(ResumePaper, {
+      resume: resolveDocument(resumeDoc.current, 'en'), locale: 'en', presentation: prefs.theme.presentation,
+    })
+    if (themeKey === 'minimal') {
+      expect(container.querySelector('.resume-header')).not.toBeNull()
+      expect(container.querySelector('img.resume-avatar')).toHaveAttribute('src', avatar)
+      expect(container.querySelector('.ats-header')).toBeNull()
+    } else {
+      expect(container.querySelector('.ats-header')).not.toBeNull()
+      expect(container.querySelector('img.resume-avatar')).toBeNull()
+    }
+  })
+
   it('reviews and confirms the real progression fixture without changing stored work early', async () => {
     service(load('extraction_progression.json'))
     const before = JSON.stringify(resumeDoc.snapshot())

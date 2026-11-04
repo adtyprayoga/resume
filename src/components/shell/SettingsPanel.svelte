@@ -64,7 +64,7 @@
           {/each}
         </div>
       </div>
-      <p id="{uid}-layout-hint" class="field-hint">{t(prefs.uiLocale, 'layout.atsHint')}</p>
+      <p id="{uid}-layout-hint" class="field-hint">{t(prefs.uiLocale, prefs.theme.presentation === 'ats' ? 'layout.atsHint' : 'layout.classicHint')}</p>
 
       <div class="settings-row">
         <span class="field-label" id="{uid}-doc">{t(prefs.uiLocale, 'app.resumeLanguage')}</span>

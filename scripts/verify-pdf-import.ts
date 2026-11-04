@@ -203,6 +203,10 @@ try {
     for (const [width, height] of [[320, 640], [375, 812], [768, 1024], [1440, 900]] as const) {
       await viewport(width, height)
       await load()
+      const appearance = await evaluate(`({
+        preferences: localStorage.getItem('resume-preferences-v1'),
+        avatar: document.querySelector('img.resume-avatar')?.getAttribute('src')
+      })`)
       await openImport(IMPORT_LABEL)
       await layout(`${width}px sources`, width)
       await choosePdf(width === 375 ? 'five_page' : 'en_single')
@@ -245,6 +249,19 @@ try {
         check(await evaluate(`!document.querySelector('[role=dialog]')`), '1440px: Replace resume closes the dialog')
         check(await evaluate(`document.querySelector('.resume-paper')?.textContent.includes('Jane Doe') ?? false`), '1440px: the paper shows the imported resume')
         check(await evaluate(`JSON.parse(localStorage.getItem('resume-document-v1')).profile.text.en.name`) === 'Jane Doe', '1440px: the imported resume is saved in the browser')
+        const importedAppearance = await evaluate(`({
+          preferences: localStorage.getItem('resume-preferences-v1'),
+          avatar: document.querySelector('img.resume-avatar')?.getAttribute('src'),
+          classic: !!document.querySelector('.resume-header') && !document.querySelector('.ats-header')
+        })`)
+        check(!!appearance.avatar && importedAppearance.avatar === appearance.avatar, '1440px: PDF replacement keeps the existing photo visible')
+        check(importedAppearance.classic && importedAppearance.preferences === appearance.preferences, '1440px: PDF replacement preserves Classic, header layout and preferences')
+
+        const reloaded = cdp.once('Page.loadEventFired')
+        await cdp.send('Page.reload')
+        await reloaded
+        await settle()
+        check(await evaluate(`!!document.querySelector('.resume-header') && !document.querySelector('.ats-header') && document.querySelector('img.resume-avatar')?.getAttribute('src') === ${JSON.stringify(appearance.avatar)}`), '1440px: Classic header and photo survive a browser reload')
 
         // Cancellation while converting.
         await openImport(IMPORT_LABEL)
