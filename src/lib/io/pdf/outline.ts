@@ -1,4 +1,4 @@
-import { findContacts, findDateRanges, isDocumentTitle, isHeadingLabel, isNameLike, isRoleTitle, matchHeading, sectionHeading, stripBullet } from './rules'
+import { findContacts, findDateRanges, isDocumentTitle, isHeadingLabel, isNameLike, isRoleTitle, matchHeading, sectionHeading, stripBullet, type HeadingKind } from './rules'
 import { dateOnly, type SourceSegment } from './segments'
 
 /**
@@ -33,6 +33,8 @@ const MAX_HEADING_WORDS = 8
 const MAX_ENTRY_WORDS = 16
 /** Entry headings (h3/h4) stay within this fraction of the body size. */
 const NEAR_BODY = 0.15
+/** Sections whose content is a list of entries, where an entry heading style is learned. */
+const ENTRY_SECTIONS = new Set<HeadingKind>(['experience', 'education', 'projects', 'awards', 'mixed_awards', 'certifications', 'references'])
 
 const classOf = (block: SourceSegment): string | null => (block.style ? `${block.style.font}@${block.style.size}` : null)
 const letters = (text: string) => text.match(/\p{L}/gu)?.length ?? 0
@@ -130,12 +132,20 @@ export const buildOutline = (blocks: SourceSegment[]): Outline => {
     return j
   }
 
+  // Only lines in sections made of entries vote: a sidebar's contact lines or
+  // one-per-line skills share a short, body-like style that is not an entry's.
+  let section: HeadingKind | null = null
+  const inEntries = roles.map((role, i) => {
+    if (role === 'h2') section = matchHeading(blocks[i]!.text)
+    return section !== null && ENTRY_SECTIONS.has(section)
+  })
+
   // H3: the class that most often begins an entry. A line directly under
   // another entry line (dates aside) is that entry's second line, so it does
   // not vote; otherwise a company with several roles would elect the role style.
   const h3 = top(blocks.flatMap((block, i): [string, number][] => {
     const previous = previousLine(i)
-    return entryLine(i) && near(block) && !(previous >= 0 && entryLine(previous)) ? [[classOf(block)!, 1]] : []
+    return inEntries[i] && entryLine(i) && near(block) && !(previous >= 0 && entryLine(previous)) ? [[classOf(block)!, 1]] : []
   }))
   blocks.forEach((block, i) => { if (h3 !== null && entryLine(i) && classOf(block) === h3) roles[i] = 'h3' })
 

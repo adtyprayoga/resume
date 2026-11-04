@@ -82,6 +82,32 @@ describe('buildOutline', () => {
     expect(roles(blocks)).toEqual(['name', 'h2', 'body', 'h2', 'h2', 'body'])
   })
 
+  it('elects the entry heading style from entry sections, not a sidebar of short lines', () => {
+    // A sidebar in a small body-like style (contact lines, one skill per line)
+    // must not outvote the entry headings of Experience and Education.
+    const small = S('f2', 9), body = S('f2', 10), heading = S('f1', 13), entry = S('f1', 10)
+    const blocks = [
+      b('b1', 'Dewi Lestari', 'text', S('f1', 22)),
+      b('b2', 'Contact', 'text', heading),
+      b('b3', 'dewi@example.com', 'text', small),
+      b('b4', '+62 811 0000 4444', 'text', null),
+      b('b5', 'example.com/dewi', 'text', small),
+      b('b6', 'Skills', 'text', heading),
+      b('b7', 'Illustration', 'text', small),
+      b('b8', 'Typography', 'text', small),
+      b('b9', 'Experience', 'text', heading),
+      b('b10', 'Illustrator, Contoh Press', 'text', entry),
+      b('b11', 'Mar 2019 - Present', 'text', body),
+      b('b12', 'Drew covers for forty titles.', 'list_item', body),
+      b('b13', 'Education', 'text', heading),
+      b('b14', 'Contoh Art Academy', 'text', entry),
+      b('b15', 'Diploma of Illustration, 2015 - 2018', 'text', body),
+    ]
+    const outline = roles(blocks)
+    expect([outline[9], outline[13]]).toEqual(['h3', 'h3'])
+    expect([outline[2], outline[6]]).toEqual(['body', 'body'])
+  })
+
   it('never promotes a list item to h3', () => {
     const blocks = [...doc.slice(0, 10), b('b14', 'Coached new trainers', 'list_item', S('f2', 10))]
     expect(roles(blocks).at(-1)).toBe('list')
