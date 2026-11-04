@@ -31,6 +31,11 @@ from importlib.metadata import version
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from app.settings import Settings  # noqa: E402  (needs ROOT on sys.path)
+
+MAX_PAGES = Settings().max_pages
 FIXTURES = ROOT / "tests" / "fixtures" / "pdf"
 CV_FIXTURES = ["en_single", "id_single", "two_column", "scanned", "mixed", "five_page"]
 PEAK_LIMIT = 2_300_000_000
@@ -59,7 +64,7 @@ def run_child(pdf: Path, cancel_after: float | None = None) -> dict:
         out = Path(tmp) / "out.json"
         start = time.monotonic()
         proc = subprocess.Popen(
-            [sys.executable, "-m", "app.extract", str(pdf), str(out)],
+            [sys.executable, "-m", "app.extract", str(pdf), str(out), "--max-pages", str(MAX_PAGES)],
             cwd=ROOT,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
