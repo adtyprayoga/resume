@@ -79,7 +79,7 @@ describe('buildOutline', () => {
       b('b5', 'Campus Activities', 'section_header', null),
       b('b6', 'Course', 'text', null),
     ]
-    expect(roles(blocks)).toEqual(['name', 'h2', 'body', 'h2', 'h2', 'h2'])
+    expect(roles(blocks)).toEqual(['name', 'h2', 'body', 'h2', 'h2', 'body'])
   })
 
   it('never promotes a list item to h3', () => {

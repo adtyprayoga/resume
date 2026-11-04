@@ -264,6 +264,17 @@ describe('sectionHeading for certifications and references', () => {
     expect(sectionHeading('Certifications:', 'text')).toBeNull()
     expect(sectionHeading('References:', 'list_item')).toBeNull()
     expect(sectionHeading('Certifications:', 'section_header')).toBe('certifications')
-    expect(sectionHeading('Certifications', 'text')).toBe('certifications')
+    expect(sectionHeading('Certifications', 'section_header')).toBe('certifications')
+  })
+
+  it('needs a heading label for certifications and references, and never opens one from a list item', () => {
+    expect(sectionHeading('Certifications', 'text')).toBeNull()
+    expect(sectionHeading('Training', 'text')).toBeNull()
+    expect(sectionHeading('Reference', 'text')).toBeNull()
+    expect(sectionHeading('Training', 'list_item')).toBeNull()
+    expect(sectionHeading('• Training', 'section_header')).toBeNull()
+    expect(sectionHeading('Experience', 'list_item')).toBeNull()
+    expect(sectionHeading('➔ Experience', 'text')).toBeNull()
+    expect(sectionHeading('Experience', 'text')).toBe('experience')
   })
 })

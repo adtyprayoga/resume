@@ -705,6 +705,23 @@ describe('PDF outline certifications and references', () => {
     expect(proposal.unmatched).toEqual([])
   })
 
+  it('keeps a skill item worded like a section in skills (list items and plain text)', () => {
+    const bullets = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
+      b('b3', '• Leadership', 'list_item'), b('b4', '• Training', 'list_item'), b('b5', '• Public speaking', 'list_item'),
+    ), 'en')
+    expect(bullets.document.content.skills.flatMap((group) => group.text.en.items)).toEqual(['Leadership', 'Training', 'Public speaking'])
+    expect(bullets.document.content.certifications).toEqual([])
+    expect(bullets.unmatched).toEqual([])
+
+    const plain = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
+      b('b3', 'Leadership'), b('b4', 'Course'), b('b5', 'Public speaking'), b('b6', 'Reference'),
+    ), 'en')
+    expect(plain.document.content.skills.flatMap((group) => group.text.en.items)).toEqual(['Leadership', 'Course', 'Public speaking', 'Reference'])
+    expect(plain.document.content.certifications).toEqual([])
+    expect(plain.document.content.references).toEqual([])
+    expect(plain.unmatched).toEqual([])
+  })
+
   it('keeps a skills group labelled "Certifications:" in skills', () => {
     const proposal = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
       b('b3', 'Certifications:'), b('b4', 'AWS Solutions Architect, CKA'),
