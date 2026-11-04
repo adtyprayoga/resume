@@ -58,9 +58,9 @@ describe('sample disclaimer', () => {
 })
 
 describe('toolbar actions', () => {
-  const NAMES = ['Sections', 'Edit', 'Upload', 'Export', 'Settings']
+  const NAMES = ['Undo', 'Redo', 'Sections', 'Edit', 'Upload', 'Export', 'Settings']
 
-  it('offers five labelled actions in order', () => {
+  it('offers seven labelled actions in order', () => {
     render(App)
     const buttons = within(toolbar()).getAllByRole('button')
     expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual(NAMES)
@@ -71,7 +71,7 @@ describe('toolbar actions', () => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'id', documentLocale: 'en' }))
     render(App)
     const names = within(screen.getByRole('toolbar', { name: 'Tindakan resume' })).getAllByRole('button').map((button) => button.getAttribute('aria-label'))
-    expect(names).toEqual(['Bagian', 'Sunting', 'Unggah', 'Ekspor', 'Pengaturan'])
+    expect(names).toEqual(['Batalkan', 'Ulangi', 'Bagian', 'Sunting', 'Unggah', 'Ekspor', 'Pengaturan'])
   })
 
   it('keeps Edit primary and updates its accessible name', async () => {
@@ -395,5 +395,83 @@ describe('Indonesian interface while editing an English resume', () => {
     expect(within(form).getByText('kedua bahasa')).toBeInTheDocument()
     expect(within(form).getByRole('button', { name: 'Terapkan' })).toBeInTheDocument()
     expect(within(form).getByRole('button', { name: 'Batal' })).toBeInTheDocument()
+  })
+})
+
+describe('undo and redo', () => {
+  const undoButton = () => within(toolbar()).getByRole('button', { name: 'Undo' })
+  const redoButton = () => within(toolbar()).getByRole('button', { name: 'Redo' })
+
+  it('shows Undo and Redo, unavailable until there is history', async () => {
+    render(App)
+    expect(undoButton()).toHaveAttribute('aria-disabled', 'true')
+    expect(redoButton()).toHaveAttribute('aria-disabled', 'true')
+    resumeDoc.addItem('skills')
+    await tick()
+    expect(undoButton()).not.toHaveAttribute('aria-disabled')
+    const count = resumeDoc.current.content.skills.length
+    await userEvent.setup().click(undoButton())
+    expect(resumeDoc.current.content.skills).toHaveLength(count - 1)
+    expect(redoButton()).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('does nothing when an unavailable button is clicked', async () => {
+    render(App)
+    const before = resumeDoc.generation
+    await userEvent.setup().click(undoButton())
+    expect(resumeDoc.generation).toBe(before)
+  })
+
+  it('Ctrl+Z undoes a section toggle while focus stays on the checkbox', async () => {
+    render(App)
+    const user = userEvent.setup()
+    await user.click(within(toolbar()).getByRole('button', { name: 'Sections' }))
+    const panel = screen.getByRole('complementary', { name: 'Sections' })
+    const checkbox = within(panel).getByRole('checkbox', { name: /Awards/ })
+    await user.click(checkbox)
+    expect(checkbox).toHaveFocus()
+    expect(resumeDoc.current.sections.find((section) => section.kind === 'awards')?.enabled).toBe(false)
+    await user.keyboard('{Control>}z{/Control}')
+    expect(resumeDoc.current.sections.find((section) => section.kind === 'awards')?.enabled).toBe(true)
+    await user.keyboard('{Control>}{Shift>}z{/Shift}{/Control}')
+    expect(resumeDoc.current.sections.find((section) => section.kind === 'awards')?.enabled).toBe(false)
+  })
+
+  it('Ctrl+Z inside a text field is left to the browser', async () => {
+    render(App)
+    resumeDoc.addItem('skills')
+    const field = document.createElement('input')
+    document.body.append(field)
+    field.focus()
+    const event = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true })
+    field.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+    expect(resumeDoc.canUndo).toBe(true)
+    field.remove()
+  })
+
+  it('the shortcut is off while the Import dialog is open', async () => {
+    render(App)
+    const user = userEvent.setup()
+    resumeDoc.addItem('skills')
+    await user.click(within(toolbar()).getByRole('button', { name: 'Upload' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Upload JSON' }))
+    expect(screen.getByRole('dialog', { name: 'Import resume JSON' })).toBeInTheDocument()
+    await user.keyboard('{Control>}z{/Control}')
+    expect(resumeDoc.canUndo).toBe(true)
+  })
+
+  it('the shortcut is off while any modal dialog is open', async () => {
+    render(App)
+    resumeDoc.addItem('skills')
+    const modal = document.createElement('div')
+    modal.setAttribute('role', 'dialog')
+    modal.setAttribute('aria-modal', 'true')
+    modal.innerHTML = '<input type="checkbox" aria-label="Present">'
+    document.body.append(modal)
+    modal.querySelector('input')!.focus()
+    await userEvent.setup().keyboard('{Control>}z{/Control}')
+    expect(resumeDoc.canUndo).toBe(true)
+    modal.remove()
   })
 })

@@ -12,6 +12,7 @@
     expanded,
     onkeydown,
     variant,
+    disabled = false,
   }: {
     icon: IconName
     label: string
@@ -25,6 +26,8 @@
     expanded?: boolean
     onkeydown?: (event: KeyboardEvent) => void
     variant?: 'primary' | undefined
+    /** Stays focusable and announced as unavailable; clicks do nothing. */
+    disabled?: boolean
   } = $props()
 
   const uid = $props.id()
@@ -41,8 +44,9 @@
     aria-haspopup={haspopup}
     aria-controls={controls}
     aria-expanded={expanded}
+    aria-disabled={disabled || undefined}
     bind:this={element}
-    {onclick}
+    onclick={(event) => { if (!disabled) onclick(event) }}
     {onkeydown}
   >
     <Icon name={icon} />

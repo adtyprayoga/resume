@@ -276,6 +276,10 @@ export const strings = {
     'action.exportJson': 'Export JSON',
     'action.importJson': 'Import JSON',
     'action.edit': 'Edit',
+    'action.undo': 'Undo',
+    'action.redo': 'Redo',
+    'history.undone': 'Undone',
+    'history.redone': 'Redone',
     'app.demoNotice':
       'Disclaimer: The resume information displayed on this page is fictitious and is used only for style and function demonstration.',
     'app.printHint':
@@ -556,6 +560,10 @@ export const strings = {
     'action.exportJson': 'Ekspor JSON',
     'action.importJson': 'Impor JSON',
     'action.edit': 'Sunting',
+    'action.undo': 'Batalkan',
+    'action.redo': 'Ulangi',
+    'history.undone': 'Dibatalkan',
+    'history.redone': 'Diulang',
     'app.demoNotice':
       'Penafian: Informasi resume yang ditampilkan di halaman ini bersifat fiktif dan hanya digunakan untuk demonstrasi tampilan dan fungsi.',
     'app.printHint':

@@ -22,6 +22,8 @@
   import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
   import { recovery } from '$lib/state/recovery.svelte'
+  import { redo, undo } from '$lib/state/actions'
+  import { historyShortcut, isTextEntry } from '$lib/ui/keys'
   import { revealSection, type NavTarget } from '$lib/ui/revealSection'
 
   // Before PersistenceHost mounts, so autosave cannot write a fresh sample over
@@ -244,12 +246,25 @@
     importing = true
   }
 
+  /** Text fields keep the browser's own undo; modal dialogs keep the app's out of their way. */
+  const onHistoryKey = (event: KeyboardEvent) => {
+    if (event.defaultPrevented || recovery.blocked || isTextEntry(event.target)) return
+    if (document.querySelector('[aria-modal="true"]')) return
+    const action = historyShortcut(event)
+    if (!action) return
+    event.preventDefault()
+    if (action === 'undo') undo(prefs.uiLocale)
+    else redo(prefs.uiLocale)
+  }
+
   const closeImport = () => {
     importing = false
     editing.resume()
     void tick().then(() => importButton?.focus())
   }
 </script>
+
+<svelte:window onkeydown={onHistoryKey} />
 
 <PersistenceHost />
 <ThemeHost />
@@ -270,6 +285,18 @@
       </div>
 
       <div class="app-actions" role="toolbar" aria-label={t(prefs.uiLocale, 'app.actions')}>
+        <IconButton
+          icon="undo"
+          label={t(prefs.uiLocale, 'action.undo')}
+          disabled={!resumeDoc.canUndo}
+          onclick={() => undo(prefs.uiLocale)}
+        />
+        <IconButton
+          icon="redo"
+          label={t(prefs.uiLocale, 'action.redo')}
+          disabled={!resumeDoc.canRedo}
+          onclick={() => redo(prefs.uiLocale)}
+        />
         <IconButton
           icon="sections"
           label={t(prefs.uiLocale, 'action.sections')}

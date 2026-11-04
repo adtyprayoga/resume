@@ -21,7 +21,7 @@
   const count = $derived(items.length)
   const sectionLabel = $derived(t(prefs.uiLocale, getSectionModule(section).labelKey as UiStringKey))
 
-  // Autosave means no undo, so delete needs a confirming second click.
+  // A confirming second click guards against a slip; undo is the further net.
   let armed = $state(false)
 
   const touchesEntry = () =>
