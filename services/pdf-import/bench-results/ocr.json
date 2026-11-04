@@ -1,0 +1,14 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "cer": 0.0091324200913242,
+      "reference_chars": 657
+    }
+  ],
+  "docling": "2.146.0",
+  "ocr_languages": [
+    "eng",
+    "ind"
+  ]
+}
