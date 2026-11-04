@@ -172,14 +172,19 @@ interface Region {
 
 /**
  * With typography, every h2 opens a region, and one whose wording is not a
- * known section is outside the structure. Without it, a region opens where
- * `sectionHeading` reads one, as the rules path always has.
+ * known section is outside the structure. Before the first known heading, an
+ * h2 of unknown wording is a header line set in the heading style (a
+ * headline), so it stays in the header. Without typography, a region opens
+ * where `sectionHeading` reads one, as the rules path always has.
  */
 const regionsOf = (outline: Outline): Region[] => {
   const regions: Region[] = [{ kind: 'header', heading: null, blocks: [] }]
+  let known = false
   for (const { role, block } of outline.nodes) {
+    const matched = outline.confidence === 'typography' && role === 'h2' ? matchHeading(block.text) : null
+    if (matched) known = true
     const kind = outline.confidence === 'typography'
-      ? role === 'h2' ? matchHeading(block.text) ?? 'outside' : null
+      ? role === 'h2' ? matched ?? (known ? 'outside' : null) : null
       : sectionHeading(block.text, block.label)
     if (kind) regions.push({ kind: kind === 'unsupported' ? 'outside' : kind, heading: block, blocks: [] })
     else regions.at(-1)!.blocks.push(block)

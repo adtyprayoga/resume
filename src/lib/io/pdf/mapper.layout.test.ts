@@ -345,6 +345,22 @@ describe('PDF outline mapping', () => {
     expect(leftovers(proposal)).toContain('Hiking')
   })
 
+  it('keeps a header line in the heading style in the header before the first known heading', () => {
+    const proposal = mapExtraction(source(
+      s('b1', 'Rina Wulandari', 'text', S('f1', 20)),
+      s('b2', 'Data Analyst', 'text', S('f2', 16)),
+      s('b3', 'rina.w@example.com | +62 811 0000 5678', 'text', S('f3', 10)),
+      s('b4', 'Profile Summary', 'text', S('f2', 16)),
+      s('b5', 'I have four years of experience in learning and development across banking, retail and education.', 'text', S('f3', 10)),
+      s('b6', 'Hobbies', 'text', S('f2', 16)),
+      s('b7', 'Hiking', 'text', S('f3', 10)),
+    ), 'en')
+    expect(proposal.document.profile.text.en).toMatchObject({ name: 'Rina Wulandari', headline: 'Data Analyst' })
+    expect(proposal.document.contact).toMatchObject({ email: 'rina.w@example.com', phone: '+62 811 0000 5678' })
+    expect(proposal.warnings.filter((warning) => warning.code === 'outside_structure')).toEqual([{ code: 'outside_structure', blocks: ['b6'] }])
+    expect(leftovers(proposal)).toBe('Hobbies\nHiking')
+  })
+
   it('keeps header fields empty from bullets when headings are unknown (fallback)', () => {
     const proposal = mapExtraction(source(
       b('b1', 'Rina Wulandari', 'section_header'),
