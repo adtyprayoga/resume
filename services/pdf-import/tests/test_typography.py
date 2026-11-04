@@ -78,3 +78,29 @@ def test_geometry_letter_majority_and_page_font_identity(tmp_path) -> None:
     assert styled[0].style.font == styled[1].style.font
     assert styled[2].style is None and styled[3].style is None
     assert blocks[0].style is None
+
+
+def test_style_failure_returns_unstyled_blocks(tmp_path, monkeypatch, caplog) -> None:
+    import pypdfium2 as pdfium
+    from reportlab.pdfgen.canvas import Canvas
+    from app.models import BBox, SourceBlock
+    from app.typography import style_blocks
+
+    blocks = [SourceBlock(id="b1", page=1, label="text", text="Body", bbox=BBox(l=10, t=20, r=290, b=70))]
+    broken = tmp_path / "broken.pdf"
+    broken.write_bytes(b"%PDF-1.4 not really a pdf")
+    assert [b.style for b in style_blocks(broken, blocks)] == [None]
+
+    pdf = tmp_path / "styles.pdf"
+    canvas = Canvas(str(pdf), pagesize=(300, 300))
+    canvas.setFont("Helvetica", 12)
+    canvas.drawString(20, 260, "Body")
+    canvas.save()
+
+    def boom(*_args):
+        raise pdfium.PdfiumError("page failed")
+
+    monkeypatch.setattr(pdfium.raw, "FPDFText_GetFontSize", boom)
+    with caplog.at_level("WARNING"):
+        assert [b.style for b in style_blocks(pdf, blocks)] == [None]
+    assert "styles skipped" in caplog.text

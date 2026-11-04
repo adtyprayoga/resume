@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+import logging
 import math
 from contextlib import ExitStack, closing
 from pathlib import Path
@@ -10,6 +11,8 @@ from pathlib import Path
 import pypdfium2 as pdfium
 
 from .models import BlockStyle, SourceBlock
+
+logger = logging.getLogger(__name__)
 
 
 def font_hints(weight: int, italic_angle: int, base_name: str) -> tuple[bool | None, bool | None]:
@@ -32,6 +35,16 @@ def dominant_style(tallies: dict[tuple[int, float], int]) -> tuple[int, float] |
 
 
 def style_blocks(pdf: Path, blocks: list[SourceBlock]) -> list[SourceBlock]:
+    """Styles are optional: if PDFium fails anywhere in the document, every block stays unstyled."""
+    try:
+        styles = _styles(pdf, blocks)
+    except Exception as error:  # noqa: BLE001 - any PDFium/ctypes failure only costs the hints
+        logger.warning("styles skipped: %s", type(error).__name__)
+        styles = {}
+    return [block.model_copy(update={"style": styles.get(i)}) for i, block in enumerate(blocks)]
+
+
+def _styles(pdf: Path, blocks: list[SourceBlock]) -> dict[int, BlockStyle]:
     raw = pdfium.raw
     styles: dict[int, BlockStyle] = {}
     fonts: dict[int, tuple[int, bool | None, bool | None]] = {}
@@ -85,4 +98,4 @@ def style_blocks(pdf: Path, blocks: list[SourceBlock]) -> list[SourceBlock]:
                     identity, size = winner
                     number, bold, italic = fonts[identity]
                     styles[block_index] = BlockStyle(font=f"f{number}", size=size, bold=bold, italic=italic)
-    return [block.model_copy(update={"style": styles.get(i)}) for i, block in enumerate(blocks)]
+    return styles
