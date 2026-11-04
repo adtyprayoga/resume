@@ -421,3 +421,94 @@ describe('outline fallback equivalence', () => {
     expect(styled).toEqual(scannedPart(mapExtraction(stripStyles(e), 'en')))
   })
 })
+
+// Entries from the outline: an h3 company row with h4 roles, and the same
+// employer-row shapes read by the rules path when no entry heading style exists.
+describe('PDF outline entries', () => {
+  const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
+  const s = (id: string, text: string, label: string, style: BlockStyle | null): SourceBlock => ({ ...b(id, text, label), style })
+  const body = S('f1', 10)
+  const name = () => s('b1', 'Rina Wulandari', 'section_header', S('f1', 14))
+  const work = () => s('b2', 'Working Experience', 'section_header', S('f2', 16))
+  const noDates = { start: '', end: null }
+  const jobsOf = (proposal: Proposal) => proposal.document.content.experience.map((job) => ({
+    company: job.company, location: job.text.en.location, role: job.text.en.role, dates: job.dates,
+  }))
+  const twoJobs = [
+    { company: 'Contoh Consulting', location: 'Bandung, Indonesia', role: 'Training Consultant', dates: { start: '2024-09', end: null, current: true } },
+    { company: 'Contoh Edu', location: 'Surabaya, Indonesia', role: 'Curriculum Designer', dates: { start: '2022-09', end: '2024-09' } },
+  ]
+
+  it('maps h3 company rows with h4 roles', () => {
+    const proposal = mapExtraction(source(name(), work(),
+      s('b3', 'Contoh Consulting - Bandung, Indonesia', 'section_header', S('f2', 10)),
+      s('b4', 'Sep 2024 - Present', 'text', body),
+      s('b5', 'Training Consultant', 'section_header', S('f3', 10)),
+      s('b6', 'Designed 12 training modules for banking clients.', 'list_item', body),
+      s('b7', 'Contoh Edu - Surabaya, Indonesia', 'section_header', S('f2', 10)),
+      s('b8', 'Sep 2022 - Sep 2024', 'text', body),
+      s('b9', 'Curriculum Designer', 'section_header', S('f3', 10)),
+      s('b10', 'Mapped 30 courses to national competency standards.', 'list_item', body),
+    ), 'en')
+    expect(jobsOf(proposal)).toEqual(twoJobs)
+    const [first, second] = proposal.document.content.experience
+    expect(proposal.refs).toContainEqual({ path: `experience.${first!.id}.dates`, blocks: ['b4'] })
+    expect(proposal.refs).toContainEqual({ path: `experience.${second!.id}.dates`, blocks: ['b8'] })
+    expect(proposal.refs).toContainEqual({ path: `experience.${first!.id}.company`, blocks: ['b3'] })
+    expect(proposal.refs).toContainEqual({ path: `experience.${first!.id}.location`, blocks: ['b3'] })
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('maps two styled roles under one employer', () => {
+    // The headline keeps f1@10 the body class (the class with the most letters).
+    const proposal = mapExtraction(source(name(), s('b9', 'People Development | Learning & Development | Bilingual Facilitator', 'text', body), work(),
+      s('b3', 'Contoh Group - Jakarta, Indonesia', 'text', S('f2', 10)),
+      s('b4', '2018 - 2024', 'text', body),
+      s('b5', 'Senior Analyst', 'text', S('f3', 10)),
+      s('b6', 'Did A.', 'list_item', body),
+      s('b7', 'Analyst', 'text', S('f3', 10)),
+      s('b8', 'Did B.', 'list_item', body),
+    ), 'en')
+    const jobs = proposal.document.content.experience
+    expect(jobs.map((job) => job.text.en.role)).toEqual(['Senior Analyst', 'Analyst'])
+    expect(jobs.map((job) => [job.company, job.text.en.location])).toEqual(Array(2).fill(['Contoh Group', 'Jakarta, Indonesia']))
+    expect(jobs.map((job) => job.text.en.bullets)).toEqual([['Did A.'], ['Did B.']])
+    expect(jobs.map((job) => job.dates)).toEqual([noDates, noDates])
+    expect(leftovers(proposal)).toContain('2018 - 2024')
+  })
+
+  const plainRows = (style: BlockStyle | null) => [
+    s('b3', 'Contoh Consulting - Bandung, Indonesia', 'text', style),
+    s('b4', 'Sep 2024 - Present', 'text', style),
+    s('b5', 'Training Consultant', 'section_header', style),
+    s('b6', 'Designed 12 training modules for banking clients.', 'list_item', style),
+    s('b7', 'Contoh Edu - Surabaya, Indonesia', 'text', style),
+    s('b8', 'Sep 2022 - Sep 2024', 'text', style),
+    s('b9', 'Curriculum Designer', 'section_header', style),
+    s('b10', 'Mapped 30 courses to national competency standards.', 'list_item', style),
+  ]
+
+  it('maps plain-font job rows under styled headings', () => {
+    const proposal = mapExtraction(source(name(), work(), ...plainRows(body)), 'en')
+    expect(jobsOf(proposal)).toEqual(twoJobs)
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('applies the employer-row rule in fallback too', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Working Experience', 'section_header'), ...plainRows(null)), 'en')
+    expect(jobsOf(proposal)).toEqual(twoJobs)
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('keeps a school title with a trailing location verbatim', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Education', 'section_header'),
+      b('b3', 'Universitas Contoh - Semarang, Indonesia'),
+      b('b4', '2017 - 2021'),
+      b('b5', 'Bachelor Degree in English Literature - GPA: 3.60/4.00'),
+    ), 'en')
+    const school = proposal.document.content.education[0]!
+    expect(school.text.en).toMatchObject({ school: 'Universitas Contoh - Semarang, Indonesia', degree: 'Bachelor Degree in English Literature', field: '' })
+    expect(school.gpa).toBe('3.60/4.00')
+    expect(school.dates).toEqual({ start: '2017', end: '2021' })
+  })
+})

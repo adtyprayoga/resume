@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findContacts, findDateRange, isLocation, matchHeading, parseDate, splitRoleCompany, stripBullet } from './rules'
+import { findContacts, findDateRange, isLocation, matchHeading, parseDate, splitRoleCompany, splitTrailingLocation, stripBullet } from './rules'
 
 describe('matchHeading', () => {
   it.each([
@@ -61,6 +61,17 @@ describe('matchHeading aliases from the resume guide', () => {
 describe('isLocation', () => {
   it.each(['Bandung, Indonesia', 'Jakarta Selatan, DKI Jakarta, Indonesia'])('accepts %s', (text) => expect(isLocation(text)).toBe(true))
   it.each(['Bandung', 'Bachelor of Computer Science, 2013 - 2017', 'A B C D E F, G'])('rejects %s', (text) => expect(isLocation(text)).toBe(false))
+})
+
+describe('splitTrailingLocation', () => {
+  it('splits a trailing location only when it is one', () => {
+    expect(splitTrailingLocation('Contoh Consulting - Bandung, Indonesia')).toEqual({ head: 'Contoh Consulting', location: 'Bandung, Indonesia' })
+    expect(splitTrailingLocation('Contoh Edu | Surabaya, Indonesia')).toEqual({ head: 'Contoh Edu', location: 'Surabaya, Indonesia' })
+    expect(splitTrailingLocation('PT A – B — Jakarta Selatan, Indonesia')).toEqual({ head: 'PT A – B', location: 'Jakarta Selatan, Indonesia' })
+    expect(splitTrailingLocation('Universitas Contoh - S1 Informatika')).toBeNull()
+    expect(splitTrailingLocation(' - Bandung, Indonesia')).toBeNull()
+    expect(splitTrailingLocation('Bandung, Indonesia')).toBeNull()
+  })
 })
 
 describe('parseDate', () => {

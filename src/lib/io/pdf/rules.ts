@@ -98,6 +98,18 @@ export const isDocumentTitle = (text: string): boolean => DOCUMENT_TITLE.test(te
 /** "City, Country" or "City, Region, Country", at most six words. */
 export const isLocation = (text: string): boolean => LOCATION_LIKE.test(text) && text.split(/\s+/).length <= 6
 
+/**
+ * "Company - City, Country": splits at the last spaced dash or bar, only when
+ * what follows is a location and something precedes it.
+ */
+export const splitTrailingLocation = (text: string): { head: string; location: string } | null => {
+  const separator = [...text.matchAll(/\s+[-–—|]\s+/g)].at(-1)
+  if (!separator) return null
+  const head = text.slice(0, separator.index).trim()
+  const location = text.slice(separator.index + separator[0].length).trim()
+  return head && isLocation(location) ? { head, location } : null
+}
+
 // Dates -----------------------------------------------------------------------
 
 const MONTHS: [RegExp, number][] = [

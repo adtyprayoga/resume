@@ -1197,8 +1197,8 @@
     "guide_template": {
       "typography": {
         "expected": 54,
-        "filled": 30,
-        "correct": 27,
+        "filled": 36,
+        "correct": 36,
         "bySection": {
           "profile": {
             "expected": 4,
@@ -1212,8 +1212,8 @@
           },
           "experience": {
             "expected": 17,
-            "filled": 11,
-            "correct": 8
+            "filled": 17,
+            "correct": 17
           },
           "education": {
             "expected": 5,
@@ -1243,22 +1243,22 @@
           "profile.summary": "correct",
           "contact.email": "correct",
           "contact.phone": "correct",
-          "experience.0.company": "wrong",
+          "experience.0.company": "correct",
           "experience.0.role": "correct",
-          "experience.0.location": "missing",
-          "experience.0.dates": "missing",
+          "experience.0.location": "correct",
+          "experience.0.dates": "correct",
           "experience.0.bullets.0": "correct",
           "experience.0.bullets.1": "correct",
-          "experience.1.company": "wrong",
+          "experience.1.company": "correct",
           "experience.1.role": "correct",
-          "experience.1.location": "missing",
-          "experience.1.dates": "missing",
+          "experience.1.location": "correct",
+          "experience.1.dates": "correct",
           "experience.1.bullets.0": "correct",
           "experience.1.bullets.1": "correct",
-          "experience.2.company": "wrong",
+          "experience.2.company": "correct",
           "experience.2.role": "correct",
-          "experience.2.location": "missing",
-          "experience.2.dates": "missing",
+          "experience.2.location": "correct",
+          "experience.2.dates": "correct",
           "experience.2.bullets.0": "correct",
           "education.0.school": "missing",
           "education.0.degree": "missing",
@@ -1292,12 +1292,12 @@
           "references.0.phone": "missing",
           "references.0.email": "missing"
         },
-        "unplaced": 12
+        "unplaced": 10
       },
       "rules": {
         "expected": 54,
-        "filled": 30,
-        "correct": 27,
+        "filled": 36,
+        "correct": 36,
         "bySection": {
           "profile": {
             "expected": 4,
@@ -1311,8 +1311,8 @@
           },
           "experience": {
             "expected": 17,
-            "filled": 11,
-            "correct": 8
+            "filled": 17,
+            "correct": 17
           },
           "education": {
             "expected": 5,
@@ -1342,22 +1342,22 @@
           "profile.summary": "correct",
           "contact.email": "correct",
           "contact.phone": "correct",
-          "experience.0.company": "wrong",
+          "experience.0.company": "correct",
           "experience.0.role": "correct",
-          "experience.0.location": "missing",
-          "experience.0.dates": "missing",
+          "experience.0.location": "correct",
+          "experience.0.dates": "correct",
           "experience.0.bullets.0": "correct",
           "experience.0.bullets.1": "correct",
-          "experience.1.company": "wrong",
+          "experience.1.company": "correct",
           "experience.1.role": "correct",
-          "experience.1.location": "missing",
-          "experience.1.dates": "missing",
+          "experience.1.location": "correct",
+          "experience.1.dates": "correct",
           "experience.1.bullets.0": "correct",
           "experience.1.bullets.1": "correct",
-          "experience.2.company": "wrong",
+          "experience.2.company": "correct",
           "experience.2.role": "correct",
-          "experience.2.location": "missing",
-          "experience.2.dates": "missing",
+          "experience.2.location": "correct",
+          "experience.2.dates": "correct",
           "experience.2.bullets.0": "correct",
           "education.0.school": "missing",
           "education.0.degree": "missing",
@@ -1391,7 +1391,7 @@
           "references.0.phone": "missing",
           "references.0.email": "missing"
         },
-        "unplaced": 12
+        "unplaced": 10
       }
     }
   }

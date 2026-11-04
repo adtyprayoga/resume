@@ -11,8 +11,8 @@ import type {
   ResumeDocument,
   SkillGroup,
 } from '$lib/model/types'
-import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
-import { buildOutline, type Outline } from './outline'
+import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, splitTrailingLocation, stripBullet, type FoundRange, type HeadingKind } from './rules'
+import { buildOutline, type Outline, type OutlineRole } from './outline'
 import { associateDateRows, joinListContinuations, joinSourceLines, partsOf, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
 import type { Extraction } from './types'
 
@@ -238,6 +238,103 @@ const splitEntries = (blocks: SourceBlock[], kind: EntryKind): { lead: SourceBlo
   }
 }
 
+/**
+ * A company row whose roles follow as their own entries. Its tenure is copied
+ * to a role only when the row carries exactly one date and exactly one role
+ * follows, since several roles would each need their own period.
+ */
+interface Employer {
+  block: SourceBlock
+  company: string
+  location: string
+  date?: SourceBlock | undefined
+}
+
+/**
+ * An entry of a section, or an employer row (`employer`). `of` points at the
+ * employer unit an entry may share; `role` marks an entry whose title the
+ * typography reads as a role (an h4 under a company h3).
+ */
+interface Unit {
+  blocks: SourceBlock[]
+  employer?: boolean
+  of?: number | undefined
+  role?: boolean
+}
+
+/** A row's text without a date range that ends it, and that date. */
+const headOf = (block: SourceBlock): { text: string; date: FoundRange | null } => {
+  const date = findDateRange(block.text)
+  if (date && date.from > 0 && !/[\p{L}\p{N}]/u.test(block.text.slice(date.to))) return { text: trimPiece(block.text.slice(0, date.from)), date }
+  return { text: block.text.trim(), date: null }
+}
+
+/** A title the rules path reads as a role that may share an employer. */
+const sharesEmployer = (unit: Unit) => {
+  if (unit.role) return true
+  const text = headOf(unit.blocks[0]!).text
+  return !splitRoleCompany(text) && isRoleTitle(text)
+}
+
+/**
+ * Links entries to employer rows. A unit is an employer when typography puts
+ * a role under it, or when it is a heading (`headed`) that is not itself a
+ * role and the next title is one; later entries share it until an entry names
+ * its own company ("Role at Company").
+ */
+const linkEmployers = (units: Unit[], kind: EntryKind, headed: (unit: Unit) => boolean): Unit[] => {
+  if (kind !== 'experience') return units
+  let current: number | undefined
+  units.forEach((unit, index) => {
+    if (unit.role) {
+      unit.of = current
+      return
+    }
+    const title = unit.blocks[0]!
+    const text = headOf(title).text
+    const next = units[index + 1]
+    if (next && (next.role || (headed(unit) && !isRoleTitle(text) && !splitRoleCompany(text) && isRoleTitle(next.blocks[0]!.text)))) {
+      unit.employer = true
+      current = index
+      return
+    }
+    unit.of = current
+    if (splitRoleCompany(title.text)) current = undefined
+  })
+  return units
+}
+
+/** Rules-path employer rows: a heading-labelled title, or a title followed only by date lines. */
+const rulesUnits = (entries: SourceBlock[][], kind: EntryKind): Unit[] =>
+  linkEmployers(entries.map((blocks) => ({ blocks })), kind, ({ blocks }) => isHeaderLabel(blocks[0]!) || blocks.slice(1).every(isDateLine))
+
+/**
+ * A short standalone line: the outline's h4 is every line of its class under
+ * an h3, so a paragraph that happens to share the class must not start a role.
+ */
+const roleLine = (block: SourceBlock) => {
+  const text = block.text.trim()
+  return !isBullet(block) && !isDateLine(block) && wordCount(text) <= 8 && !/[.!?:;]$/.test(text) && !isLocation(text)
+}
+
+/**
+ * Typography entries: each h3 starts an entry; in experience, each h4 under an
+ * h3 starts a role entry that shares that h3 as employer. An h3 company row
+ * followed by role h3s keeps the rules path's shared-employer reading.
+ */
+const outlineUnits = (blocks: SourceBlock[], kind: EntryKind, roleOf: Map<SourceBlock, OutlineRole>): { lead: SourceBlock[]; units: Unit[] } => {
+  const lead: SourceBlock[] = []
+  const units: Unit[] = []
+  for (const block of blocks) {
+    const role = roleOf.get(block)
+    if (role === 'h3') units.push({ blocks: [block] })
+    else if (!units.length) lead.push(block)
+    else if (kind === 'experience' && role === 'h4' && roleLine(block)) units.push({ blocks: [block], role: true })
+    else units.at(-1)!.blocks.push(block)
+  }
+  return { lead, units: linkEmployers(units, kind, () => true) }
+}
+
 // Mapper -----------------------------------------------------------------------
 
 export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal => {
@@ -249,6 +346,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   const regions = regionsOf(outline)
   // List items never fill header fields.
   const lists = new Set(outline.nodes.filter((node) => node.role === 'list').map((node) => node.block))
+  const roleOf = new Map(outline.nodes.map((node) => [node.block, node.role]))
 
   const ref = (path: string, block: SourceBlock) => {
     const ids = partsOf(block).map(part => part.block.id)
@@ -374,31 +472,37 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
       case 'awards': {
         seen(region.kind)
         const kind: EntryKind = region.kind
-        const blocks = kind === 'education' ? splitEducationRows(region.blocks) : region.blocks
-        const split = splitEntries(blocks, kind)
-        if (!split) {
-          if (kind === 'awards') {
-            for (const block of region.blocks) mapEntry(kind, [block], document, locale, usage, ref, warnings)
-          } else if (region.blocks.length) {
-            warnings.push({ code: 'ambiguous_entries', blocks: region.blocks.map((b) => b.id) })
+        let split: { lead: SourceBlock[]; units: Unit[] }
+        // Typography decides per region: entry headings split it only where they exist.
+        if (outline.confidence === 'typography' && region.blocks.some((block) => roleOf.get(block) === 'h3')) {
+          split = outlineUnits(region.blocks, kind, roleOf)
+        } else {
+          const rules = splitEntries(kind === 'education' ? splitEducationRows(region.blocks) : region.blocks, kind)
+          if (!rules) {
+            if (kind === 'awards') {
+              for (const block of region.blocks) mapEntry(kind, [block], document, locale, usage, ref, warnings)
+            } else if (region.blocks.length) {
+              warnings.push({ code: 'ambiguous_entries', blocks: region.blocks.map((b) => b.id) })
+            }
+            break
           }
-          break
+          split = { lead: rules.lead, units: rulesUnits(rules.entries, kind) }
         }
         if (split.lead.length) warnings.push({ code: 'ambiguous_entries', blocks: split.lead.map((b) => b.id) })
-        let employer: SourceBlock | undefined
-        for (let index = 0; index < split.entries.length; index++) {
-          const entry = split.entries[index]!
-          const title = entry[0]!
-          const titleText = usage.rest(title)
-          const next = split.entries[index + 1]?.[0]
-          if (kind === 'experience' && isHeaderLabel(title) && !isRoleTitle(titleText) && !splitRoleCompany(titleText) && next && isRoleTitle(next.text)) {
-            employer = title
-            usage.take(title)
-            continue
+        const employers = new Map<number, Employer>()
+        split.units.forEach((unit, index) => {
+          if (unit.employer) {
+            const [title, ...rest] = unit.blocks as [SourceBlock, ...SourceBlock[]]
+            const head = headOf(title)
+            usage.take(title, 0, head.date ? head.date.from : title.text.length)
+            const dates = [...(head.date ? [title] : []), ...rest.filter(isDateLine)]
+            const roles = split.units.filter((other) => other.of === index && sharesEmployer(other)).length
+            const { head: company, location } = splitTrailingLocation(head.text) ?? { head: head.text, location: '' }
+            employers.set(index, { block: title, company, location, date: dates.length === 1 && roles === 1 ? dates[0] : undefined })
+            return
           }
-          mapEntry(kind, entry, document, locale, usage, ref, warnings, employer)
-          if (kind === 'experience' && splitRoleCompany(titleText)) employer = undefined
-        }
+          mapEntry(kind, unit.blocks, document, locale, usage, ref, warnings, unit.of === undefined ? undefined : employers.get(unit.of), unit.role)
+        })
         break
       }
       default:
@@ -471,7 +575,8 @@ const mapEntry = (
   usage: Usage,
   ref: Ref,
   warnings: MapWarning[],
-  employer?: SourceBlock,
+  employer?: Employer,
+  asRole = false,
 ) => {
   const item = getSectionModule(kind).emptyItem() as ExperienceItem & EducationItem & ProjectItem & AwardItem
   const text = item.text[locale] as unknown as Record<string, string | string[]>
@@ -520,7 +625,7 @@ const mapEntry = (
   }
 
   if (kind === 'experience') {
-    const split = splitRoleCompany(titleText)
+    const split = asRole ? null : splitRoleCompany(titleText)
     if (split) {
       item.company = split.company
       text.role = split.role
@@ -528,14 +633,26 @@ const mapEntry = (
       else usage.takeRest(title)
       ref(path('company'), title)
       ref(path('role'), title)
-    } else if (isRoleTitle(titleText)) {
+    } else if (asRole ? titleText : isRoleTitle(titleText)) {
       text.role = titleText
       if (ambiguous) usage.take(title, 0, titleLimit)
       else usage.takeRest(title)
       ref(path('role'), title)
       if (employer) {
-        item.company = employer.text.trim()
-        ref(path('company'), employer)
+        item.company = employer.company
+        ref(path('company'), employer.block)
+        if (employer.location) {
+          text.location = employer.location
+          ref(path('location'), employer.block)
+        }
+        // The employer's tenure, only for a role with no date of its own.
+        const tenure = !dateCandidates.length && employer.date ? findDateRange(employer.date.text) : null
+        if (tenure) {
+          dated = true
+          usage.take(employer.date!, tenure.from, tenure.to)
+          item.dates = dateRangeOf(tenure)
+          ref(path('dates'), employer.date!)
+        }
       }
     } else if (titleText) {
       warnings.push({ code: 'ambiguous_title', blocks: [title.id] })
@@ -543,7 +660,9 @@ const mapEntry = (
   } else if (titleText) {
     const field = { education: 'school', projects: 'name', awards: 'title' }[kind]
     const metadata = kind === 'projects' ? projectMetadata(titleText) : null
-    const school = kind === 'education' ? /^(.+?)\s+[–—-]\s+(.+)$/.exec(titleText) : null
+    // "School - City, Country" names the place, not a qualification: kept whole.
+    const schoolSplit = kind === 'education' ? /^(.+?)\s+[–—-]\s+(.+)$/.exec(titleText) : null
+    const school = schoolSplit && !isLocation(schoolSplit[2]!.trim()) ? schoolSplit : null
     if (metadata) {
       text.name = metadata.name
       text.role = metadata.role
