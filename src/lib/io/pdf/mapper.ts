@@ -280,22 +280,29 @@ const sharesEmployer = (unit: Unit) => {
  * Links entries to employer rows. A unit is an employer when typography puts
  * a role under it, or when it is a heading (`headed`) that is not itself a
  * role and the next title is one; later entries share it until an entry names
- * its own company ("Role at Company").
+ * its own company ("Role at Company"). An employer of typography roles is
+ * shared by those roles only.
  */
 const linkEmployers = (units: Unit[], kind: EntryKind, headed: (unit: Unit) => boolean): Unit[] => {
   if (kind !== 'experience') return units
   let current: number | undefined
+  // An employer that typography puts roles under owns only those roles: its
+  // scope ends at the next h3 (or the region's end, at the next h2).
+  let scoped = false
   units.forEach((unit, index) => {
     if (unit.role) {
       unit.of = current
       return
     }
+    if (scoped) current = undefined
+    scoped = false
     const title = unit.blocks[0]!
     const text = headOf(title).text
     const next = units[index + 1]
     if (next && (next.role || (headed(unit) && !isRoleTitle(text) && !splitRoleCompany(text) && isRoleTitle(next.blocks[0]!.text)))) {
       unit.employer = true
       current = index
+      scoped = !!next.role
       return
     }
     unit.of = current

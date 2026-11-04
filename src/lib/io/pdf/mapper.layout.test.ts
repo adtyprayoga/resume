@@ -477,6 +477,23 @@ describe('PDF outline entries', () => {
     expect(leftovers(proposal)).toContain('2018 - 2024')
   })
 
+  it('ends an h4-role employer at the next h3', () => {
+    const proposal = mapExtraction(source(name(), work(),
+      s('b3', 'Contoh Consulting - Bandung, Indonesia', 'section_header', S('f2', 10)),
+      s('b4', 'Sep 2024 - Present', 'text', body),
+      s('b5', 'Training Consultant', 'section_header', S('f3', 10)),
+      s('b6', 'Designed 12 training modules for banking clients.', 'list_item', body),
+      s('b7', 'Freelance Writer', 'section_header', S('f2', 10)),
+      s('b8', 'Jan 2020 - Aug 2024', 'text', body),
+      s('b9', 'Wrote 50 articles on workplace learning for online magazines.', 'list_item', body),
+    ), 'en')
+    expect(jobsOf(proposal)).toEqual([
+      { company: 'Contoh Consulting', location: 'Bandung, Indonesia', role: 'Training Consultant', dates: { start: '2024-09', end: null, current: true } },
+      { company: '', location: '', role: 'Freelance Writer', dates: { start: '2020-01', end: '2024-08' } },
+    ])
+    expect(leftovers(proposal)).not.toContain('Sep 2024 - Present')
+  })
+
   const plainRows = (style: BlockStyle | null) => [
     s('b3', 'Contoh Consulting - Bandung, Indonesia', 'text', style),
     s('b4', 'Sep 2024 - Present', 'text', style),
