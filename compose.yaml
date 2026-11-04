@@ -1,10 +1,14 @@
 # Combined deployment: the resume app with optional PDF import.
 # The static-only deployment needs none of this: `docker build .` as before.
 #
-#   cp .env.example .env   # optional; every value has a default
-#   docker compose up -d --build
+# No host ports are published here. A platform proxy (Coolify/Traefik) routes
+# the domain to web:80 over the Docker network. For local runs, Docker Compose
+# also loads compose.override.yaml, which publishes web on WEB_PORT:
 #
-# One public address (web). The pdf-import service publishes no port.
+#   cp .env.example .env   # optional; every value has a default
+#   docker compose up -d --build        # http://localhost:${WEB_PORT:-8080}
+#
+# The pdf-import service is never published.
 
 services:
   web:
@@ -13,8 +17,8 @@ services:
       args:
         VITE_PDF_IMPORT: "1"
         NGINX_CONF: nginx.pdf-import.conf
-    ports:
-      - "${WEB_PORT:-8080}:80"
+    expose:
+      - "80"
     restart: unless-stopped
     # No depends_on: the site and JSON import keep working while the backend
     # is starting, unhealthy or stopped; PDF conversion reports "unavailable".
