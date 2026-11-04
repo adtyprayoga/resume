@@ -135,35 +135,42 @@ def build_converter():
     )
 
 
-def extract_pdf(path: Path, max_pages: int = 5) -> Extraction:
-    result = build_converter().convert(path, raises_on_error=True, max_num_pages=max_pages)
+def extract_pdf(path: Path, max_pages: int = 5, progress_path: Path | None = None, total_pages: int | None = None) -> Extraction:
+    from .progress import ProgressWriter
+
+    if progress_path is not None and total_pages is None:
+        total_pages = pdf_page_count(path, max_pages)
+    callback = ProgressWriter(progress_path, total_pages) if progress_path is not None and total_pages is not None else None
+    result = build_converter().convert(path, raises_on_error=True, max_num_pages=max_pages, progress_callback=callback)
     doc = result.document
     return Extraction(pages=max(1, len(doc.pages)), blocks=blocks_from_document(doc))
 
 
-def check_pdf(path: Path, max_pages: int) -> int | None:
-    """Opens the file with PDFium before any model loads. Returns an exit code
-    for a file we refuse, or None when it is a readable PDF within limits."""
+def pdf_page_count(path: Path, max_pages: int) -> int:
+    """Validate before loading models and return the selected page count.
+
+    ValueError carries the stable refusal exit code.
+    """
     import pypdfium2 as pdfium
 
     try:
         with path.open("rb") as handle:
             if not handle.read(1024).lstrip().startswith(b"%PDF-"):
-                return EXIT["invalid_file"]
+                raise ValueError(EXIT["invalid_file"])
         document = pdfium.PdfDocument(str(path))
     except pdfium.PdfiumError as error:
         if getattr(error, "err_code", None) == pdfium.raw.FPDF_ERR_PASSWORD:
-            return EXIT["encrypted"]
-        return EXIT["invalid_file"]
+            raise ValueError(EXIT["encrypted"])
+        raise ValueError(EXIT["invalid_file"])
     try:
         pages = len(document)
         if pages < 1:
-            return EXIT["invalid_file"]
+            raise ValueError(EXIT["invalid_file"])
         if pages > max_pages:
-            return EXIT["too_many_pages"]
+            raise ValueError(EXIT["too_many_pages"])
     finally:
         document.close()
-    return None
+    return pages
 
 
 def main(argv: list[str]) -> int:
@@ -173,13 +180,15 @@ def main(argv: list[str]) -> int:
     parser.add_argument("source", type=Path)
     parser.add_argument("target", type=Path)
     parser.add_argument("--max-pages", type=int, required=True)
+    parser.add_argument("--progress", type=Path)
     args = parser.parse_args(argv)
 
-    refused = check_pdf(args.source, args.max_pages)
-    if refused is not None:
-        return refused
+    try:
+        pages = pdf_page_count(args.source, args.max_pages)
+    except ValueError as error:
+        return error.args[0]
 
-    extraction = extract_pdf(args.source, args.max_pages)
+    extraction = extract_pdf(args.source, args.max_pages, progress_path=args.progress, total_pages=pages)
     if not extraction.blocks:
         return EXIT["empty_extraction"]
     tmp = args.target.with_suffix(".partial")

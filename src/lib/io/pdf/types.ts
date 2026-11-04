@@ -54,10 +54,18 @@ export interface JobError {
 
 export type Stage = 'queued' | 'extracting' | 'done'
 
-export type JobStatus =
+export interface PdfProgress {
+  phase: 'initializing' | 'extracting' | 'assembling' | 'finalizing' | 'done'
+  percent: number
+  completed_pages: number
+  total_pages: number | null
+}
+
+export type JobStatus = { progress?: PdfProgress | null } & (
   | { id: string; status: 'processing'; stage: Stage | null }
   | { id: string; status: 'completed'; stage: Stage | null; result: Extraction }
   | { id: string; status: 'failed'; stage: Stage | null; error: JobError }
+)
 
 export interface Health {
   ready: boolean

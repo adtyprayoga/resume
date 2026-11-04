@@ -58,3 +58,16 @@ describe('PDF import contract', () => {
     expect(parseErrorBody('nope')).toBeNull()
   })
 })
+
+it('accepts valid optional progress and ignores malformed telemetry independently', () => {
+  const job = load('valid', 'job_completed.json') as Record<string, unknown>
+  const progress = { phase: 'done', percent: 100, completed_pages: 1, total_pages: 1 }
+  const parsed = parseJobStatus({ ...job, progress })
+  expect(parsed.ok && parsed.value.progress).toEqual(progress)
+  for (const bad of [{ ...progress, percent: 101 }, { ...progress, completed_pages: 2 }, { ...progress, phase: 'unknown' }, { ...progress, percent: 0.5 }, { ...progress, total_pages: '1' }]) {
+    const result = parseJobStatus({ ...job, progress: bad })
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.value.progress).toBeNull()
+  }
+  expect(parseJobStatus({ ...job, progress, result: null }).ok).toBe(false)
+})

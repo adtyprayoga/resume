@@ -58,7 +58,7 @@ describe('sample disclaimer', () => {
 })
 
 describe('toolbar actions', () => {
-  const NAMES = ['Sections', 'Edit', 'Import JSON', 'Export', 'Settings']
+  const NAMES = ['Sections', 'Edit', 'Upload', 'Export', 'Settings']
 
   it('offers five labelled actions in order', () => {
     render(App)
@@ -71,7 +71,7 @@ describe('toolbar actions', () => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'id', documentLocale: 'en' }))
     render(App)
     const names = within(screen.getByRole('toolbar', { name: 'Tindakan resume' })).getAllByRole('button').map((button) => button.getAttribute('aria-label'))
-    expect(names).toEqual(['Bagian', 'Sunting', 'Impor JSON', 'Ekspor', 'Pengaturan'])
+    expect(names).toEqual(['Bagian', 'Sunting', 'Unggah', 'Ekspor', 'Pengaturan'])
   })
 
   it('keeps Edit primary and updates its accessible name', async () => {
@@ -104,7 +104,8 @@ describe('toolbar actions', () => {
   it('opens the existing import review dialog from the upload action', async () => {
     render(App)
     const user = userEvent.setup()
-    await user.click(within(toolbar()).getByRole('button', { name: 'Import JSON' }))
+    await user.click(within(toolbar()).getByRole('button', { name: 'Upload' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Upload JSON' }))
     expect(screen.getByRole('dialog', { name: 'Import resume JSON' })).toBeInTheDocument()
   })
 
@@ -114,9 +115,10 @@ describe('toolbar actions', () => {
     editing.enter()
     editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
     editing.setDraft('profile.name', 'Draft')
-    await user.click(within(toolbar()).getByRole('button', { name: 'Import JSON' }))
+    await user.click(within(toolbar()).getByRole('button', { name: 'Upload' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Upload JSON' }))
     await user.click(within(screen.getByRole('dialog', { name: 'Import resume JSON' })).getByRole('button', { name: 'Close' }))
-    expect(within(toolbar()).getByRole('button', { name: 'Import JSON' })).toHaveFocus()
+    expect(within(toolbar()).getByRole('button', { name: 'Upload' })).toHaveFocus()
     expect(editing.active).not.toBeNull()
     expect(editing.suspended).toBe(false)
   })

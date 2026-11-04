@@ -177,14 +177,14 @@ def create_app(
             manager.release(job)
             raise
         manager.launch(job)
-        return JSONResponse(job.to_status().model_dump(), status_code=202)
+        return JSONResponse(job.to_status().model_dump(exclude={"progress"}), status_code=202)
 
     @app.get(f"{PREFIX}/jobs/{{job_id}}")
-    async def get_job(job_id: str) -> Response:
+    async def get_job(job_id: str, progress: str | None = None) -> Response:
         job = manager.get(job_id) if JOB_ID.match(job_id) else None
         if job is None:
             return error_response("not_found")
-        return JSONResponse(job.to_status().model_dump())
+        return JSONResponse(job.to_status().model_dump(exclude=set() if progress == "1" else {"progress"}))
 
     @app.delete(f"{PREFIX}/jobs/{{job_id}}")
     async def delete_job(job_id: str) -> Response:

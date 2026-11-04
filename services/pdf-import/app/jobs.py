@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from .models import EXIT_CODES, RETRYABLE, ErrorCode, Extraction, JobError, JobStatus
+from .models import EXIT_CODES, RETRYABLE, ErrorCode, Extraction, JobError, JobStatus, PdfProgress
 from .settings import Settings
 
 Command = Callable[[Path, Path], list[str]]
@@ -32,7 +32,7 @@ class Busy(Exception):
 
 
 def extractor_command(settings: Settings) -> Command:
-    return lambda source, target: [sys.executable, "-m", "app.extract", str(source), str(target), "--max-pages", str(settings.max_pages)]
+    return lambda source, target: [sys.executable, "-m", "app.extract", str(source), str(target), "--max-pages", str(settings.max_pages), "--progress", str(target.parent / "progress.json")]
 
 
 def job_error(code: ErrorCode) -> JobError:
@@ -45,6 +45,7 @@ class Job:
     dir: Path
     status: Literal["processing", "completed", "failed"] = "processing"
     stage: Literal["queued", "extracting", "done"] | None = "queued"
+    progress: PdfProgress = field(default_factory=lambda: PdfProgress(phase="initializing", percent=0, completed_pages=0, total_pages=None))
     result: Extraction | None = None
     error: JobError | None = None
     expires_at: float | None = None
@@ -57,7 +58,7 @@ class Job:
         return self.dir / "upload.pdf"
 
     def to_status(self) -> JobStatus:
-        return JobStatus(id=self.id, status=self.status, stage=self.stage, result=self.result, error=self.error)
+        return JobStatus(id=self.id, status=self.status, stage=self.stage, result=self.result, error=self.error, progress=self.progress)
 
 
 def kill_group(process: asyncio.subprocess.Process) -> None:
@@ -125,6 +126,8 @@ class JobManager:
         if job and job.expires_at is not None and job.expires_at <= time.monotonic():
             self.jobs.pop(job_id, None)
             return None
+        if job and job.status == "processing":
+            self._refresh_progress(job)
         return job
 
     async def cancel(self, job_id: str) -> bool:
@@ -182,6 +185,21 @@ class JobManager:
             if self.active is job:
                 self.active = None
 
+    def _refresh_progress(self, job: Job) -> None:
+        try:
+            path = job.dir / "progress.json"
+            if path.stat().st_size > 1024:
+                return
+            progress = PdfProgress.model_validate_json(path.read_bytes())
+        except (OSError, ValueError):
+            return
+        previous = job.progress
+        if progress.phase == "done" or progress.percent < previous.percent or progress.completed_pages < previous.completed_pages:
+            return
+        if previous.total_pages is not None and progress.total_pages != previous.total_pages:
+            return
+        job.progress = progress
+
     def _complete(self, job: Job, target: Path) -> None:
         try:
             result = Extraction.model_validate_json(target.read_bytes())
@@ -192,9 +210,12 @@ class JobManager:
             self._finish(job, error="empty_extraction")
             return
         job.result = result
+        job.progress = PdfProgress(phase="done", percent=100, completed_pages=result.pages, total_pages=result.pages)
         self._finish(job)
 
     def _finish(self, job: Job, error: ErrorCode | None = None) -> None:
+        if error:
+            self._refresh_progress(job)
         job.process = None
         job.status = "failed" if error else "completed"
         job.stage = "done" if not error else None

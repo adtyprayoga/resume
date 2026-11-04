@@ -11,7 +11,7 @@
  *   bun scripts/verify-pdf-import.ts URL --static        static-only build: no PDF option
  * Needs chromium. Uses a throwaway profile; screenshots go to a temp directory.
  */
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, copyFileSync } from 'node:fs'
 import { writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -103,7 +103,7 @@ await cdp.send('DOM.enable')
 await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true })
 
 const evaluate = async (expression: string) => {
-  const { result, exceptionDetails } = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
+  const { result, exceptionDetails } = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, userGesture: true })
   if (exceptionDetails) throw new Error(`${expression}: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`)
   return result.value
 }
@@ -149,15 +149,21 @@ const key = async (keyName: string, code = keyName) => {
   await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: keyName, code })
   await settle()
 }
-const choosePdf = async (name: string) => {
-  const { root } = await cdp.send('DOM.getDocument', { depth: -1 })
-  const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: 'input[type=file][accept*="pdf"]' })
-  if (!nodeId) throw new Error('no PDF file input')
-  await cdp.send('DOM.setFileInputFiles', { nodeId, files: [PDF(name)] })
+const chooseFile = async (path: string) => {
+  await cdp.send('Page.setInterceptFileChooserDialog', { enabled: true })
+  const chooser = cdp.once('Page.fileChooserOpened')
+  await evaluate(`document.querySelector('.file-picker button').click()`)
+  const { backendNodeId, mode } = await chooser
+  check(mode === 'selectSingle', 'native picker requests exactly one file')
+  await cdp.send('DOM.setFileInputFiles', { backendNodeId, files: [path] })
+  await cdp.send('Page.setInterceptFileChooserDialog', { enabled: false })
   await settle()
 }
-const openImport = async (label: string) => {
-  await clickButton(label)
+const choosePdf = async (name: string) => chooseFile(PDF(name))
+let locale: 'en' | 'id' = 'en'
+const openImport = async (_label: string, format: 'pdf' | 'json' = 'pdf') => {
+  await clickButton(locale === 'en' ? 'Upload' : 'Unggah')
+  await clickButton(locale === 'en' ? `Upload ${format.toUpperCase()}` : `Unggah ${format.toUpperCase()}`)
   await waitFor(`!!document.querySelector('[role=dialog]')`, 'import dialog')
 }
 /** Layout checks shared by every width. */
@@ -165,7 +171,7 @@ const layout = async (label: string, width: number) => {
   const report = await evaluate(`(() => {
     const dialog = document.querySelector('[role=dialog]').getBoundingClientRect()
     const small = [...document.querySelectorAll('[role=dialog] button, [role=dialog] summary, [role=dialog] select, [role=dialog] input:not([type=checkbox])')]
-      .filter((el) => el.offsetParent !== null)
+      .filter((el) => el.offsetParent !== null && el.getClientRects().length && !el.classList.contains('file-picker-input'))
       .filter((el) => el.getBoundingClientRect().height < 43.5)
       .map((el) => (el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 40) + ' ' + el.getBoundingClientRect().height.toFixed(3) + 'px')
     return { left: dialog.left, right: dialog.right, scroll: document.documentElement.scrollWidth, inner: innerWidth, small }
@@ -181,9 +187,9 @@ try {
   if (mode === '--static') {
     await viewport(1440, 900)
     await load()
-    await openImport(IMPORT_LABEL)
+    await openImport(IMPORT_LABEL, 'json')
     check(!(await evaluate(`!!document.querySelector('input[type=file][accept*="pdf"]')`)), 'static build: no PDF option')
-    check(await evaluate(`!!document.querySelector('textarea')`), 'static build: JSON import still offered')
+    check(await evaluate(`!!document.querySelector('input[type=file][accept*=json]')`), 'static build: JSON file import still offered')
     const api = await evaluate(`fetch('/api/pdf-import/health').then((r) => r.headers.get('content-type') ?? '')`)
     check(!String(api).includes('json'), 'static build: no PDF service behind the site')
   } else if (mode === '--backend-down') {
@@ -196,10 +202,84 @@ try {
     await waitFor(`!!document.querySelector('[role=alert]')`, 'unavailable alert', 20_000)
     const alert = await evaluate(`document.querySelector('[role=alert]').textContent`)
     check(/unavailable/i.test(alert), `backend down: retryable message shown ("${alert.trim()}")`)
-    check(await evaluate(`!document.querySelector('textarea').disabled`), 'backend down: JSON paste still enabled')
+    check(await evaluate(`!document.querySelector('input[type=file][accept*=json]')`), 'backend down: PDF dialog stays format-specific')
     check(await evaluate(`![...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Convert PDF').disabled`), 'backend down: Convert PDF can be retried')
     await screenshot('backend-down-375')
   } else {
+    for (const language of ['en', 'id'] as const) for (const scheme of ['light', 'dark']) {
+      locale = language
+      await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] })
+      for (const [width, height] of [[320, 640], [375, 812], [768, 1024], [1440, 900]] as const) {
+        await viewport(width, height)
+        await load()
+        await evaluate(`localStorage.setItem('resume-preferences-v1', JSON.stringify({uiLocale:${JSON.stringify(language)}, documentLocale:'en', themeKey:'minimal', fontScale:'standard', introDismissed:true}))`)
+        const loaded = cdp.once('Page.loadEventFired'); await cdp.send('Page.reload'); await loaded; await settle()
+        const label = `${width}px ${language} ${scheme}`
+        await clickButton(language === 'en' ? 'Upload' : 'Unggah')
+        check(await evaluate(`document.activeElement?.getAttribute('role') === 'menuitem'`), `${label}: menu focuses first format`)
+        await key('Escape')
+        check(await evaluate(`document.activeElement?.getAttribute('aria-label') === ${JSON.stringify(language === 'en' ? 'Upload' : 'Unggah')}`), `${label}: Escape restores Upload focus`)
+        await openImport(IMPORT_LABEL)
+        await layout(`${label} PDF picker`, width)
+        check(await evaluate(`!document.querySelector('textarea') && !document.querySelector('input[accept*=json]')`), `${label}: PDF format isolation`)
+        await evaluate(`window.__pdfPosts = 0; window.__originalFetch = window.fetch; window.fetch = (...args) => {if(String(args[0]).includes('/jobs') && args[1]?.method === 'POST') window.__pdfPosts++; return window.__originalFetch(...args)}`)
+        const longName = `synthetic-${'long-filename-'.repeat(16)}.pdf`
+        const selected = join(work, longName)
+        copyFileSync(PDF('en_single'), selected)
+        await chooseFile(selected)
+        await layout(`${label} long filename`, width)
+        check(await evaluate(`window.__pdfPosts === 0`), `${label}: selection alone never uploads`)
+        await screenshot(`picker-${width}-${language}-${scheme}`)
+        await clickButton(language === 'en' ? 'Remove file' : 'Hapus berkas')
+        const drop = async (files: string) => {
+          await evaluate(`(() => {const dataTransfer = new DataTransfer(); ${files}; document.querySelector('.file-picker').dispatchEvent(new DragEvent('drop', {bubbles:true, dataTransfer}))})()`); await settle()
+        }
+        await drop(`dataTransfer.items.add(new File(['wrong'], 'wrong.json', {type:'application/json'}))`)
+        check(await evaluate(`!!document.querySelector('.file-picker [role=alert]')`), `${label}: wrong format drop rejected`)
+        await drop(`dataTransfer.items.add(new File(['a'], 'a.pdf', {type:'application/pdf'})); dataTransfer.items.add(new File(['b'], 'b.pdf', {type:'application/pdf'}))`)
+        check(await evaluate(`!!document.querySelector('.file-picker [role=alert]')`), `${label}: multiple-file drop rejected`)
+        await drop(`dataTransfer.items.add(new File(['%PDF-1.4'], 'drop.pdf', {type:'application/pdf'}))`)
+        check(await evaluate(`document.querySelector('.file-picker-name')?.textContent === 'drop.pdf' && window.__pdfPosts === 0`), `${label}: valid single drop selects without upload`)
+        await clickButton(language === 'en' ? 'Close' : 'Tutup')
+        await openImport(IMPORT_LABEL, 'json')
+        check(await evaluate(`!document.querySelector('input[accept*=pdf]') && !!document.querySelector('input[accept*=json]') && !document.querySelector('details').open`), `${label}: JSON file first and format isolation`)
+        await evaluate(`document.querySelector('details').open = true`); await settle()
+        await layout(`${label} JSON alternate methods`, width)
+        check(await evaluate(`!!document.querySelector('textarea') && !!document.querySelector('input[type=url]')`), `${label}: paste and URL remain available`)
+        await clickButton(language === 'en' ? 'Close' : 'Tutup')
+      }
+    }
+    locale = 'en'
+    await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'light' }] })
+    await viewport(375, 812)
+    await load()
+    await waitFor(`!!localStorage.getItem('resume-document-v1')`, 'initial local document save', 5000)
+    const jsonDocument = await evaluate(`localStorage.getItem('resume-document-v1')`)
+    const jsonPath = join(work, 'synthetic-resume.json')
+    writeFileSync(jsonPath, jsonDocument)
+    for (const method of ['file', 'paste', 'url']) {
+      await openImport(IMPORT_LABEL, 'json')
+      if (method === 'file') {
+        await chooseFile(jsonPath)
+      } else {
+        await evaluate(`document.querySelector('details').open = true`); await settle()
+        const selector = method === 'paste' ? 'textarea' : 'input[type=url]'
+        const value = method === 'paste' ? jsonDocument : 'https://resume-verification.invalid/resume.json'
+        await evaluate(`(() => {const input = document.querySelector(${JSON.stringify(selector)}); input.value=${JSON.stringify(value)}; input.dispatchEvent(new Event('input', {bubbles:true}))})()`)
+        await settle()
+        if (method === 'url') {
+          await cdp.send('Fetch.enable', {patterns:[{urlPattern:'https://resume-verification.invalid/*'}]})
+          const response = cdp.once('Fetch.requestPaused').then(({requestId}) => cdp.send('Fetch.fulfillRequest', {requestId, responseCode:200, responseHeaders:[{name:'Content-Type',value:'application/json'},{name:'Access-Control-Allow-Origin',value:'*'}], body:Buffer.from(jsonDocument).toString('base64')}))
+          await clickButton('Load'); await response; await cdp.send('Fetch.disable')
+        } else await clickButton('Review pasted JSON')
+      }
+      if (await waitFor(`document.querySelector('[role=dialog] h2')?.textContent.trim() === 'Review import'`, `JSON ${method} review`, 10000)) {
+        check(true, `JSON ${method}: existing review reached`)
+        await clickButton('Back')
+        if (method === 'file') check(await evaluate(`document.querySelector('.file-picker-name')?.textContent === 'synthetic-resume.json'`), 'JSON file: Back retains selected file')
+      } else console.log(`      dialog alert: ${await evaluate(`document.querySelector('[role=dialog] [role=alert]')?.textContent?.trim() ?? '(none)'`)}`)
+      await clickButton('Close')
+    }
     for (const [width, height] of [[320, 640], [375, 812], [768, 1024], [1440, 900]] as const) {
       await viewport(width, height)
       await load()
@@ -209,10 +289,15 @@ try {
       })`)
       await openImport(IMPORT_LABEL)
       await layout(`${width}px sources`, width)
+      await evaluate(`window.__progress = []; window.__originalFetch = window.fetch; window.fetch = async (...args) => { const response = await window.__originalFetch(...args); if(String(args[0]).includes('?progress=1')) { const job = await response.clone().json(); if(job.progress) window.__progress.push(job.progress); } return response }`)
       await choosePdf(width === 375 ? 'five_page' : 'en_single')
       await clickButton('Convert PDF')
+      check(await evaluate(`!!document.querySelector('progress') && document.querySelector('progress').max === 100`), `${width}px: native progress exposed while converting`)
       const started = Date.now()
       if (!(await waitFor(`document.querySelector('[role=dialog] h2')?.textContent.trim() === 'Review PDF import'`, `${width}px review`))) continue
+      const observations = await evaluate(`window.__progress`)
+      check(observations.length > 0 && observations.every((p: any, i: number) => p.percent >= (observations[i-1]?.percent ?? 0)), `${width}px: measured progress polls received without regression`)
+      check(await evaluate(`document.querySelector('[role=dialog] [role=status]')?.textContent.includes('100%')`), `${width}px: review announces 100% completion`)
       console.log(`      conversion took ${((Date.now() - started) / 1000).toFixed(1)} s`)
       check(await evaluate(`document.activeElement?.tagName === 'H2'`), `${width}px: focus moves to the review heading`)
       await layout(`${width}px review`, width)

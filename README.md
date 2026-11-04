@@ -163,8 +163,8 @@ extracted text, replacement, cancellation and the unavailable state.
 ## Workspace
 
 Above the resume, five icon buttons have tooltips and accessible names:
-**Sections**, **Edit**, **Import JSON**, **Export** and **Settings**. **Edit**
-opens the editor. **Import JSON** opens the import review. **Export** offers
+**Sections**, **Edit**, **Upload**, **Export** and **Settings**. **Edit**
+opens the editor. **Upload** offers JSON and, when enabled, PDF. Choose a format to open its import dialog. **Export** offers
 **Export PDF**, which prints the current resume, and **Export JSON**.
 **Sections** and **Settings** open and close side panels. The status shows
 whether work is saved in this browser or needs attention.
@@ -195,7 +195,7 @@ actions and help.
 On a first visit the page shows a fictional sample resume. A disclaimer below
 the toolbar appears only while the sample is unchanged; it is separate from
 the save status and excluded from print. A short introduction above the resume
-offers **Start blank**. Use **Edit** or **Import JSON** to
+offers **Start blank**. Use **Edit** or **Upload** to
 edit or import. The introduction disappears once the sample is changed or
 the introduction is dismissed. **Start blank** is also in Settings → Data, where it
 asks for confirmation.
@@ -285,8 +285,11 @@ the print preview is authoritative.
 ## Data
 
 Your resume is held in this browser's local storage, which means clearing site
-data will erase it. **Export JSON** regularly; **Import JSON** restores from a
-file, a pasted payload or an `https` URL.
+data will erase it. **Export JSON** regularly; **Upload → Upload JSON** restores from a file (up to 1,000,000 bytes).
+Choose a file or drop one in the picker; selection opens a local review.
+**Other ways to import JSON** offers paste and `https` URL methods.
+The picker shows the filename and size, with **Change file** and **Remove file**;
+Back retains the selected file so it can be reviewed again.
 
 Every import is validated and reviewed before it replaces your resume. The
 review shows the imported name and section counts; **Replace resume** applies
@@ -308,8 +311,10 @@ whole, since the browser's storage budget is a few megabytes in total.
 
 ### PDF import
 
-When the deployment enables it, **Import resume** also offers **Convert PDF**
-(PDF only, up to 10 MB and 5 pages). The PDF is uploaded to this site's own
+When the deployment enables it, **Upload → Upload PDF** opens the PDF picker
+(PDF only, up to 10 MiB and 5 pages). Choose or drop a single PDF, then select
+**Convert PDF** to send it; selecting a file alone makes no server request.
+The PDF is uploaded to this site's own
 extraction service, which reads its text and layout with
 [Docling](https://github.com/docling-project/docling) and Tesseract OCR for
 scanned pages, entirely on that server: no external AI service or generative
@@ -317,6 +322,14 @@ model is involved. The upload is deleted as soon as conversion ends, the
 extracted text is deleted once the browser has fetched it (or after ten minutes
 at most), and nothing is logged about its content. The finished resume is stored
 in your browser like any other.
+
+During upload, progress is indeterminate. When the server provides progress,
+the percentage measures completed conversion work: converter initialization,
+each completed page, assembly, and validated output. It is not an estimate of
+time remaining. The page count reports completed pages, and progress stays at
+most 99% until the browser has validated and mapped the review draft. Review
+announces 100%. Older servers still show stage messages without a percentage.
+**Cancel conversion** remains available; retry starts progress afresh.
 
 The browser then maps the text to resume fields with fixed bilingual rules:
 section headings, dates, contact details, bullets and entry boundaries it can
