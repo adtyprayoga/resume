@@ -34,6 +34,7 @@ export const sampleDocument = (): ResumeDocument => ({
     },
   },
   content: {
+    references: [],
     certifications: [],
     experience: [
       {

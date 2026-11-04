@@ -23,6 +23,7 @@ const doc = (): ResumeDocument => ({
     { kind: 'awards', enabled: false },
   ],
   content: {
+    references: [],
     education: [],
     experience: [
       {

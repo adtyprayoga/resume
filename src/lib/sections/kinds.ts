@@ -2,7 +2,7 @@
  * Glob keys are not literal types, so a glob alone cannot produce this union.
  * A test asserts the registry matches it, so the two cannot drift.
  */
-export const LIST_SECTION_KINDS = ['experience', 'education', 'projects', 'skills', 'awards', 'certifications'] as const
+export const LIST_SECTION_KINDS = ['experience', 'education', 'projects', 'skills', 'awards', 'certifications', 'references'] as const
 
 export type ListSectionKind = (typeof LIST_SECTION_KINDS)[number]
 
@@ -17,4 +17,5 @@ export const DEFAULT_SECTION_ORDER = [
   'skills',
   'awards',
   'certifications',
+  'references',
 ] as const satisfies readonly ListSectionKind[]

@@ -105,6 +105,13 @@ export const SECTION_FIELDS: Record<ListSectionKind, readonly FieldSpec[]> = {
     spec('date', 'shared', 'month', 'field.date', 'placeholder.awardDate'),
     spec('description', 'localized', 'multiline', 'field.notes'),
   ],
+  references: [
+    spec('name', 'localized', 'text', 'field.name'),
+    spec('position', 'localized', 'text', 'field.position'),
+    spec('phone', 'shared', 'text', 'field.phone'),
+    spec('email', 'shared', 'text', 'field.email'),
+    spec('note', 'localized', 'multiline', 'field.notes'),
+  ],
   certifications: [
     spec('title', 'localized', 'text', 'field.title'),
     spec('issuer', 'localized', 'text', 'field.issuer'),

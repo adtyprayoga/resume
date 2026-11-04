@@ -3,6 +3,7 @@
   import SectionShell from './SectionShell.svelte'
   import AddEntry from '../editing/AddEntry.svelte'
   import Icon from '../shell/Icon.svelte'
+  import ReferencesPreview from '$lib/sections/references/Preview.svelte'
   import CertificationsPreview from '$lib/sections/certifications/Preview.svelte'
   import AwardsPreview from '$lib/sections/awards/Preview.svelte'
   import EducationPreview from '$lib/sections/education/Preview.svelte'
@@ -65,6 +66,8 @@
         <ProjectsPreview items={resume.projects} {locale} {presentation} />
       {:else if section.kind === 'skills'}
         <SkillsPreview items={resume.skills} {presentation} />
+      {:else if section.kind === 'references'}
+        <ReferencesPreview items={resume.references} {locale} {presentation} />
       {:else if section.kind === 'certifications'}
         <CertificationsPreview items={resume.certifications} {locale} {presentation} />
       {:else if section.kind === 'awards'}

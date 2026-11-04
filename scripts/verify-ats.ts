@@ -80,7 +80,7 @@ const fixture = {
       },
     },
   },
-  sections: ['experience', 'education', 'projects', 'skills', 'awards', 'certifications'].map((kind) => ({ kind, enabled: true })),
+  sections: ['experience', 'education', 'projects', 'skills', 'awards', 'certifications', 'references'].map((kind) => ({ kind, enabled: true })),
   content: {
     experience: [job(1, true, false), job(2, false, true), job(3, false, false), job(4, false, false), job(5, false, false)],
     education: [
@@ -117,6 +117,7 @@ const fixture = {
       { id: 'skl_1', text: { en: { title: 'Languages S1CAT', items: ['TypeScript S1A', 'Go S1B', 'SQL S1C'] }, id: { title: 'Bahasa S1CAT', items: ['TypeScript S1A', 'Go S1B', 'SQL S1C'] } } },
       { id: 'skl_2', text: { en: { title: 'Practices S2CAT', items: ['Accessibility S2A', 'Testing S2B'] }, id: { title: 'Praktik S2CAT', items: ['Aksesibilitas S2A', 'Pengujian S2B'] } } },
     ],
+    references: [{ id: 'ref_1', phone: '+62 812 0000 1111', email: 'r1@example.com', text: { en: { name: 'Referee R1NAME', position: 'Lead R1POSITION', note: '' }, id: { name: 'Referee R1NAME', position: 'Lead R1POSITION', note: '' } } }],
     certifications: [{ id: 'crt_1', date: '2023', text: { en: { title: 'Cloud Course C1TITLE', issuer: 'Nusantara Board C1ISSUER', description: 'C1DESC Practitioner level.' }, id: { title: 'Kursus Cloud C1TITLE', issuer: 'Nusantara Board C1ISSUER', description: 'C1DESC Tingkat praktisi.' } } }],
     awards: [
       { id: 'awd_1', date: '2022', text: { en: { title: 'Engineering Award A1TITLE', issuer: 'Nusantara Guild A1ISSUER', description: 'A1DESC For the extraction toolkit.' }, id: { title: 'Penghargaan Rekayasa A1TITLE', issuer: 'Nusantara Guild A1ISSUER', description: 'A1DESC Untuk perangkat ekstraksi.' } } },
@@ -132,6 +133,7 @@ const text = (lang: Lang) => ({
   schools: fixture.content.education.map((item) => ({ ...item, ...item.text[lang] })),
   projects: fixture.content.projects.map((item) => ({ ...item, ...item.text[lang] })),
   skills: fixture.content.skills.map((item) => item.text[lang]),
+  references: fixture.content.references.map((item) => ({ ...item, ...item.text[lang] })),
   certifications: fixture.content.certifications.map((item) => ({ ...item, ...item.text[lang] })),
   awards: fixture.content.awards.map((item) => ({ ...item, ...item.text[lang] })),
 })
@@ -185,6 +187,8 @@ const atsSequence = (lang: Lang): string[] => {
     ...t.awards.flatMap((award) => [award.title, award.date, award.issuer, award.description]),
     en ? 'Courses & Certifications' : 'Kursus & Sertifikasi',
     ...t.certifications.flatMap((item) => [item.title, item.date, item.issuer, item.description]),
+    en ? 'References' : 'Referensi',
+    ...t.references.flatMap((item) => [item.name, item.position, item.phone, item.email]),
   ].filter(Boolean)
 }
 
@@ -1017,7 +1021,7 @@ const main = async () => {
     const scrollY = () => evaluate(`Math.round(window.scrollY)`)
     const short = structuredClone(fixture)
     short.content.experience = short.content.experience.slice(0, 1)
-    for (const kind of ['education', 'projects', 'skills', 'awards', 'certifications'] as const) (short.content as Record<string, unknown[]>)[kind] = []
+    for (const kind of ['education', 'projects', 'skills', 'awards', 'certifications', 'references'] as const) (short.content as Record<string, unknown[]>)[kind] = []
     await seed(short, prefs)
     await click('Sections')
     await evaluate(`window.scrollTo(0, 0)`)

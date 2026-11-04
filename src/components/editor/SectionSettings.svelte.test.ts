@@ -44,7 +44,7 @@ describe('section rows', () => {
     render(SectionSettings, { onNavigate: () => {} })
     expect(screen.queryAllByRole('button', { name: /^Move / })).toHaveLength(0)
     const handles = document.querySelectorAll('.drag-handle')
-    expect(handles).toHaveLength(6)
+    expect(handles).toHaveLength(7)
     for (const handle of handles) {
       expect(handle.querySelector('svg')).not.toBeNull()
       expect(handle.textContent?.trim()).toBe('')
@@ -55,7 +55,7 @@ describe('section rows', () => {
     stubPhone()
     render(SectionSettings, { onNavigate: () => {} })
     expect(screen.getByRole('button', { name: 'Move Experience up' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Move Courses & Certifications down' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Move References down' })).toBeDisabled()
     const awards = row('awards')
     const up = within(awards).getByRole('button', { name: 'Move Awards up' })
     expect(up.querySelector('svg')).not.toBeNull()
@@ -63,8 +63,8 @@ describe('section rows', () => {
     expect(follows(within(awards).getByRole('checkbox', { name: 'Show Awards' }), up)).toBe(true)
     await userEvent.click(screen.getByRole('button', { name: 'Move Experience down' }))
     expect(resumeDoc.current.sections.slice(0, 2).map((s) => s.kind)).toEqual(['education', 'experience'])
-    expect(screen.getByRole('button', { name: 'Reorder Experience, position 2 of 6' })).toHaveFocus()
-    expect(screen.getByRole('status')).toHaveTextContent('Experience, position 2 of 6')
+    expect(screen.getByRole('button', { name: 'Reorder Experience, position 2 of 7' })).toHaveFocus()
+    expect(screen.getByRole('status')).toHaveTextContent('Experience, position 2 of 7')
   })
 
   it('translates the phone move buttons', () => {
@@ -87,8 +87,8 @@ describe('section rows', () => {
     screen.getByRole('button', { name: /^Reorder Education/ }).focus()
     await userEvent.keyboard('{ArrowUp}')
     expect(resumeDoc.current.sections[0]?.kind).toBe('education')
-    expect(screen.getByRole('button', { name: 'Reorder Education, position 1 of 6' })).toHaveFocus()
-    expect(screen.getByRole('status')).toHaveTextContent('Education, position 1 of 6')
+    expect(screen.getByRole('button', { name: 'Reorder Education, position 1 of 7' })).toHaveFocus()
+    expect(screen.getByRole('status')).toHaveTextContent('Education, position 1 of 7')
   })
 
   it('translates the row controls and instructions', async () => {
@@ -98,7 +98,7 @@ describe('section rows', () => {
     expect(screen.getByText(/Seret/)).toHaveTextContent(/di ponsel, gunakan tombol pindah/)
     screen.getByRole('button', { name: /^Ubah urutan Pendidikan/ }).focus()
     await userEvent.keyboard('{ArrowUp}')
-    expect(screen.getByRole('status')).toHaveTextContent('Pendidikan, posisi 1 dari 6')
+    expect(screen.getByRole('status')).toHaveTextContent('Pendidikan, posisi 1 dari 7')
   })
 })
 

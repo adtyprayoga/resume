@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, type UiStringKey } from '$lib/i18n/ui'
   import { normalizeUrl } from '$lib/model/sanitize'
-  import type { AwardItem, CertificationItem, EducationItem, ExperienceItem, Locale, ProjectItem, SkillGroup } from '$lib/model/types'
+  import type { AwardItem, CertificationItem, ReferenceItem, EducationItem, ExperienceItem, Locale, ProjectItem, SkillGroup } from '$lib/model/types'
   import type { ListSectionKind } from '$lib/sections/kinds'
   import { prefs } from '$lib/state/preferences.svelte'
   import DateRangeField from '../ui/DateRangeField.svelte'
@@ -10,7 +10,7 @@
   import TextArea from '../ui/TextArea.svelte'
   import TextField from '../ui/TextField.svelte'
 
-  type SectionItem = ExperienceItem | EducationItem | ProjectItem | SkillGroup | AwardItem | CertificationItem
+  type SectionItem = ExperienceItem | EducationItem | ProjectItem | SkillGroup | AwardItem | CertificationItem | ReferenceItem
   /** One component edits every section's shape; `kind` decides which fields exist. */
   type Loose = { text: Record<Locale, Record<string, any>> } & Record<string, any>
 
@@ -63,6 +63,12 @@
     <DateRangeField bind:value={entry.dates} presentLabel={t(ui, 'date.present')} />
     <TextArea label={label('description')} bind:value={text.description} />
     <LinesField label={label('highlights')} bind:value={text.bullets} />
+  {:else if kind === 'references'}
+    <TextField label={label('name')} bind:value={text.name} />
+    <TextField label={label('position')} bind:value={text.position} />
+    <TextField label={label('phone')} scope="shared" bind:value={entry.phone} />
+    <TextField label={label('email')} scope="shared" bind:value={entry.email} />
+    <TextArea label={label('notes')} bind:value={text.note} />
   {:else if kind === 'skills'}
     <TextField label={label('group')} bind:value={text.title} />
     <TagsField label={label('skills')} bind:value={text.items} />

@@ -47,4 +47,5 @@ export const resolve = (doc: ResumeDocument, locale: Locale): ResolvedResume => 
   skills: doc.content.skills.map((item) => flatten(item, locale)),
   awards: doc.content.awards.map((item) => flatten(item, locale)),
   certifications: doc.content.certifications.map((item) => flatten(item, locale)),
+  references: doc.content.references.map((item) => flatten(item, locale)),
 })

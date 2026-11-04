@@ -115,7 +115,7 @@ describe('certifications schema migration', () => {
     expect(doc.value.content.awards[0]!.text.en.title).toBe('A')
     expect(doc.value.content.certifications).toEqual([])
     expect(doc.value.sections[0]).toEqual({ kind: 'awards', enabled: false })
-    expect(doc.value.sections.at(-1)).toEqual({ kind: 'certifications', enabled: true })
+    expect(doc.value.sections.at(-1)).toEqual({ kind: 'references', enabled: true })
   })
 
   it('coerces certification items like awards', () => {
@@ -128,4 +128,10 @@ describe('certifications schema migration', () => {
     expect(item.text.en).toEqual({ title: 'Cloud', issuer: '', description: 'Practitioner' })
     expect(item.text.id).toEqual({ title: '', issuer: '', description: '' })
   })
+})
+
+it('coerces reference items', () => {
+  const doc = validateDocument({ content: { references: [{ phone: 62, email: 'a@b.co', text: { en: { name: 'Anggi', note: 5 } } }] } })
+  if (!doc.ok) throw new Error('invalid')
+  expect(doc.value.content.references[0]).toMatchObject({ phone: '', email: 'a@b.co', text: { en: { name: 'Anggi', position: '', note: '' } } })
 })

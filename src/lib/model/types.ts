@@ -111,6 +111,19 @@ export type CertificationItem = AwardItem
 export type ResolvedCertificationItem = ResolvedAwardItem
 
 
+interface ReferenceCore {
+  id: string
+  phone: string
+  email: string
+}
+export interface ReferenceText {
+  name: string
+  position: string
+  note: string
+}
+export type ReferenceItem = Localized<ReferenceCore, ReferenceText>
+export type ResolvedReferenceItem = Resolved<ReferenceCore, ReferenceText>
+
 export interface SectionState {
   kind: ListSectionKind
   enabled: boolean
@@ -123,6 +136,7 @@ export interface ResumeSections {
   skills: SkillGroup[]
   awards: AwardItem[]
   certifications: CertificationItem[]
+  references: ReferenceItem[]
 }
 
 /** One structure shared across locales, so the language versions cannot drift in shape. */
@@ -145,4 +159,5 @@ export interface ResolvedResume {
   skills: ResolvedSkillGroup[]
   awards: ResolvedAwardItem[]
   certifications: ResolvedCertificationItem[]
+  references: ResolvedReferenceItem[]
 }
