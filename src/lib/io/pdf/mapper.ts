@@ -576,17 +576,23 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         seen('skills')
         mapSkills(region.blocks, document, locale, usage, ref)
         break
-      case 'mixed_awards':
+      case 'mixed_awards': {
+        // A line that is neither award nor certificate describes the
+        // certificate directly above it; with none above, it stays unplaced.
+        const entries: { kind: 'awards' | 'certifications'; blocks: SourceBlock[] }[] = []
         for (const block of region.blocks) {
           const kind = isAward(block.text) ? 'awards' : isCertificate(block.text) ? 'certifications' : null
-          if (!kind) {
-            warnings.push({ code: 'outside_structure', blocks: [block.id] })
-            continue
-          }
+          const last = entries.at(-1)
+          if (kind) entries.push({ kind, blocks: [block] })
+          else if (last?.kind === 'certifications') last.blocks.push(block)
+          else warnings.push({ code: 'ambiguous_entries', blocks: [block.id] })
+        }
+        for (const { kind, blocks } of entries) {
           seen(kind)
-          mapEntry(kind, [block], document, locale, usage, ref, warnings)
+          mapEntry(kind, blocks, document, locale, usage, ref, warnings)
         }
         break
+      }
       case 'references': {
         seen('references')
         const blocks = region.blocks

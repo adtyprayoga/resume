@@ -614,7 +614,21 @@ describe('PDF outline certifications and references', () => {
     expect(certsOf(proposal)[0]!.slice(0, 2)).toEqual(['Foundation Testing Certificate', 'Example Board'])
     expect(proposal.document.content.awards).toHaveLength(1)
     expect(leftovers(proposal)).toContain('Bahasa Indonesia (Native)')
-    expect(proposal.warnings).toContainEqual({ code: 'outside_structure', blocks: ['b5'] })
+    expect(proposal.warnings).toContainEqual({ code: 'ambiguous_entries', blocks: ['b5'] })
+    expect(proposal.warnings.map((warning) => warning.code)).not.toContain('outside_structure')
+  })
+
+  it('keeps a line under a certificate in a mixed section as its description', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Certifications & Awards', 'section_header'),
+      b('b3', 'Overall rating 4 of 5'),
+      b('b4', 'English Proficiency Certificate, Contoh Testing Board, 2024'),
+      b('b5', 'Score 900/1000'),
+      b('b6', 'Best Volunteer Award, Contoh Foundation, 2022'),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([['English Proficiency Certificate', 'Contoh Testing Board', '2024', 'Score 900/1000']])
+    expect(proposal.document.content.awards).toHaveLength(1)
+    expect(proposal.warnings).toEqual([{ code: 'ambiguous_entries', blocks: ['b3'] }])
+    expect(leftovers(proposal)).toBe('Overall rating 4 of 5')
   })
 
   it('maps a named reference with position and contacts', () => {
