@@ -272,9 +272,16 @@ describe('sectionHeading for certifications and references', () => {
     expect(sectionHeading('Training', 'text')).toBeNull()
     expect(sectionHeading('Reference', 'text')).toBeNull()
     expect(sectionHeading('Training', 'list_item')).toBeNull()
-    expect(sectionHeading('• Training', 'section_header')).toBeNull()
+    expect(sectionHeading('• Training', 'text')).toBeNull()
     expect(sectionHeading('Experience', 'list_item')).toBeNull()
     expect(sectionHeading('➔ Experience', 'text')).toBeNull()
     expect(sectionHeading('Experience', 'text')).toBe('experience')
+  })
+
+  it('opens a section from a heading-labelled line with a decorative glyph', () => {
+    expect(sectionHeading('■ EXPERIENCE', 'section_header')).toBe('experience')
+    expect(sectionHeading('➔ Education', 'title')).toBe('education')
+    expect(sectionHeading('• Training', 'section_header')).toBe('certifications')
+    expect(sectionHeading('■ EXPERIENCE', 'text')).toBeNull()
   })
 })

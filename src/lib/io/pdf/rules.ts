@@ -75,15 +75,16 @@ export const isHeadingLabel = (label: string): boolean => label === 'title' || l
 const UNKNOWN_SECTION = /\b(activities|memberships|involvement|kegiatan|keanggotaan)\b/i
 
 /**
- * The section a line opens on the rules path. A list item or a line with a
- * bullet glyph never opens one: it is an item of the current section. "Languages:"
- * inside a skills list is a label, so an unsupported heading needs a layout
- * heading label; so does an unknown section named by activity/membership
- * wording. Course and reference wordings ("Training", "Certifications:") are
+ * The section a line opens on the rules path. A list item, or a line with a
+ * bullet glyph that is not labelled a heading, never opens one: it is an item
+ * of the current section; a heading-labelled "■ EXPERIENCE" is a decorated
+ * heading. "Languages:" inside a skills list is a label, so an unsupported
+ * heading needs a layout heading label; so does an unknown section named by
+ * activity/membership wording. Course and reference wordings ("Training", "Certifications:") are
  * common skill items and group labels too, so they also need a heading label.
  */
 export const sectionHeading = (text: string, label: string): HeadingKind | null => {
-  if (label === 'list_item' || stripBullet(text).from > 0) return null
+  if (!isHeadingLabel(label) && (label === 'list_item' || stripBullet(text).from > 0)) return null
   const matched = matchHeading(text)
   if (matched === 'unsupported' || (!matched && UNKNOWN_SECTION.test(text))) return isHeadingLabel(label) ? 'unsupported' : null
   if ((matched === 'certifications' || matched === 'references') && !isHeadingLabel(label)) return null

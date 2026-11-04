@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { stripStyles } from './accuracy'
 import { parseExtraction } from './validate'
 import { mapExtraction, type Proposal } from './mapper'
+import { buildOutline } from './outline'
 import type { BBox, BlockStyle, Extraction, SourceBlock } from './types'
 
 const b = (id: string, text: string, label = 'text', options: Partial<Pick<SourceBlock, 'page' | 'group' | 'bbox'>> = {}): SourceBlock => ({
@@ -544,6 +545,35 @@ describe('PDF outline entries', () => {
 
 // Courses & certifications and references from the outline, with the rules
 // path's boundaries where no entry heading style exists.
+describe('PDF headings with a decorative glyph', () => {
+  const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
+  const probe = (styles: { name: BlockStyle; h2: BlockStyle; entry: BlockStyle; body: BlockStyle } | null) => source(
+    { ...b('b1', 'MAYA UTAMI', 'title'), style: styles?.name ?? null },
+    { ...b('b2', '■ EXPERIENCE', 'section_header'), style: styles?.h2 ?? null },
+    { ...b('b3', 'Analyst, PT Contoh', 'section_header'), style: styles?.entry ?? null },
+    { ...b('b4', '2020 - 2023'), style: styles?.body ?? null },
+    { ...b('b5', '• Built dashboards for the regional sales team.', 'list_item'), style: styles?.body ?? null },
+  )
+  const check = (proposal: Proposal) => {
+    expect(proposal.document.content.experience).toHaveLength(1)
+    const job = proposal.document.content.experience[0]!
+    expect(job.dates).toMatchObject({ start: '2020', end: '2023' })
+    expect(job.text.en.bullets).toEqual(['Built dashboards for the regional sales team.'])
+    expect(`${job.text.en.role} ${job.company}`).toContain('Analyst')
+    expect(proposal.unmatched).toEqual([])
+  }
+
+  it('opens the section on the rules path', () => {
+    check(mapExtraction(probe(null), 'en'))
+  })
+
+  it('opens the section when the glyph line carries the heading style', () => {
+    const styled = probe({ name: S('f2', 18), h2: S('f2', 14), entry: S('f3', 10), body: S('f1', 10) })
+    expect(buildOutline(styled.blocks).confidence).toBe('typography')
+    check(mapExtraction(styled, 'en'))
+  })
+})
+
 describe('PDF outline certifications and references', () => {
   const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
   const s = (id: string, text: string, label: string, style: BlockStyle | null): SourceBlock => ({ ...b(id, text, label), style })

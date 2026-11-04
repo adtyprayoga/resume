@@ -39,6 +39,9 @@ const ENTRY_SECTIONS = new Set<HeadingKind>(['experience', 'education', 'project
 const classOf = (block: SourceSegment): string | null => (block.style ? `${block.style.font}@${block.style.size}` : null)
 const letters = (text: string) => text.match(/\p{L}/gu)?.length ?? 0
 const isBullet = (block: SourceSegment) => block.label === 'list_item' || stripBullet(block.text).from > 0
+/** A heading-labelled line behind a decorative glyph ("■ EXPERIENCE"): its wording, not the glyph, decides its role. */
+const decorated = (block: SourceSegment) => isHeadingLabel(block.label) && stripBullet(block.text).from > 0
+const bare = (block: SourceSegment): SourceSegment => (decorated(block) ? { ...block, text: stripBullet(block.text).text } : block)
 
 /** Not a list item, at most `maxWords` letter tokens, and no date range except one that ends the line. */
 const shortStandalone = (block: SourceSegment, maxWords = MAX_HEADING_WORDS) => {
@@ -80,7 +83,7 @@ const fallbackOutline = (blocks: SourceSegment[]): Outline => {
 const headingClass = (styled: SourceSegment[], body: string): string | null => {
   const known = styled.filter((block) => {
     const kind = matchHeading(block.text)
-    return kind !== null && (kind !== 'unsupported' || isHeadingLabel(block.label)) && headingLike(block)
+    return kind !== null && (kind !== 'unsupported' || isHeadingLabel(block.label)) && headingLike(bare(block))
   })
   if (known.length) return top(known.map((block) => [classOf(block)!, 1]))
   const members = new Map<string, SourceSegment[]>()
@@ -103,6 +106,7 @@ export const buildOutline = (blocks: SourceSegment[]): Outline => {
 
   const roles: OutlineRole[] = blocks.map((block) => {
     if (!block.style) return fallbackRole(block)
+    if (decorated(block)) return classOf(block) === h2 && matchHeading(block.text) !== null && headingLike(bare(block)) ? 'h2' : 'list'
     if (isBullet(block)) return 'list'
     return classOf(block) === h2 && headingLike(block) ? 'h2' : 'body'
   })

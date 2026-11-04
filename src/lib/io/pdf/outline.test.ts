@@ -108,6 +108,20 @@ describe('buildOutline', () => {
     expect([outline[2], outline[6]]).toEqual(['body', 'body'])
   })
 
+  it('reads a heading-labelled line with a glyph in the heading style as h2, and a glyph list item as list', () => {
+    const blocks = [
+      b('b1', 'Rina Wulandari', 'text', S('f1', 14)),
+      b('b2', '■ EXPERIENCE', 'section_header', S('f2', 16)),
+      b('b3', 'Designed 12 modules for new hires.', 'text', S('f1', 10)),
+      b('b4', '■ Skills', 'list_item', S('f2', 16)),
+      b('b5', 'Education', 'section_header', S('f2', 16)),
+      b('b6', 'Universitas Contoh, B.Sc. Psychology', 'text', S('f1', 10)),
+    ]
+    expect(buildOutline(blocks).confidence).toBe('typography')
+    expect(roles(blocks)).toEqual(['name', 'h2', 'body', 'list', 'h2', 'body'])
+    expect(roles(single(blocks, null))).toEqual(['name', 'h2', 'body', 'list', 'h2', 'body'])
+  })
+
   it('never promotes a list item to h3', () => {
     const blocks = [...doc.slice(0, 10), b('b14', 'Coached new trainers', 'list_item', S('f2', 10))]
     expect(roles(blocks).at(-1)).toBe('list')
