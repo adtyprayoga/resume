@@ -59,12 +59,39 @@ def oom_kills() -> int:
     return 0
 
 
+def progress_summary(observations: list[dict], terminal: bool = True) -> dict:
+    """Validate measured metadata, retaining no extracted document text."""
+    valid = bool(observations)
+    previous_percent = previous_pages = 0
+    total = None
+    phases = []
+    for item in observations:
+        phase = item.get("phase")
+        percent, pages, count = (item.get(key) for key in ("percent", "completed_pages", "total_pages"))
+        valid &= phase in ("initializing", "extracting", "assembling", "finalizing", "done")
+        valid &= type(percent) is int and previous_percent <= percent <= 100
+        valid &= type(pages) is int and pages >= previous_pages
+        valid &= count is None or (type(count) is int and 1 <= count <= MAX_PAGES and pages <= count)
+        valid &= total is None or count == total
+        previous_percent, previous_pages = percent, pages
+        if count is not None:
+            total = count
+        if phase not in phases:
+            phases.append(phase)
+    valid &= bool(observations) and observations[-1].get("phase") == ("done" if terminal else "finalizing") and (previous_percent == 100 if terminal else previous_percent < 100)
+    valid &= total is not None and previous_pages == total
+    return {"progress_valid": bool(valid), "progress_observations": len(observations),
+            "progress_phases": phases, "completed_pages": previous_pages, "total_pages": total}
+
+
 def run_child(pdf: Path, cancel_after: float | None = None) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out.json"
+        telemetry = Path(tmp) / "progress.json"
+        observations = []
         start = time.monotonic()
         proc = subprocess.Popen(
-            [sys.executable, "-m", "app.extract", str(pdf), str(out), "--max-pages", str(MAX_PAGES)],
+            [sys.executable, "-m", "app.extract", str(pdf), str(out), "--max-pages", str(MAX_PAGES), "--progress", str(telemetry)],
             cwd=ROOT,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
@@ -74,6 +101,13 @@ def run_child(pdf: Path, cancel_after: float | None = None) -> dict:
         deadline = start + (cancel_after if cancel_after is not None else TIMEOUT)
         reaped = None
         while reaped is None and time.monotonic() < deadline:
+            if telemetry.exists():
+                try:
+                    item = json.loads(telemetry.read_text())
+                    if not observations or observations[-1] != item:
+                        observations.append(item)
+                except (OSError, ValueError):
+                    pass
             pid, status, usage = os.wait4(proc.pid, os.WNOHANG)
             if pid:
                 reaped = (status, usage)
@@ -90,9 +124,17 @@ def run_child(pdf: Path, cancel_after: float | None = None) -> dict:
             status, usage = reaped
         proc.returncode = os.waitstatus_to_exitcode(status)
         stderr = proc.stderr.read().decode(errors="replace") if proc.stderr else ""
+        if telemetry.exists():
+            try:
+                item = json.loads(telemetry.read_text())
+                if not observations or observations[-1] != item:
+                    observations.append(item)
+            except (OSError, ValueError):
+                pass
         blocks = len(json.loads(out.read_text())["blocks"]) if out.exists() else None
         return {
             "fixture": pdf.stem,
+            **progress_summary(observations, terminal=False),
             "seconds": round(time.monotonic() - start, 2),
             "exit": proc.returncode,
             "child_max_rss_bytes": usage.ru_maxrss * 1024,
@@ -143,14 +185,18 @@ def upload(base: str, pdf: Path) -> tuple[int, dict]:
 
 def api_convert(base: str, pdf: Path, delete: bool = True) -> dict:
     start = time.monotonic()
+    observations = []
     status, job = upload(base, pdf)
     if status != 202:
         return {"fixture": pdf.stem, "http": status, "error": job.get("error")}
     while job.get("status") == "processing" and time.monotonic() - start < TIMEOUT + 10:
         time.sleep(0.5)
-        status, job = api(base, "GET", f"/jobs/{job['id']}")
+        status, job = api(base, "GET", f"/jobs/{job['id']}?progress=1")
+        if isinstance(job.get("progress"), dict):
+            observations.append(job["progress"])
     run = {
         "fixture": pdf.stem,
+        **progress_summary(observations),
         "seconds": round(time.monotonic() - start, 2),
         "status": job.get("status"),
         "error": job.get("error"),
@@ -162,8 +208,23 @@ def api_convert(base: str, pdf: Path, delete: bool = True) -> dict:
     return run
 
 
+def conversion_passes(run: dict) -> bool:
+    return (run.get("status") == "completed" and bool(run.get("blocks"))
+            and run.get("seconds", TIMEOUT + 1) <= TIMEOUT and run.get("progress_valid") is True)
+
+
+MEMORY_LIMIT = 2_750_000_000
+PAGE_BYTES = 4096
+
+
+def limits_valid(limits: dict) -> bool:
+    """The kernel rounds memory.max down to whole pages; allow exactly that."""
+    memory = limits.get("memory.max", "")
+    return (memory.isdigit() and MEMORY_LIMIT // PAGE_BYTES * PAGE_BYTES <= int(memory) <= MEMORY_LIMIT
+            and limits.get("memory.swap.max") == "0" and limits.get("cpu.max") == "200000 100000")
+
+
 def api_main(base: str, container: str, repeat: int, out: Path) -> int:
-    ttl = None
     runs = []
     for round_ in range(repeat):
         for name in CV_FIXTURES:
@@ -197,8 +258,11 @@ def api_main(base: str, container: str, repeat: int, out: Path) -> int:
 
     events = dict(line.split(" ", 1) for line in container_value(container, "memory.events").splitlines())
     peak = int(container_value(container, "memory.peak"))
-    failures = [r for r in runs if r.get("status") != "completed" or not r.get("blocks")]
+    failures = [r for r in runs if not conversion_passes(r)]
+    limits = {name: container_value(container, name) for name in ("memory.max", "memory.swap.max", "cpu.max")}
+    configured_limits = limits_valid(limits)
     report = {
+        "configured_limits_valid": configured_limits,
         "limits": {
             "memory_max": container_value(container, "memory.max"),
             "swap_max": container_value(container, "memory.swap.max"),
@@ -212,7 +276,7 @@ def api_main(base: str, container: str, repeat: int, out: Path) -> int:
         "busy_after_cancel": health.get("busy"),
         "memory_after_cancel_bytes": after_cancel,
         "runs": runs,
-        "passed": peak < PEAK_LIMIT and int(events.get("oom_kill", "0")) == 0 and not failures
+        "passed": configured_limits and peak < PEAK_LIMIT and int(events.get("oom_kill", "0")) == 0 and not failures
         and expired_after is not None and health.get("busy") is False and cancel_status == 204,
     }
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -251,7 +315,7 @@ def main() -> int:
     cgroup_peak = int(cgroup_value("memory.peak") or 0)
     peak = max(cgroup_peak, max(r["child_max_rss_bytes"] for r in runs))
     conversions = [r for r in runs if not r["cancelled"]]
-    failures = [r for r in conversions if r["exit"] != 0 or r["timed_out"] or not r["blocks"]]
+    failures = [r for r in conversions if r["exit"] != 0 or r["timed_out"] or not r["blocks"] or not r["progress_valid"] or r["seconds"] > TIMEOUT]
     kills = oom_kills()
     report = {
         "versions": {

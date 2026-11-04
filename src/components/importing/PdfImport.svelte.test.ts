@@ -58,7 +58,7 @@ beforeEach(() => {
 
 function mount(props: Record<string, unknown> = {}) {
   const closed = vi.fn()
-  const view = render(ImportDialog, { onClose: () => { closed(); view.unmount() }, pdfImport: true, pdfPollMs: 0, ...props })
+  const view = render(ImportDialog, { onClose: () => { closed(); view.unmount() }, pdfImport: true, format: 'pdf', pdfPollMs: 0, ...props })
   return { ...view, closed }
 }
 
@@ -83,10 +83,10 @@ describe('PDF import source', () => {
     expect(screen.getByLabelText('Paste JSON')).toBeInTheDocument()
   })
 
-  it('sits beside the JSON sources and explains temporary server processing', () => {
+  it('shows only the selected PDF source and explains temporary server processing', () => {
     mount()
     expect(screen.getByRole('heading', { name: 'Import resume' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Paste JSON')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Paste JSON')).toBeNull()
     expect(screen.getByText(/temporary processing/)).toBeInTheDocument()
     expect(screen.getByText(/stays stored in this browser/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Convert PDF' })).toBeDisabled()
@@ -102,6 +102,56 @@ describe('PDF import source', () => {
     expect(screen.getByRole('button', { name: 'Cancel conversion' })).toBeEnabled()
     server.release()
     await screen.findByRole('heading', { name: 'Review PDF import' })
+  })
+
+  it('shows measured pages and caps server completion until the mapped review is ready', async () => {
+    let complete!: () => void
+    let cleanup!: () => void
+    const finish = new Promise<void>((resolve) => { complete = resolve })
+    const removed = new Promise<void>((resolve) => { cleanup = resolve })
+    let polls = 0
+    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') return json({ ...JOB, stage: 'queued' }, 202)
+      if (init?.method === 'DELETE') { await removed; return new Response(null, { status: 204 }) }
+      if (++polls === 1) return json({ ...JOB, status: 'processing', stage: 'extracting', progress: { phase: 'extracting', percent: 50, completed_pages: 1, total_pages: 2 } })
+      await finish
+      return json({ ...JOB, status: 'completed', stage: 'done', progress: { phase: 'done', percent: 100, completed_pages: 2, total_pages: 2 }, result: english() })
+    }))
+    mount()
+    await choosePdf()
+    await waitFor(() => expect(screen.getByRole('progressbar')).toHaveAttribute('value', '50'))
+    expect(screen.getByRole('status')).toHaveTextContent('1 of 2 pages completed')
+    expect(screen.getByText('50%')).toBeInTheDocument()
+    complete()
+    await waitFor(() => expect(screen.getByRole('progressbar')).toHaveAttribute('value', '99'))
+    expect(screen.queryByText(/Conversion complete/)).toBeNull()
+    cleanup()
+    await screen.findByRole('heading', { name: 'Review PDF import' })
+    expect(screen.getByRole('status')).toHaveTextContent('Conversion complete (100%).')
+    expect(screen.queryByRole('progressbar')).toBeNull()
+  })
+
+  it('resets measured progress after cancellation and starts retry indeterminate', async () => {
+    let attempts = 0
+    let polls = 0
+    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') { attempts++; return json({ ...JOB, stage: 'queued' }, 202) }
+      if (init?.method === 'DELETE') return new Response(null, { status: 204 })
+      if (attempts === 1 && ++polls === 1) return json({ ...JOB, status: 'processing', stage: 'extracting', progress: { phase: 'extracting', percent: 40, completed_pages: 1, total_pages: 2 } })
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+      })
+    }))
+    const view = mount()
+    const user = await choosePdf()
+    await waitFor(() => expect(screen.getByRole('progressbar')).toHaveAttribute('value', '40'))
+    await user.click(screen.getByRole('button', { name: 'Cancel conversion' }))
+    await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull())
+    await user.click(screen.getByRole('button', { name: 'Convert PDF' }))
+    expect(screen.getByRole('progressbar')).not.toHaveAttribute('value')
+    expect(screen.queryByText('40%')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Cancel conversion' })).toBeEnabled()
+    view.unmount()
   })
 
   it('cancels on the server and lets the user try again', async () => {
@@ -146,12 +196,12 @@ describe('PDF import source', () => {
     expect(screen.getByRole('button', { name: 'Convert PDF' })).toBeEnabled()
   })
 
-  it('reports an unreachable service as retryable without affecting JSON import', async () => {
+  it('reports an unreachable service as retryable and allows another conversion', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
     mount()
     await choosePdf()
     expect(await screen.findByRole('alert')).toHaveTextContent('PDF conversion is unavailable right now. Try again in a moment.')
-    expect(screen.getByLabelText('Paste JSON')).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Convert PDF' })).toBeEnabled()
   })
 })
 

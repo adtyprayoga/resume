@@ -97,7 +97,9 @@ describe('saved-data recovery', () => {
 
   async function reviewImport() {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    await user.click(screen.getByRole('button', { name: 'Import replacement' }))
+    await user.click(screen.getByRole('button', { name: 'Upload' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Upload JSON' }))
+    await user.click(screen.getByText('Other ways to import JSON'))
     await user.click(screen.getByLabelText('Paste JSON'))
     await user.paste(JSON.stringify(imported()))
     await user.click(screen.getByRole('button', { name: 'Review pasted JSON' }))

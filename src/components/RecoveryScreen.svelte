@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from 'svelte'
+  import UploadMenu from './shell/UploadMenu.svelte'
   import ImportDialog from './ImportDialog.svelte'
   import { sampleDocument } from '../data/sample'
   import { t, translatedMessage, type UiMessage } from '$lib/i18n/ui'
@@ -6,6 +8,9 @@
   import { recovery } from '$lib/state/recovery.svelte'
 
   let importing = $state(false)
+  let importFormat = $state<'pdf' | 'json'>('json')
+  let uploadButton = $state<HTMLButtonElement>()
+  const closeImport = () => { importing = false; void tick().then(() => uploadButton?.focus()) }
   let confirmReset = $state(false)
   let failure = $state<({ message: string } & Partial<UiMessage>) | null>(null)
 
@@ -59,7 +64,7 @@
       {/if}
       <button type="button" class="tool-btn" onclick={retry}>{t(prefs.uiLocale, 'recovery.retry')}</button>
       {#if status.kind === 'recovery'}
-        <button type="button" class="tool-btn" onclick={() => (importing = true)}>{t(prefs.uiLocale, 'recovery.import')}</button>
+        <UploadMenu bind:button={uploadButton} onSelect={(format) => { importFormat = format; importing = true }} />
         <button type="button" class="tool-btn" onclick={reset}>
           {t(prefs.uiLocale, confirmReset ? 'recovery.confirmReset' : 'recovery.reset')}
         </button>
@@ -68,7 +73,7 @@
   </main>
 
   {#if importing}
-    <ImportDialog onClose={() => (importing = false)} commit={(doc) => recovery.commit(doc)} />
+    <ImportDialog format={importFormat} onClose={closeImport} commit={(doc) => recovery.commit(doc)} />
   {/if}
 {/if}
 

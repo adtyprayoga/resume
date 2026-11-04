@@ -31,6 +31,7 @@ function mount() {
 
 async function enter(source: 'paste' | 'file' | 'url', text = JSON.stringify(incoming())) {
   const user = userEvent.setup()
+  if (source !== 'file') await user.click(screen.getByText('Other ways to import JSON'))
   if (source === 'paste') {
     await user.click(screen.getByLabelText('Paste JSON'))
     await user.paste(text)
@@ -69,8 +70,9 @@ describe('import review', () => {
     await enter('file')
     await userEvent.click(screen.getByRole('button', { name: 'Back' }))
     const input = screen.getByLabelText('Resume JSON file') as HTMLInputElement
-    expect(input.files?.[0]?.name).toBe('resume.json')
-    expect(input).toHaveFocus()
+    expect(input).toBeInTheDocument()
+    expect(screen.getByText('resume.json')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Change file' })).toHaveFocus()
     await userEvent.click(screen.getByRole('button', { name: 'Review selected file' }))
     expect(await screen.findByText('Imported Person')).toBeInTheDocument()
     expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
@@ -99,6 +101,7 @@ describe('import review', () => {
   it('associates and announces validation errors without discarding the draft', async () => {
     const before = resumeDoc.snapshot()
     mount()
+    await userEvent.click(screen.getByText('Other ways to import JSON'))
     const input = screen.getByLabelText('Paste JSON')
     await userEvent.type(input, 'invalid')
     await userEvent.click(screen.getByRole('button', { name: 'Review pasted JSON' }))
@@ -135,6 +138,7 @@ describe('import review', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(resolve => { finish = resolve })))
     const before = resumeDoc.snapshot()
     mount()
+    await userEvent.click(screen.getByText('Other ways to import JSON'))
     await userEvent.type(screen.getByLabelText('Resume JSON URL'), 'https://example.com/resume.json')
     await userEvent.click(screen.getByRole('button', { name: 'Load' }))
     expect(screen.getByLabelText('Resume JSON file')).toBeDisabled()
@@ -151,6 +155,7 @@ describe('import review', () => {
   it('shows a skeleton, not a spinner, while loading a URL', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
     const { container } = mount()
+    await userEvent.click(screen.getByText('Other ways to import JSON'))
     await userEvent.type(screen.getByLabelText('Resume JSON URL'), 'https://example.com/resume.json')
     await userEvent.click(screen.getByRole('button', { name: 'Load' }))
     expect(container.ownerDocument.querySelector('.skeleton')).toHaveAttribute('aria-hidden', 'true')
@@ -189,6 +194,7 @@ describe('import review', () => {
 
   it('translates an existing error without losing the pasted draft', async () => {
     mount()
+    await userEvent.click(screen.getByText('Other ways to import JSON'))
     await userEvent.type(screen.getByLabelText('Paste JSON'), 'invalid')
     await userEvent.click(screen.getByRole('button', { name: 'Review pasted JSON' }))
     await act(() => { prefs.uiLocale = 'id' })
@@ -229,6 +235,7 @@ describe('import review', () => {
     const stored = JSON.stringify(before)
     localStorage.setItem(DOCUMENT_KEY, stored)
     const { unmount } = mount()
+    await userEvent.click(screen.getByText('Other ways to import JSON'))
     await userEvent.type(screen.getByLabelText('Resume JSON URL'), 'https://example.com/resume.json')
     await userEvent.click(screen.getByRole('button', { name: 'Load' }))
     expect(signal?.aborted).toBe(false)
@@ -251,6 +258,7 @@ describe('import review', () => {
     }, { highWaterMark: 0 })
     vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { headers: { 'content-type': 'application/json' } })))
     mount()
+    await userEvent.click(screen.getByText('Other ways to import JSON'))
     await userEvent.type(screen.getByLabelText('Resume JSON URL'), 'https://example.com/resume.json')
     await userEvent.click(screen.getByRole('button', { name: 'Load' }))
     await userEvent.click(screen.getByRole('button', { name: 'Close' }))

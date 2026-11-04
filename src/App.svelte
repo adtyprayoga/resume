@@ -1,6 +1,6 @@
 <script lang="ts">
   import ImportDialog from './components/ImportDialog.svelte'
-  import { PDF_IMPORT_ENABLED } from '$lib/io/pdf/client'
+  import UploadMenu from './components/shell/UploadMenu.svelte'
   import PersistenceHost from './components/PersistenceHost.svelte'
   import RecoveryScreen from './components/RecoveryScreen.svelte'
   import ThemeHost from './components/ThemeHost.svelte'
@@ -33,6 +33,9 @@
   let previewContainer = $state<HTMLDivElement | undefined>()
   let previewZoom = $state(1)
   let importing = $state(false)
+  let importFormat = $state<'pdf' | 'json'>('json')
+  let uploadOpen = $state(false)
+  let exportOpen = $state(false)
   let settingsOpen = $state(false)
   let sectionsOpen = $state(false)
   let importButton = $state<HTMLButtonElement | undefined>()
@@ -235,7 +238,8 @@
     return () => query.removeEventListener('change', onChange)
   })
 
-  const openImport = () => {
+  const openImport = (format: 'pdf' | 'json') => {
+    importFormat = format
     editing.suspend()
     importing = true
   }
@@ -280,8 +284,8 @@
           onclick={toggleEdit}
           variant="primary"
         />
-        <IconButton icon="import" label={t(prefs.uiLocale, PDF_IMPORT_ENABLED ? 'import.titleAny' : 'action.importJson')} haspopup="dialog" expanded={importing} onclick={openImport} bind:element={importButton} />
-        <ExportMenu onPdf={exportPdf} onJson={exportJson} />
+        <UploadMenu onSelect={openImport} bind:open={uploadOpen} onOpen={() => (exportOpen = false)} bind:button={importButton} />
+        <ExportMenu onPdf={exportPdf} onJson={exportJson} bind:open={exportOpen} onOpen={() => (uploadOpen = false)} />
         <IconButton
           icon="settings"
           label={t(prefs.uiLocale, 'action.settings')}
@@ -347,6 +351,6 @@
 <div class="sr-only" aria-live="polite" aria-atomic="true" data-print-hide>{editing.announcement}</div>
 
 {#if importing}
-  <ImportDialog onClose={closeImport} />
+  <ImportDialog format={importFormat} onClose={closeImport} />
 {/if}
 {/if}

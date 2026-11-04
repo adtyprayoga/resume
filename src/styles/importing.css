@@ -108,3 +108,34 @@
 .pdf-acknowledge {
   margin-block: 1rem;
 }
+
+.file-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px dashed var(--color-hairline);
+  background: var(--color-surface);
+}
+.file-picker.dragging {
+  border-style: solid;
+  border-color: var(--color-ink);
+}
+.file-picker-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.file-picker-name { max-width: 100%; margin: 0; overflow-wrap: anywhere; font-weight: 600; }
+.file-picker p { margin-block: 0; }
+.import-alternatives { margin-top: 1rem; }
+.import-alternatives summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; text-decoration: underline; }
+.import-alternatives summary:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.pdf-progress { margin-top: 1rem; }
+.pdf-progress progress { width: 100%; accent-color: var(--color-ink); }
+.pdf-percent { font-weight: 700; font-variant-numeric: tabular-nums; }
