@@ -415,6 +415,29 @@ describe('undo and redo', () => {
     expect(redoButton()).not.toHaveAttribute('aria-disabled')
   })
 
+  it.each([false, true])('undoes the first changed draft with exhausted history: %s', async (exhausted) => {
+    render(App)
+    if (exhausted) {
+      resumeDoc.addItem('skills')
+      resumeDoc.undo()
+    }
+    const original = resumeDoc.current.profile.text.en.name
+    editing.enter()
+    editing.begin({ kind: 'field', ref: { owner: 'profile', key: 'name' } })
+    await tick()
+    expect(undoButton()).toHaveAttribute('aria-disabled', 'true')
+    editing.setDraft('profile.name', 'Changed name')
+    await tick()
+    expect(resumeDoc.canUndo).toBe(false)
+    expect(undoButton()).not.toHaveAttribute('aria-disabled')
+    await userEvent.setup().click(undoButton())
+    expect(editing.active).toBeNull()
+    expect(resumeDoc.current.profile.text.en.name).toBe(original)
+    expect(resumeDoc.canRedo).toBe(true)
+    await userEvent.setup().click(redoButton())
+    expect(resumeDoc.current.profile.text.en.name).toBe('Changed name')
+  })
+
   it('does nothing when an unavailable button is clicked', async () => {
     render(App)
     const before = resumeDoc.generation

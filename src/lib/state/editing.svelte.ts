@@ -134,6 +134,13 @@ class EditingSession {
     return !active.refs.every((ref) => itemExists(resumeDoc.current, ref))
   }
 
+  get hasChanges(): boolean {
+    const active = this.active
+    return !!active && !this.isStale && active.refs.some((ref) =>
+      !sameDraft(active.draft[refKey(ref)], active.original[refKey(ref)]),
+    )
+  }
+
   commit(): CommitResult {
     const active = this.active
     if (!active) return 'none'

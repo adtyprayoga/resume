@@ -288,7 +288,7 @@
         <IconButton
           icon="undo"
           label={t(prefs.uiLocale, 'action.undo')}
-          disabled={!resumeDoc.canUndo}
+          disabled={!resumeDoc.canUndo && !editing.hasChanges}
           onclick={() => undo(prefs.uiLocale)}
         />
         <IconButton
