@@ -342,6 +342,54 @@ describe('mapExtraction: conservative rules', () => {
     expect(proposal.document.contact.github).toBe('')
   })
 
+  it('keeps brackets that belong to the text', () => {
+    const proposal = mapExtraction(
+      extraction(
+        block('Experience', 'section_header'),
+        block('Software Engineer, PT Pertamina (Persero)', 'section_header'),
+        block('2019 - 2020'),
+        block('Analyst at Foo (2017 - 2019)', 'section_header'),
+        block('Education', 'section_header'),
+        block('Universitas Contoh', 'section_header'),
+        block('S1 Teknik Informatika (Sarjana), 2013 - 2017'),
+        block('Projects', 'section_header'),
+        block('Resume Builder (Svelte)', 'section_header'),
+      ),
+      'en',
+    )
+    const [first, second] = proposal.document.content.experience
+    expect(first!.company).toBe('PT Pertamina (Persero)')
+    expect(second!.company).toBe('Foo')
+    expect(second!.dates).toEqual({ start: '2017', end: '2019' })
+    expect(proposal.document.content.education[0]!.text.en.degree).toBe('S1 Teknik Informatika (Sarjana)')
+    expect(proposal.document.content.projects[0]!.text.en.name).toBe('Resume Builder (Svelte)')
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('never takes an entry date from a bullet', () => {
+    const proposal = mapExtraction(
+      extraction(
+        block('Experience', 'section_header'),
+        block('Engineer at Foo', 'section_header'),
+        block('Grew revenue by 30% in 2019', 'list_item', 'g1'),
+        block('Led project from 2019 to 2020', 'list_item', 'g1'),
+      ),
+      'en',
+    )
+    const [entry] = proposal.document.content.experience
+    expect(entry!.dates).toEqual({ start: '', end: null })
+    expect(entry!.text.en.bullets).toEqual(['Grew revenue by 30% in 2019', 'Led project from 2019 to 2020'])
+  })
+
+  it.each(['CURRICULUM VITAE', 'Daftar Riwayat Hidup', 'Resume', 'CV'])('does not take the document title %j as the name', (title) => {
+    const proposal = mapExtraction(
+      extraction(block(title, 'title'), block('Budi Santoso', 'section_header'), block('Experience', 'section_header')),
+      'id',
+    )
+    expect(proposal.document.profile.text.id.name).toBe('Budi Santoso')
+    expect(proposal.unmatched).toEqual([])
+  })
+
   it('reports everything unmatched when nothing is recognised', () => {
     const proposal = mapExtraction(extraction(block('Lorem ipsum dolor'), block('sit amet')), 'en')
     expect(proposal.warnings).toContainEqual({ code: 'nothing_recognised', blocks: [] })

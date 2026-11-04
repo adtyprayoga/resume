@@ -13,6 +13,7 @@ export const PDF_IMPORT_BASE = '/api/pdf-import'
 export const MAX_PDF_MB = 10
 export const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024
 export const MAX_PDF_PAGES = 5
+const MAX_RATE_LIMITED_POLLS = 20
 
 /** Build-time flag; the static-only deployment leaves it unset. */
 export const PDF_IMPORT_ENABLED = import.meta.env.VITE_PDF_IMPORT === '1'
@@ -131,11 +132,19 @@ export const convertPdf = async (file: File, options: ConvertOptions): Promise<R
     let status = statusOf(await readJson(created))
     jobId = status.id
 
+    let limited = 0
     while (status.status === 'processing') {
       onStage(status.stage === 'queued' ? 'queued' : 'extracting')
-      await sleep(pollMs, signal)
+      await sleep(pollMs * (1 + Math.min(limited, 4)), signal)
       const polled = await request(`/jobs/${jobId}`)
+      // The service never rate-limits status reads; a 429 here is the proxy's
+      // shared limit, so wait it out rather than abandon a healthy job.
+      if (polled.status === 429 && limited < MAX_RATE_LIMITED_POLLS) {
+        limited += 1
+        continue
+      }
       if (!polled.ok) throw new Stop(await codeOf(polled))
+      limited = 0
       status = statusOf(await readJson(polled))
     }
 

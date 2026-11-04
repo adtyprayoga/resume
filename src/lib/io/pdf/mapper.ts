@@ -50,7 +50,32 @@ export interface Proposal {
 
 // Usage: which characters of each block were consumed -------------------------
 
-const SEPARATORS = /^[\s|,;:•·/\\()[\]–—-]+|[\s|,;:•·/\\()[\]–—-]+$/g
+const SEPARATORS = /^[\s|,;:•·/\\–—-]+|[\s|,;:•·/\\–—-]+$/g
+
+const count = (text: string, char: string) => text.split(char).length - 1
+
+/**
+ * Trims separators left at the edges of a piece after a span was taken out of
+ * it. Brackets are trimmed only when unbalanced (the other half went with the
+ * span, as in "Foo (2019 – 2020)"); "PT Pertamina (Persero)" keeps its own.
+ */
+const trimPiece = (text: string): string => {
+  let out = text.replace(SEPARATORS, '')
+  for (let changed = true; changed; ) {
+    changed = false
+    for (const [open, close] of [['(', ')'], ['[', ']']] as const) {
+      if (out.endsWith(open) || (out.endsWith(close) && count(out, open) < count(out, close))) {
+        out = out.slice(0, -1).replace(SEPARATORS, '')
+        changed = true
+      }
+      if (out.startsWith(close) || (out.startsWith(open) && count(out, open) > count(out, close))) {
+        out = out.slice(1).replace(SEPARATORS, '')
+        changed = true
+      }
+    }
+  }
+  return out
+}
 
 class Usage {
   private spans = new Map<string, [number, number][]>()
@@ -82,7 +107,7 @@ class Usage {
   /** Remaining text, trimmed of separators; empty when nothing meaningful is left. */
   rest(block: SourceBlock): string {
     return this.pieces(block)
-      .map(([text]) => text.replace(SEPARATORS, ''))
+      .map(([text]) => trimPiece(text))
       .filter((text) => /[\p{L}\p{N}]/u.test(text))
       .join(' ')
       .replace(/\s+/g, ' ')
@@ -94,10 +119,10 @@ class Usage {
     const pieces = this.pieces(block)
     const kept: string[] = []
     for (const [text, offset] of pieces) {
-      const trimmed = text.replace(SEPARATORS, '')
+      const trimmed = trimPiece(text)
+      this.take(block, offset, offset + text.length)
       if (!/[\p{L}\p{N}]/u.test(trimmed)) continue
       kept.push(trimmed)
-      this.take(block, offset, offset + text.length)
     }
     if (!pieces.length) this.take(block)
     return kept.join(' ').replace(/\s+/g, ' ').trim()
@@ -108,6 +133,8 @@ class Usage {
 
 const HEADER_LABELS = new Set(['title', 'section_header'])
 const isHeaderLabel = (block: SourceBlock) => HEADER_LABELS.has(block.label)
+/** Document titles, not names: "CURRICULUM VITAE", "Daftar Riwayat Hidup". */
+const DOCUMENT_TITLE = /^\s*(?:curriculum vitae|cv|resume|résumé|daftar riwayat hidup|riwayat hidup)\s*$/i
 const NAME_LIKE = /^[\p{Lu}][\p{L}.'’-]*(?:\s+[\p{L}][\p{L}.'’-]*){0,4}$/u
 const LOCATION_LIKE = /^[\p{L}][\p{L} .'’-]*(?:,\s*[\p{L}][\p{L} .'’-]*){1,2}$/u
 const SKILL_SPLIT = /\s*[,;|•·]\s*/
@@ -123,7 +150,7 @@ const dateRangeOf = (found: FoundRange): DateRange =>
 const isDateLine = (block: SourceBlock) => {
   const found = findDateRange(block.text)
   if (!found) return false
-  const rest = (block.text.slice(0, found.from) + block.text.slice(found.to)).replace(SEPARATORS, '')
+  const rest = trimPiece(block.text.slice(0, found.from) + block.text.slice(found.to))
   return !/[\p{L}\p{N}]/u.test(rest)
 }
 
@@ -201,6 +228,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
 
   const profile = document.profile.text[locale]
   const header = regions[0]!.blocks
+  for (const block of header) if (DOCUMENT_TITLE.test(block.text)) usage.take(block)
   const nameBlock = header.find((block) => isHeaderLabel(block) && !usage.used(block) && NAME_LIKE.test(block.text.trim()))
   if (nameBlock) {
     profile.name = nameBlock.text.trim()
@@ -381,7 +409,8 @@ const mapEntry = (
 
   const description: string[] = []
   for (const block of rest) {
-    takeDates(block)
+    // A year inside an achievement ("…by 30% in 2019") is not the entry's period.
+    if (!isBullet(block)) takeDates(block)
     if (usage.rest(block) === '') continue
 
     if (isBullet(block) && kind !== 'education' && kind !== 'awards') {

@@ -231,8 +231,10 @@ try {
         await key('Tab')
         check(await evaluate(`document.activeElement?.tagName === 'SELECT'`), '1440px: next Tab reaches the language select')
         await key('Escape')
-        check(await evaluate(`!document.querySelector('[role=dialog]')`), '1440px: Escape dismisses the review')
-        check(await evaluate(`!document.body.textContent.includes('Jane Doe')`), '1440px: dismissing leaves the resume unchanged')
+        check(await evaluate(`!!document.querySelector('[role=dialog]')`), '1440px: Escape does not discard the review')
+        await clickButton('Cancel')
+        check(await evaluate(`!document.querySelector('[role=dialog]')`), '1440px: Cancel dismisses the review')
+        check(await evaluate(`!document.querySelector('.resume-paper')?.textContent.includes('Jane Doe')`), '1440px: dismissing leaves the resume unchanged')
 
         // Replacement.
         await openImport(IMPORT_LABEL)
@@ -256,7 +258,7 @@ try {
         const freed = await waitFor(`fetch('/api/pdf-import/health').then((r) => r.json()).then((h) => h.busy === false)`, 'slot release', 15_000)
         check(freed, '1440px: the server slot is free after cancelling')
       } else {
-        await key('Escape')
+        await clickButton('Cancel')
       }
     }
   }

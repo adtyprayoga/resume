@@ -124,6 +124,16 @@ describe('PDF import source', () => {
     expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
   })
 
+  it('keeps keyboard focus inside the dialog through conversion and cancellation', async () => {
+    service(english(), { hold: true })
+    mount()
+    const user = await choosePdf()
+    const cancel = await screen.findByRole('button', { name: 'Cancel conversion' })
+    expect(cancel).toHaveFocus()
+    await user.click(cancel)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Convert PDF' })).toHaveFocus())
+  })
+
   it('announces a conversion failure and allows another attempt', async () => {
     service({ code: 'busy' })
     mount()
@@ -275,6 +285,17 @@ describe('PDF review', () => {
     expect(closed).toHaveBeenCalledOnce()
     expect($state.snapshot(editing.active)).toEqual(draftBefore)
     expect(editing.suspended).toBe(true)
+  })
+
+  it('does not discard the review on Escape or a backdrop click', async () => {
+    service()
+    const { closed, container } = mount()
+    const user = await review()
+    await user.type(screen.getByLabelText('Name'), ' edited')
+    await user.keyboard('{Escape}')
+    await user.click(container.querySelector('.drawer-overlay')!)
+    expect(closed).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Name')).toHaveValue('Jane Doe edited')
   })
 
   it('shows recognition warnings', async () => {

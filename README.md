@@ -332,7 +332,9 @@ text was not placed, **Replace resume** asks you to confirm you have checked it
 first. Replacement goes through the same validation as
 JSON import and is saved before your current resume changes, so a validation or
 storage failure leaves it untouched. Cancelling or closing at any point, even
-mid-conversion, cancels the job on the server.
+mid-conversion, cancels the job on the server. While you review, Escape and
+clicks outside the dialog are ignored so your corrections are not lost by
+accident; use **Cancel** or **Close**.
 
 Imported data is validated field by field rather than trusted: containers must
 have the right shape, leaves are coerced to safe defaults, URLs are restricted
@@ -453,7 +455,10 @@ PDF** reports that conversion is unavailable and can be retried.
 
 On Coolify, deploy the repository as a **Docker Compose** resource using
 `compose.yaml`, assign the domain to the `web` service only (port `80`), and
-leave `pdf-import` without a domain. The static-only deployment above is
+leave `pdf-import` without a domain. The proxy config trusts `X-Forwarded-For`
+from private addresses only, so the upload and polling limits apply per visitor
+behind Coolify's proxy; if your proxy reaches the site from a public address,
+add it with `set_real_ip_from` in `nginx.pdf-import.conf`. The static-only deployment above is
 unchanged and remains the default.
 
 ### Other static hosts

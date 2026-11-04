@@ -128,6 +128,21 @@ describe('convertPdf', () => {
     expect(deleteInit.signal).toBeUndefined()
   })
 
+  it('keeps polling through a transient rate limit instead of abandoning the job', async () => {
+    let polls = 0
+    const { fetch, calls } = server((method) => {
+      if (method === 'POST') return json(processing, 202)
+      if (method === 'DELETE') return new Response(null, { status: 204 })
+      polls += 1
+      if (polls === 1) return new Response('<html>429</html>', { status: 429 })
+      return json(completed)
+    })
+    const result = await run(fetch).done
+    expect(result.ok).toBe(true)
+    expect(calls.filter((c) => c.startsWith('DELETE'))).toHaveLength(1)
+    expect(calls.at(-1)).toBe(`DELETE /api/pdf-import/jobs/${ID}`)
+  })
+
   it('rejects an oversized file before uploading', async () => {
     const { fetch, calls } = server(() => json(processing, 202))
     const big = new File(['x'], 'cv.pdf', { type: 'application/pdf' })

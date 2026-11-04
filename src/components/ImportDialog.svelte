@@ -51,6 +51,8 @@
   let pdfError = $state<({ error: string } & Partial<UiMessage>) | null>(null)
   let pdfReview = $state.raw<{ proposal: Proposal; extraction: Extraction } | null>(null)
   let pdfRequest: AbortController | null = null
+  let convertButton = $state<HTMLButtonElement>()
+  let cancelPdfButton = $state<HTMLButtonElement>()
   let closed = false
   let request: AbortController | null = null
 
@@ -95,6 +97,8 @@
     const current = new AbortController()
     pdfRequest = current
     pdfStage = 'uploading'
+    // Convert is about to be disabled; keep focus on a live control in the modal.
+    void tick().then(() => { if (pdfRequest === current) cancelPdfButton?.focus() })
     const result = await convertPdf(pdfFile, { signal: current.signal, pollMs: pdfPollMs, onStage: (stage) => { if (!current.signal.aborted) pdfStage = stage } })
     if (closed || pdfRequest !== current) return
     pdfRequest = null
@@ -102,11 +106,21 @@
     if (!result.ok) {
       if (result.messageKey === 'pdf.error.cancelled') pdfNotice = result
       else pdfError = result
+      await tick()
+      if (!closed) convertButton?.focus()
       return
     }
     pdfReview = { proposal: mapExtraction(result.value, prefs.documentLocale), extraction: result.value }
     await tick()
     if (!closed) titleElement?.focus()
+  }
+
+  /**
+   * The PDF review is an editing form whose server copy is already gone, so a
+   * stray Escape or backdrop tap must not throw it away; Cancel and Close still do.
+   */
+  const dismiss = () => {
+    if (!pdfReview) close()
   }
 
   const cancelConversion = () => {
@@ -205,12 +219,12 @@
   }
 </script>
 
-<svelte:window onkeydown={(event) => { if (event.key === 'Escape') { event.preventDefault(); close() } }} />
+<svelte:window onkeydown={(event) => { if (event.key === 'Escape') { event.preventDefault(); dismiss() } }} />
 
 <div
   class="drawer-overlay import-overlay"
   role="presentation"
-  onclick={(event) => { if (event.target === event.currentTarget) close() }}
+  onclick={(event) => { if (event.target === event.currentTarget) dismiss() }}
 >
   <div class="drawer import-dialog" class:import-dialog-wide={pdfReview !== null} role="dialog" aria-modal="true" aria-labelledby="{uid}-title" use:focusTrap>
     <header class="drawer-head">
@@ -239,9 +253,9 @@
             <p id="{uid}-pdf-hint" class="field-hint">{t(prefs.uiLocale, 'pdf.privacy')}</p>
             <p id="{uid}-pdf-limits" class="field-hint">{t(prefs.uiLocale, 'pdf.limits', { size: MAX_PDF_MB, pages: MAX_PDF_PAGES })}</p>
             <div class="import-actions">
-              <button type="button" class="tool-btn" disabled={pdfBusy || busy || !pdfFile} onclick={convert}>{t(prefs.uiLocale, 'pdf.convert')}</button>
+              <button type="button" class="tool-btn" bind:this={convertButton} disabled={pdfBusy || busy || !pdfFile} onclick={convert}>{t(prefs.uiLocale, 'pdf.convert')}</button>
               {#if pdfBusy}
-                <button type="button" class="tool-btn" onclick={cancelConversion}>{t(prefs.uiLocale, 'pdf.cancel')}</button>
+                <button type="button" class="tool-btn" bind:this={cancelPdfButton} onclick={cancelConversion}>{t(prefs.uiLocale, 'pdf.cancel')}</button>
               {/if}
             </div>
             {#if pdfStage || pdfNotice}
