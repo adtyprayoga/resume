@@ -108,6 +108,14 @@
   border-color: var(--color-ink);
 }
 
+.icon-btn[aria-disabled='true'],
+.icon-btn[aria-disabled='true']:hover {
+  background: var(--color-surface);
+  border-color: var(--color-hairline);
+  color: var(--color-muted);
+  cursor: default;
+}
+
 .icon-btn:focus-visible {
   outline: 2px solid var(--color-accent-strong);
   outline-offset: 2px;
