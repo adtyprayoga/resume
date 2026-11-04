@@ -200,6 +200,9 @@ edit or import. The introduction disappears once the sample is changed or
 the introduction is dismissed. **Start blank** is also in Settings → Data, where it
 asks for confirmation.
 
+The available sections are Experience, Education, Projects, Skills, Awards, and
+Courses & Certifications.
+
 The app starts in **Preview**. Press **Edit** to reveal what can be changed;
 editable text gets a dashed outline and a hint above the page explains the
 keys:

@@ -372,9 +372,9 @@ try {
     if (await waitFor(`document.querySelector('[role=dialog] h2')?.textContent.trim() === 'Review PDF import'`, 'progression review')) {
       const counts = await evaluate(`(() => {
         const names = [...document.querySelectorAll('.pdf-entry legend')].map(el => el.textContent.trim())
-        return ['Experience', 'Projects', 'Education', 'Skills', 'Awards'].map(kind => names.filter(name => name.startsWith(kind + ' entry ')).length)
+        return ['Experience', 'Projects', 'Education', 'Skills', 'Awards', 'Courses & Certifications'].map(kind => names.filter(name => name.startsWith(kind + ' entry ')).length)
       })()`)
-      check(JSON.stringify(counts) === JSON.stringify([4, 5, 2, 7, 1]), 'progression: four roles, five projects, two schools, seven skill groups and one award')
+      check(JSON.stringify(counts) === JSON.stringify([4, 5, 2, 7, 1, 0]), 'progression: four roles, five projects, two schools, seven skill groups and one award')
       await clickButton('Replace resume')
       check(await evaluate(`document.querySelector('[role=alert]')?.textContent.includes('unplaced text') ?? false`), 'progression: unplaced text still requires acknowledgment')
       await evaluate(`document.querySelector('.pdf-acknowledge input').click()`)

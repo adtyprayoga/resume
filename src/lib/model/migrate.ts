@@ -18,6 +18,6 @@ export const migrate = (raw: unknown): Result<Record<string, unknown>> => {
     )
   }
 
-  // Version 1 is current; future steps chain here.
+  // Version 1 needs no data rewrite; validation appends missing sections.
   return ok({ ...raw, schemaVersion: SCHEMA_VERSION })
 }

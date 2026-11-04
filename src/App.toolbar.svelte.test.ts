@@ -367,7 +367,7 @@ describe('section settings inside the Sections panel', () => {
     render(App)
     const { user, panel } = await openSections()
     const before = resumeDoc.current.sections.map((section) => section.kind)
-    within(panel).getByRole('button', { name: 'Reorder Experience, position 1 of 5' }).focus()
+    within(panel).getByRole('button', { name: 'Reorder Experience, position 1 of 6' }).focus()
     await user.keyboard('{ArrowDown}')
     expect(resumeDoc.current.sections.map((section) => section.kind)).toEqual([before[1], before[0], ...before.slice(2)])
   })

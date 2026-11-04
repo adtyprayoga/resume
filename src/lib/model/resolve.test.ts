@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { resolve } from './resolve'
-import type { ResumeDocument } from './types'
+import { SCHEMA_VERSION, type ResumeDocument } from './types'
 
 const doc = (): ResumeDocument => ({
-  schemaVersion: 1,
+  schemaVersion: SCHEMA_VERSION,
   contact: {
     email: 'a@b.c',
     phone: '+62 811',
@@ -38,6 +38,7 @@ const doc = (): ResumeDocument => ({
     projects: [],
     skills: [],
     awards: [],
+    certifications: [],
   },
 })
 
@@ -51,6 +52,16 @@ describe('resolve', () => {
       role: 'Engineer',
       bullets: ['One'],
     })
+  })
+
+  it('resolves certifications with per-field locale fallback and shared identity', () => {
+    const d = doc()
+    d.content.certifications = [{ id: 'crt_1', date: '2024-05', text: {
+      en: { title: 'Cloud course', issuer: '', description: 'Practitioner' },
+      id: { title: 'Kursus cloud', issuer: 'Dewan', description: '' },
+    } }]
+    expect(resolve(d, 'en').certifications[0]).toEqual({ id: 'crt_1', date: '2024-05', title: 'Cloud course', issuer: 'Dewan', description: 'Practitioner' })
+    expect(resolve(d, 'id').certifications[0]).toEqual({ id: 'crt_1', date: '2024-05', title: 'Kursus cloud', issuer: 'Dewan', description: 'Practitioner' })
   })
 
   it('keeps shared fields identical across locales', () => {

@@ -105,6 +105,12 @@ export const SECTION_FIELDS: Record<ListSectionKind, readonly FieldSpec[]> = {
     spec('date', 'shared', 'month', 'field.date', 'placeholder.awardDate'),
     spec('description', 'localized', 'multiline', 'field.notes'),
   ],
+  certifications: [
+    spec('title', 'localized', 'text', 'field.title'),
+    spec('issuer', 'localized', 'text', 'field.issuer'),
+    spec('date', 'shared', 'month', 'field.date', 'placeholder.certificationDate'),
+    spec('description', 'localized', 'multiline', 'field.notes'),
+  ],
 }
 
 export const refKey = (ref: FieldRef): string =>

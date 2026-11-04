@@ -12,16 +12,17 @@
     items,
     locale,
     presentation = 'classic',
-  }: { items: ResolvedAwardItem[]; locale: Locale; presentation?: ResumePresentation } = $props()
+    section = 'awards',
+  }: { items: ResolvedAwardItem[]; locale: Locale; presentation?: ResumePresentation; section?: 'awards' | 'certifications' } = $props()
 
-  const R = (id: string, key: string): FieldRef => ({ owner: 'item', section: 'awards', id, key })
+  const R = (id: string, key: string): FieldRef => ({ owner: 'item', section, id, key })
   const editMode = $derived(editing.mode === 'edit')
 </script>
 
 {#if presentation === 'ats'}
   {#each items as item (item.id)}
     {@const date = formatMonth(item.date, locale)}
-    <EntryShell section="awards" id={item.id} class="ats-entry">
+    <EntryShell {section} id={item.id} class="ats-entry">
       <div class="ats-entry-head">
         <h3 class="item-title"><Editable ref={R(item.id, 'title')} value={item.title} /></h3>
         {#if date}<p class="item-dates"><Editable ref={R(item.id, 'date')} value={date} /></p>{:else if editMode}<p class="item-dates" data-print-hide><Editable ref={R(item.id, 'date')} value="" /></p>{/if}
@@ -33,7 +34,7 @@
 {:else}
   {#each items as item (item.id)}
     {@const parts = [{ ref: R(item.id, 'issuer'), value: item.issuer }, { ref: R(item.id, 'description'), value: item.description }]}
-    <EntryShell section="awards" id={item.id}>
+    <EntryShell {section} id={item.id}>
       <div class="item-head">
         <h3 class="item-title"><Editable ref={R(item.id, 'title')} value={item.title} /></h3>
         <span class="item-dates"><Editable ref={R(item.id, 'date')} value={formatMonth(item.date, locale)} /></span>

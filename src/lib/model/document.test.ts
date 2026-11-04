@@ -104,3 +104,28 @@ describe('migrate', () => {
     expect(migrate('x').ok).toBe(false)
   })
 })
+
+describe('certifications schema migration', () => {
+  it('migrates a schema-1 resume and appends the new section', () => {
+    const migrated = migrate({ schemaVersion: 1, sections: [{ kind: 'awards', enabled: false }], content: { awards: [{ id: 'awd_1', date: '2022', text: { en: { title: 'A' } } }] } })
+    if (!migrated.ok) throw new Error('migration failed')
+    const doc = validateDocument(migrated.value)
+    if (!doc.ok) throw new Error('invalid')
+    expect(doc.value.schemaVersion).toBe(2)
+    expect(doc.value.content.awards[0]!.text.en.title).toBe('A')
+    expect(doc.value.content.certifications).toEqual([])
+    expect(doc.value.sections[0]).toEqual({ kind: 'awards', enabled: false })
+    expect(doc.value.sections.at(-1)).toEqual({ kind: 'certifications', enabled: true })
+  })
+
+  it('coerces certification items like awards', () => {
+    const doc = validateDocument({ content: { certifications: [null, 4, { date: '2024-05', text: { en: { title: 'Cloud', issuer: 4, description: 'Practitioner' } } }] } })
+    if (!doc.ok) throw new Error('invalid')
+    expect(doc.value.content.certifications).toHaveLength(1)
+    const item = doc.value.content.certifications[0]!
+    expect(item.id).toMatch(/^crt_/)
+    expect(item.date).toBe('2024-05')
+    expect(item.text.en).toEqual({ title: 'Cloud', issuer: '', description: 'Practitioner' })
+    expect(item.text.id).toEqual({ title: '', issuer: '', description: '' })
+  })
+})

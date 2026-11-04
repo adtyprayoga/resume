@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, type UiStringKey } from '$lib/i18n/ui'
   import { normalizeUrl } from '$lib/model/sanitize'
-  import type { AwardItem, EducationItem, ExperienceItem, Locale, ProjectItem, SkillGroup } from '$lib/model/types'
+  import type { AwardItem, CertificationItem, EducationItem, ExperienceItem, Locale, ProjectItem, SkillGroup } from '$lib/model/types'
   import type { ListSectionKind } from '$lib/sections/kinds'
   import { prefs } from '$lib/state/preferences.svelte'
   import DateRangeField from '../ui/DateRangeField.svelte'
@@ -10,7 +10,7 @@
   import TextArea from '../ui/TextArea.svelte'
   import TextField from '../ui/TextField.svelte'
 
-  type SectionItem = ExperienceItem | EducationItem | ProjectItem | SkillGroup | AwardItem
+  type SectionItem = ExperienceItem | EducationItem | ProjectItem | SkillGroup | AwardItem | CertificationItem
   /** One component edits every section's shape; `kind` decides which fields exist. */
   type Loose = { text: Record<Locale, Record<string, any>> } & Record<string, any>
 
