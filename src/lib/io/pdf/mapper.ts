@@ -397,8 +397,9 @@ const courseRows = (blocks: SourceBlock[], roleOf: Map<SourceBlock, OutlineRole>
 /**
  * References: a name line starts an entry, and `lines(i)` says how many of the
  * following lines belong to it. The first of them, up to its first contact
- * and that contact's label ("Phone:"), is the position; the first phone and email in any of them fill those
- * fields; another line without contacts is the note. A line outside an entry
+ * and that contact's label ("Phone:"), is the position; the first phone and
+ * email in any of them fill those fields; another line without contacts is
+ * the note. A line outside an entry
  * becomes a note entry, unless it holds contacts: then it stays unplaced.
  */
 const mapReferences = (blocks: SourceBlock[], lines: (index: number) => number | null, document: ResumeDocument, locale: Locale, usage: Usage, ref: Ref) => {
