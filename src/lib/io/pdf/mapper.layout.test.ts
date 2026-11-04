@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import { stripStyles } from './accuracy'
 import { parseExtraction } from './validate'
 import { mapExtraction, type Proposal } from './mapper'
-import type { BBox, Extraction, SourceBlock } from './types'
+import type { BBox, BlockStyle, Extraction, SourceBlock } from './types'
 
 const b = (id: string, text: string, label = 'text', options: Partial<Pick<SourceBlock, 'page' | 'group' | 'bbox'>> = {}): SourceBlock => ({
   id, text, label, page: 1, group: null, bbox: null, ...options,
@@ -281,6 +281,93 @@ describe('PDF layout mapping regressions', () => {
     expect(leftovers(proposal)).toContain('Foundation Testing Certificate')
     expect(leftovers(proposal)).toContain('Bahasa Indonesia (Native); English (Conversational)')
     expect(proposal.refs).toContainEqual({ path: `experience.${doc.content.experience[0]!.id}.dates`, blocks: ['b26'] })
+  })
+})
+
+// Header and regions from the typography outline: a name/heading style is
+// learned from the known headings, so a plain-text name and an unknown
+// heading in the same style are read the way the page shows them.
+describe('PDF outline mapping', () => {
+  const S = (font: string, size: number): BlockStyle => ({ font, size, bold: null, italic: null })
+  const s = (id: string, text: string, label: string, style: BlockStyle | null, options: Partial<Pick<SourceBlock, 'page' | 'group' | 'bbox'>> = {}): SourceBlock => ({
+    ...b(id, text, label, options), style,
+  })
+  const top = () => [
+    s('b1', 'Rina Wulandari', 'text', S('f1', 14)),
+    s('b2', 'People Development | Learning & Development | Bilingual Facilitator', 'text', S('f3', 10)),
+    s('b3', 'Bandung, Indonesia | rina.w@example.com | +62 811 0000 5678', 'text', S('f3', 10)),
+    s('b4', 'Profile Summary', 'text', S('f2', 16)),
+    s('b5', 'I have four years of experience in learning and development across banking, retail and education.', 'text', S('f3', 10)),
+  ]
+
+  it('maps the header from the outline and keeps bullets out of it', () => {
+    const proposal = mapExtraction(source(...top(),
+      s('b6', 'Competencies & Abilities', 'text', S('f2', 16)),
+      s('b7', '➔ Support Skills: Office 365, Fast Typing, AI Integration', 'list_item', S('f3', 10)),
+    ), 'en')
+    expect(proposal.document.profile.text.en).toMatchObject({
+      name: 'Rina Wulandari',
+      headline: 'People Development | Learning & Development | Bilingual Facilitator',
+      location: 'Bandung, Indonesia',
+      summary: 'I have four years of experience in learning and development across banking, retail and education.',
+    })
+    expect(proposal.document.contact).toMatchObject({ email: 'rina.w@example.com', phone: '+62 811 0000 5678' })
+    expect(proposal.document.content.skills.map((group) => group.text.en)).toEqual([
+      { title: 'Support Skills', items: ['Office 365', 'Fast Typing', 'AI Integration'] },
+    ])
+    expect(proposal.refs).toContainEqual({ path: 'profile.name', blocks: ['b1'] })
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('takes the location from the contact row before a comma-separated headline', () => {
+    const blocks = top()
+    blocks[1] = s('b2', 'Facilitator, Trainer', 'text', S('f3', 10))
+    const profile = mapExtraction(source(...blocks), 'en').document.profile.text.en
+    expect(profile.location).toBe('Bandung, Indonesia')
+    expect(profile.headline).toBe('Facilitator, Trainer')
+  })
+
+  it('lists an unknown heading-style section as outside the structure without leaking into the previous section', () => {
+    const proposal = mapExtraction(source(...top(),
+      s('b6', 'Hobbies', 'text', S('f2', 16)),
+      s('b7', 'Hiking', 'text', S('f3', 10)),
+      s('b8', 'Working Experience', 'text', S('f2', 16)),
+    ), 'en')
+    expect(proposal.document.profile.text.en.summary).not.toContain('Hiking')
+    expect(proposal.warnings).toContainEqual({ code: 'outside_structure', blocks: ['b6'] })
+    expect(leftovers(proposal)).toContain('Hobbies')
+    expect(leftovers(proposal)).toContain('Hiking')
+  })
+
+  it('keeps recommended sections that are not mapped yet unplaced without the outside warning', () => {
+    const proposal = mapExtraction(source(...top(),
+      s('b6', 'References', 'text', S('f2', 16)),
+      s('b7', 'Anggi Pratiwi', 'text', S('f3', 10)),
+    ), 'en')
+    expect(proposal.warnings.map((warning) => warning.code)).not.toContain('outside_structure')
+    expect(leftovers(proposal)).toContain('References')
+    expect(leftovers(proposal)).toContain('Anggi Pratiwi')
+  })
+
+  it('keeps header fields empty from bullets when headings are unknown (fallback)', () => {
+    const proposal = mapExtraction(source(
+      b('b1', 'Rina Wulandari', 'section_header'),
+      b('b2', 'Abilities Overview', 'section_header'),
+      b('b3', '➔ Support Skills: Office 365, Fast Typing, AI Integration', 'list_item'),
+      b('b4', '➔ Training Skills: Needs Analysis, Curriculum Design', 'list_item'),
+    ), 'en')
+    expect(proposal.document.profile.text.en).toMatchObject({ name: 'Rina Wulandari', headline: '', location: '' })
+  })
+
+  it('joins a bullet continued on the next page', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'Experience', 'section_header'),
+      b('b3', 'Curriculum Designer', 'section_header'), b('b4', '2022 – 2024'),
+      b('b5', 'Reviewed drafts before submission to the programme office', 'list_item', { group: 'g1', bbox: box(91, 760, 500) }),
+      b('b6', 'for further review.', 'list_item', { group: 'g1', page: 2, bbox: box(108, 50, 200) }),
+    ), 'en')
+    const job = proposal.document.content.experience[0]!
+    expect(job.text.en.bullets).toEqual(['Reviewed drafts before submission to the programme office for further review.'])
+    expect(proposal.refs).toContainEqual({ path: `experience.${job.id}.bullets`, blocks: ['b5', 'b6'] })
   })
 })
 

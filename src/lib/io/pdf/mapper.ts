@@ -11,8 +11,9 @@ import type {
   ResumeDocument,
   SkillGroup,
 } from '$lib/model/types'
-import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, projectMetadata, sectionHeading, splitList, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
-import { associateDateRows, joinSourceLines, partsOf, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
+import { findContacts, findDateRange, findDateRanges, findProjectDate, isAward, isDocumentTitle, isHeadingLabel, isLocation, isNameLike, isRoleTitle, matchHeading, projectMetadata, sectionHeading, splitList, splitRoleCompany, stripBullet, type FoundRange, type HeadingKind } from './rules'
+import { buildOutline, type Outline } from './outline'
+import { associateDateRows, joinListContinuations, joinSourceLines, partsOf, splitEducationRows, type SourceSegment as SourceBlock } from './segments'
 import type { Extraction } from './types'
 
 /**
@@ -28,7 +29,7 @@ export interface FieldRef {
   blocks: string[]
 }
 
-export type WarningCode = 'no_name' | 'ambiguous_title' | 'ambiguous_entries' | 'ambiguous_dates' | 'unsupported_section' | 'nothing_recognised'
+export type WarningCode = 'no_name' | 'ambiguous_title' | 'ambiguous_entries' | 'ambiguous_dates' | 'outside_structure' | 'nothing_recognised'
 
 export interface MapWarning {
   code: WarningCode
@@ -156,10 +157,14 @@ const isDateLine = (block: SourceBlock) => {
   return !/[\p{L}\p{N}]/u.test(rest)
 }
 
-type RegionKind = HeadingKind | 'header'
+/** `outside`: a section that is not part of the recommended resume structure. */
+type RegionKind = Exclude<HeadingKind, 'unsupported'> | 'header' | 'outside'
 
-/** Recognised but not imported yet: their heading and content stay visible as unmatched. */
-const unmapped = (kind: RegionKind) => kind === 'unsupported' || kind === 'certifications' || kind === 'references'
+/**
+ * Their heading and content stay visible as unmatched: outside sections, and
+ * the recommended certifications and references sections, not imported yet.
+ */
+const unmapped = (kind: RegionKind) => kind === 'outside' || kind === 'certifications' || kind === 'references'
 
 interface Region {
   kind: RegionKind
@@ -167,15 +172,36 @@ interface Region {
   blocks: SourceBlock[]
 }
 
-const regionsOf = (blocks: SourceBlock[]): Region[] => {
+/**
+ * With typography, every h2 opens a region, and one whose wording is not a
+ * known section is outside the structure. Without it, a region opens where
+ * `sectionHeading` reads one, as the rules path always has.
+ */
+const regionsOf = (outline: Outline): Region[] => {
   const regions: Region[] = [{ kind: 'header', heading: null, blocks: [] }]
-  for (const block of blocks) {
-    const kind = sectionHeading(block.text, block.label)
-    if (kind) regions.push({ kind, heading: block, blocks: [] })
+  for (const { role, block } of outline.nodes) {
+    const kind = outline.confidence === 'typography'
+      ? role === 'h2' ? matchHeading(block.text) ?? 'outside' : null
+      : sectionHeading(block.text, block.label)
+    if (kind) regions.push({ kind: kind === 'unsupported' ? 'outside' : kind, heading: block, blocks: [] })
     else regions.at(-1)!.blocks.push(block)
   }
   return regions
 }
+
+/** Letter-bearing tokens: "People Development | L&D" is three words. */
+const wordCount = (text: string) => text.split(/\s+/).filter((token) => /\p{L}/u.test(token)).length
+
+/**
+ * A `City, Country` piece between the separators of a contact row. A flattened
+ * row can glue a headline's last words onto the city ("Bilingual Facilitator
+ * Bandung, Indonesia"), so the city is at most two words.
+ */
+const contactRowLocation = (piece: string): RegExpMatchArray | undefined =>
+  [...piece.matchAll(/[^|\n•·]+/g)].find((part) => {
+    const text = trimPiece(part[0])
+    return isLocation(text) && wordCount(text.split(',')[0]!) <= 2
+  })
 
 const ENTRY_KINDS = ['experience', 'education', 'projects', 'awards'] as const
 type EntryKind = (typeof ENTRY_KINDS)[number]
@@ -219,7 +245,10 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   const usage = new Usage()
   const refs: FieldRef[] = []
   const warnings: MapWarning[] = []
-  const regions = regionsOf(associateDateRows(joinSourceLines(extraction.blocks)))
+  const outline = buildOutline(associateDateRows(joinListContinuations(joinSourceLines(extraction.blocks))))
+  const regions = regionsOf(outline)
+  // List items never fill header fields.
+  const lists = new Set(outline.nodes.filter((node) => node.role === 'list').map((node) => node.block))
 
   const ref = (path: string, block: SourceBlock) => {
     const ids = partsOf(block).map(part => part.block.id)
@@ -247,7 +276,9 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   const profile = document.profile.text[locale]
   const header = regions[0]!.blocks
   for (const block of header) if (isDocumentTitle(block.text)) usage.take(block)
-  const nameBlock = header.find((block) => isHeaderLabel(block) && !usage.used(block) && isNameLike(block.text.trim()))
+  const outlineName = outline.confidence === 'typography' ? outline.nodes.find((node) => node.role === 'name')?.block : undefined
+  const nameBlock = (outlineName && header.includes(outlineName) && !usage.used(outlineName) ? outlineName : undefined) ??
+    header.find((block) => isHeaderLabel(block) && !usage.used(block) && isNameLike(block.text.trim()))
   if (nameBlock) {
     profile.name = nameBlock.text.trim()
     usage.take(nameBlock)
@@ -255,9 +286,20 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
   } else {
     warnings.push({ code: 'no_name', blocks: [] })
   }
-  const afterName = nameBlock ? header.slice(header.indexOf(nameBlock) + 1) : []
+  const afterName = (nameBlock ? header.slice(header.indexOf(nameBlock) + 1) : []).filter((block) => !isHeaderLabel(block) && !lists.has(block))
+  // The contact row's location comes before any other "A, B" line.
   for (const block of afterName) {
-    if (isHeaderLabel(block)) continue
+    if (profile.location || !findContacts(block.text).length) continue
+    for (const [piece, offset] of usage.pieces(block)) {
+      const part = contactRowLocation(piece)
+      if (!part) continue
+      profile.location = trimPiece(part[0])
+      usage.take(block, offset + part.index!, offset + part.index! + part[0].length)
+      ref('profile.location', block)
+      break
+    }
+  }
+  for (const block of afterName) {
     if (!profile.location) {
       for (const [piece, offset] of usage.pieces(block)) {
         for (const line of piece.matchAll(/[^\n]+/g)) {
@@ -282,10 +324,9 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
     for (const [piece, offset] of usage.pieces(block)) {
       for (const line of piece.matchAll(/[^\n]+/g)) {
         const text = trimPiece(line[0])
-        const words = text.split(/\s+/).length
         let field: 'location' | 'headline' | null = null
         if (!profile.location && isLocation(text)) field = 'location'
-        else if (!profile.headline && !/[@\d]/.test(text) && (isRoleTitle(text) || (!usage.used(block) && text.length <= 80 && words <= 10))) field = 'headline'
+        else if (!profile.headline && !/[@\d]/.test(text) && (isRoleTitle(text) || (!usage.used(block) && text.length <= 80 && wordCount(text) <= 10))) field = 'headline'
         if (field) {
           profile[field] = text
           usage.take(block, offset + line.index, offset + line.index + line[0].length)
@@ -313,10 +354,8 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         if (lines.length) profile.summary = [profile.summary, ...lines].filter(Boolean).join('\n')
         break
       }
-      case 'unsupported':
-      case 'certifications':
-      case 'references':
-        warnings.push({ code: 'unsupported_section', blocks: [region.heading!.id] })
+      case 'outside':
+        warnings.push({ code: 'outside_structure', blocks: [region.heading!.id] })
         break
       case 'skills':
         seen('skills')
@@ -326,7 +365,7 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         seen('awards')
         for (const block of region.blocks) {
           if (isAward(block.text)) mapEntry('awards', [block], document, locale, usage, ref, warnings)
-          else warnings.push({ code: 'unsupported_section', blocks: [block.id] })
+          else warnings.push({ code: 'outside_structure', blocks: [block.id] })
         }
         break
       case 'experience':

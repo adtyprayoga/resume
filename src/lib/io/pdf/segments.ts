@@ -1,4 +1,4 @@
-import { findDateRange, findDateRanges, isRoleTitle, matchHeading } from './rules'
+import { findDateRange, findDateRanges, isRoleTitle, matchHeading, stripBullet } from './rules'
 import type { SourceBlock } from './types'
 
 export interface SourceSegment extends SourceBlock {
@@ -6,6 +6,16 @@ export interface SourceSegment extends SourceBlock {
 }
 
 export const partsOf = (block: SourceSegment) => block.parts ?? [{ block, from: 0, to: block.text.length, at: 0 }]
+
+/** Appends `next` to `segment` with one space, keeping every source part. */
+const append = (segment: SourceSegment, next: SourceSegment): SourceSegment => {
+  const at = segment.text.length + 1
+  return {
+    ...segment,
+    text: `${segment.text} ${next.text}`,
+    parts: [...partsOf(segment), ...partsOf(next).map(part => ({ ...part, at: at + part.at }))],
+  }
+}
 
 export const joinSourceLines = (blocks: SourceBlock[]): SourceSegment[] => {
   const result: SourceSegment[] = []
@@ -20,12 +30,28 @@ export const joinSourceLines = (blocks: SourceBlock[]): SourceSegment[] => {
       ((previous.text.match(/\(/g)?.length ?? 0) > (previous.text.match(/\)/g)?.length ?? 0)) ||
       /[,\-]$/.test(previous.text) || /^[\p{Ll}]/u.test(block.text))
     if (!compatible || !continuation || /^[^:]{1,40}:/.test(block.text)) { result.push(block); continue }
-    const at = previous.text.length + 1
-    result[result.length - 1] = {
-      ...previous,
-      text: `${previous.text} ${block.text}`,
-      parts: [...partsOf(previous), { block, from: 0, to: block.text.length, at }],
-    }
+    result[result.length - 1] = append(previous, block)
+  }
+  return result
+}
+
+/**
+ * A bullet that wraps onto the next page comes back as a second list item: same
+ * group, indented under the first one's text, starting lowercase, and the first
+ * one has not finished its sentence.
+ */
+export const joinListContinuations = (blocks: SourceSegment[]): SourceSegment[] => {
+  const result: SourceSegment[] = []
+  for (const block of blocks) {
+    const previous = result.at(-1)
+    const continues = previous && previous.label === 'list_item' && block.label === 'list_item' &&
+      previous.group !== null && previous.group === block.group &&
+      (block.page === previous.page || block.page === previous.page + 1) &&
+      /^\p{Ll}/u.test(block.text) && stripBullet(block.text).from === 0 &&
+      !/[.!?]$/.test(previous.text.trim()) &&
+      previous.bbox !== null && block.bbox !== null && block.bbox.l >= previous.bbox.l + 8
+    if (continues) result[result.length - 1] = append(previous, block)
+    else result.push(block)
   }
   return result
 }
@@ -59,13 +85,21 @@ export const dateOnly = (block: SourceBlock): boolean => {
   return date !== null && !/[\p{L}\p{N}]/u.test(block.text.slice(0, date.from) + block.text.slice(date.to))
 }
 
+/** A plain-text row (a company line) no taller than two of the date's lines. */
+const oneLineText = (block: SourceBlock, date: SourceBlock) =>
+  block.label === 'text' && stripBullet(block.text).from === 0 && block.text.length <= 120 &&
+  !!block.bbox && !!date.bbox && block.bbox.b - block.bbox.t <= 2 * (date.bbox.b - date.bbox.t)
+
 /** Associate only unambiguous visual rows; retain reading order everywhere else. */
-export const associateDateRows = (blocks: SourceBlock[]): SourceBlock[] => {
-  const attached = new Map<SourceBlock, SourceBlock[]>()
-  const moved = new Set<SourceBlock>()
+export const associateDateRows = <T extends SourceBlock>(blocks: T[]): T[] => {
+  const attached = new Map<T, T[]>()
+  const moved = new Set<T>()
   for (const date of blocks.filter(dateOnly)) {
+    // A date left-aligned with other content opens a column line (a two-column
+    // layout); only a date standing alone at the row's end belongs to plain text.
+    const columnLine = blocks.some(h => h.page === date.page && h.bbox && date.bbox && !dateOnly(h) && Math.abs(h.bbox.l - date.bbox.l) <= 4)
     const candidates = blocks.filter(b => b !== date && !dateOnly(b) && b.label !== 'list_item' &&
-      (b.label === 'section_header' || b.label === 'title' || isRoleTitle(b.text)) &&
+      (b.label === 'section_header' || b.label === 'title' || isRoleTitle(b.text) || (!columnLine && oneLineText(b, date))) &&
       !matchHeading(b.text) && sameRow(b, date) && b.bbox!.r <= date.bbox!.l &&
       !blocks.some(h => h.page === date.page && h.bbox && matchHeading(h.text) &&
         h.bbox.l > b.bbox!.r && h.bbox.l <= date.bbox!.l && h.bbox.t < date.bbox!.t))

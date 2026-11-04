@@ -272,7 +272,17 @@ describe('mapExtraction: conservative rules', () => {
     expect(proposal.document.content.experience[0]!.text.en.bullets).toEqual([])
     expect(proposal.document.content.awards).toEqual([])
     expect(unmatchedText(proposal)).toEqual(['Certifications', 'AWS Solutions Architect, 2021'])
-    expect(proposal.warnings).toContainEqual({ code: 'unsupported_section', blocks: ['b4'] })
+    // Certifications belong to the recommended structure; they are only not imported yet.
+    expect(proposal.warnings.map((w) => w.code)).not.toContain('outside_structure')
+  })
+
+  it('lists a section outside the recommended structure under its own warning', () => {
+    const proposal = mapExtraction(
+      extraction(block('Experience', 'section_header'), block('Engineer at Foo', 'section_header'), block('Languages', 'section_header'), block('English (fluent)')),
+      'en',
+    )
+    expect(unmatchedText(proposal)).toEqual(['Languages', 'English (fluent)'])
+    expect(proposal.warnings).toContainEqual({ code: 'outside_structure', blocks: ['b3'] })
   })
 
   it('treats an unsupported heading word in body text as content, not a new section', () => {
