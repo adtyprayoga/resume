@@ -96,3 +96,28 @@ describe('late dates in a two-column layout', () => {
     expect(associateDateRows(blocks)).toEqual(blocks)
   })
 })
+
+describe('fix round 1', () => {
+  const first = b('b20', 'Reviewed curriculum drafts before submission to the programme office', 'list_item', { group: 'g3', bbox: { l: 56, t: 779, r: 380, b: 788 } })
+
+  it('joins a plain-text, ungrouped continuation indented under a bullet', () => {
+    const next = b('b21', 'for further review.', 'text', { page: 2, bbox: { l: 68, t: 49, r: 145, b: 56 } })
+    const joined = joinListContinuations([first, next])
+    expect(joined).toHaveLength(1)
+    expect(joined[0]!.text).toBe('Reviewed curriculum drafts before submission to the programme office for further review.')
+    expect(partsOf(joined[0]!).map(part => part.block.id)).toEqual(['b20', 'b21'])
+  })
+
+  it('keeps a plain-text line without the indent separate', () => {
+    const next = b('b21', 'for further review.', 'text', { page: 2, bbox: { l: 56, t: 49, r: 145, b: 56 } })
+    expect(joinListContinuations([first, next])).toHaveLength(2)
+  })
+
+  it('still attaches a late date to the role heading when a plain-text location shares its row', () => {
+    const role = b('b3', 'Software Engineer', 'section_header', { bbox: { l: 40, t: 100, r: 160, b: 110 } })
+    const location = b('b4', 'Jakarta, Indonesia', 'text', { bbox: { l: 200, t: 100, r: 300, b: 110 } })
+    const bullet = b('b5', 'Built services.', 'list_item', { bbox: { l: 50, t: 120, r: 400, b: 130 } })
+    const date = b('b6', 'Jan 2020 - Present', 'text', { bbox: { l: 440, t: 100, r: 520, b: 110 } })
+    expect(associateDateRows([role, location, bullet, date]).map(x => x.id)).toEqual(['b3', 'b6', 'b4', 'b5'])
+  })
+})

@@ -36,16 +36,17 @@ export const joinSourceLines = (blocks: SourceBlock[]): SourceSegment[] => {
 }
 
 /**
- * A bullet that wraps onto the next page comes back as a second list item: same
- * group, indented under the first one's text, starting lowercase, and the first
- * one has not finished its sentence.
+ * A bullet that wraps onto the next page comes back as a second list item in
+ * the same group, or as an ungrouped plain-text line: indented under the first
+ * one's text, starting lowercase, and the first one has not finished its sentence.
  */
 export const joinListContinuations = (blocks: SourceSegment[]): SourceSegment[] => {
   const result: SourceSegment[] = []
   for (const block of blocks) {
     const previous = result.at(-1)
-    const continues = previous && previous.label === 'list_item' && block.label === 'list_item' &&
-      previous.group !== null && previous.group === block.group &&
+    const sameList = block.label === 'list_item' && previous?.group != null && previous.group === block.group
+    const looseLine = block.label === 'text' && block.group === null
+    const continues = previous && previous.label === 'list_item' && (sameList || looseLine) &&
       (block.page === previous.page || block.page === previous.page + 1) &&
       /^\p{Ll}/u.test(block.text) && stripBullet(block.text).from === 0 &&
       !/[.!?]$/.test(previous.text.trim()) &&
@@ -98,11 +99,13 @@ export const associateDateRows = <T extends SourceBlock>(blocks: T[]): T[] => {
     // A date left-aligned with other content opens a column line (a two-column
     // layout); only a date standing alone at the row's end belongs to plain text.
     const columnLine = blocks.some(h => h.page === date.page && h.bbox && date.bbox && !dateOnly(h) && Math.abs(h.bbox.l - date.bbox.l) <= 4)
-    const candidates = blocks.filter(b => b !== date && !dateOnly(b) && b.label !== 'list_item' &&
-      (b.label === 'section_header' || b.label === 'title' || isRoleTitle(b.text) || (!columnLine && oneLineText(b, date))) &&
+    const onRow = blocks.filter(b => b !== date && !dateOnly(b) && b.label !== 'list_item' &&
       !matchHeading(b.text) && sameRow(b, date) && b.bbox!.r <= date.bbox!.l &&
       !blocks.some(h => h.page === date.page && h.bbox && matchHeading(h.text) &&
         h.bbox.l > b.bbox!.r && h.bbox.l <= date.bbox!.l && h.bbox.t < date.bbox!.t))
+    // Headings and role titles first, as before; a plain-text row only when none is there.
+    const strong = onRow.filter(b => b.label === 'section_header' || b.label === 'title' || isRoleTitle(b.text))
+    const candidates = strong.length ? strong : columnLine ? [] : onRow.filter(b => oneLineText(b, date))
     if (candidates.length !== 1) continue
     const target = candidates[0]!
     attached.set(target, [...(attached.get(target) ?? []), date])
