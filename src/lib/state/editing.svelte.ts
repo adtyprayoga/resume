@@ -71,8 +71,9 @@ class EditingSession {
     if (this.selected?.section !== section || this.selected.id !== id) this.selected = { section, id }
   }
 
+  /** A repeat of the same text toggles a zero-width space, so the live region changes and is read again. */
   announce(text: string): void {
-    this.announcement = text
+    this.announcement = this.announcement === text ? `${text}\u200B` : text
   }
 
   enter(): void {

@@ -25,6 +25,12 @@ class ResumeDocumentStore {
   current = $state<ResumeDocument>(emptyDocument())
   /** Bumped on every wholesale replacement, so per-document session state can tell documents apart. */
   generation = $state(0)
+  /**
+   * Bumped only when a different document arrives (replace or load), not when
+   * undo or redo restores a version of this one; consent to load a remote photo
+   * is keyed on it.
+   */
+  identity = $state(0)
 
   /**
    * Session-only history of whole-document snapshots, never persisted. The
@@ -73,6 +79,7 @@ class ResumeDocumentStore {
     this.change(() => {
       this.current = doc
       this.generation += 1
+      this.identity += 1
     })
   }
 
@@ -80,6 +87,7 @@ class ResumeDocumentStore {
   load(doc: ResumeDocument): void {
     this.current = doc
     this.generation += 1
+    this.identity += 1
     this.undoStack = []
     this.redoStack = []
     this.syncCounts()

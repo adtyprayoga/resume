@@ -238,3 +238,13 @@ describe('undo steps', () => {
     expect(resumeDoc.canUndo).toBe(false)
   })
 })
+
+describe('announcements', () => {
+  it('changes the live text when the same message is announced twice', () => {
+    editing.announce('Undone')
+    const first = editing.announcement
+    editing.announce('Undone')
+    expect(editing.announcement).not.toBe(first)
+    expect(editing.announcement.replace(/​/g, '')).toBe('Undone')
+  })
+})

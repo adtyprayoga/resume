@@ -460,4 +460,18 @@ describe('undo and redo', () => {
     await user.keyboard('{Control>}z{/Control}')
     expect(resumeDoc.canUndo).toBe(true)
   })
+
+  it('the shortcut is off while any modal dialog is open', async () => {
+    render(App)
+    resumeDoc.addItem('skills')
+    const modal = document.createElement('div')
+    modal.setAttribute('role', 'dialog')
+    modal.setAttribute('aria-modal', 'true')
+    modal.innerHTML = '<input type="checkbox" aria-label="Present">'
+    document.body.append(modal)
+    modal.querySelector('input')!.focus()
+    await userEvent.setup().keyboard('{Control>}z{/Control}')
+    expect(resumeDoc.canUndo).toBe(true)
+    modal.remove()
+  })
 })

@@ -5,14 +5,15 @@ import { resumeDoc } from './document.svelte'
  * a reload asks again; a replaced document or a changed avatar asks again too.
  */
 class PhotoConsent {
-  private approved = $state<{ generation: number; url: string } | null>(null)
+  /** Keyed on document identity, so undo and redo keep consent for the same photo. */
+  private approved = $state<{ identity: number; url: string } | null>(null)
 
   allow(url: string): void {
-    this.approved = { generation: resumeDoc.generation, url }
+    this.approved = { identity: resumeDoc.identity, url }
   }
 
   allows(url: string): boolean {
-    return this.approved?.generation === resumeDoc.generation && this.approved.url === url
+    return this.approved?.identity === resumeDoc.identity && this.approved.url === url
   }
 
   /** Called whenever the avatar is observed, so A → B → A does not revive consent for A. */

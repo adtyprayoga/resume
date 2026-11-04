@@ -246,9 +246,10 @@
     importing = true
   }
 
-  /** Text fields keep the browser's own undo; dialogs keep the app's out of their way. */
+  /** Text fields keep the browser's own undo; modal dialogs keep the app's out of their way. */
   const onHistoryKey = (event: KeyboardEvent) => {
-    if (event.defaultPrevented || importing || recovery.blocked || isTextEntry(event.target)) return
+    if (event.defaultPrevented || recovery.blocked || isTextEntry(event.target)) return
+    if (document.querySelector('[aria-modal="true"]')) return
     const action = historyShortcut(event)
     if (!action) return
     event.preventDefault()
