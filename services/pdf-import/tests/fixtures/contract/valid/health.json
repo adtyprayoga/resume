@@ -1,0 +1,10 @@
+{
+  "contract_version": 1,
+  "ready": true,
+  "busy": false,
+  "limits": {
+    "max_bytes": 10485760,
+    "max_pages": 5,
+    "timeout_seconds": 180
+  }
+}

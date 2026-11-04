@@ -1,5 +1,6 @@
 <script lang="ts">
   import ImportDialog from './components/ImportDialog.svelte'
+  import { PDF_IMPORT_ENABLED } from '$lib/io/pdf/client'
   import PersistenceHost from './components/PersistenceHost.svelte'
   import RecoveryScreen from './components/RecoveryScreen.svelte'
   import ThemeHost from './components/ThemeHost.svelte'
@@ -279,7 +280,7 @@
           onclick={toggleEdit}
           variant="primary"
         />
-        <IconButton icon="import" label={t(prefs.uiLocale, 'action.importJson')} haspopup="dialog" expanded={importing} onclick={openImport} bind:element={importButton} />
+        <IconButton icon="import" label={t(prefs.uiLocale, PDF_IMPORT_ENABLED ? 'import.titleAny' : 'action.importJson')} haspopup="dialog" expanded={importing} onclick={openImport} bind:element={importButton} />
         <ExportMenu onPdf={exportPdf} onJson={exportJson} />
         <IconButton
           icon="settings"

@@ -4,6 +4,11 @@ A bilingual (Indonesian / English) resume builder that runs entirely in the
 browser. No account, no server, no tracking: your resume lives in this browser's
 local storage and exports to PDF through the browser's own print dialog.
 
+The one exception is optional: a deployment can add **PDF import**, which sends
+an uploaded CV to a small extraction service on the same site for temporary
+processing (see [PDF import](#pdf-import)). The static-only build has no server
+at all.
+
 The resume sits on a quiet workspace under a compact toolbar, and you edit it in
 place: click text on the page to change it. The A4 preview fits the available
 screen width, while editors, forms and buttons stay full size. Browser pinch zoom
@@ -111,6 +116,49 @@ focuses its destination, leaves a visible heading in place, reaches a later
 one in a long resume, and requires
 identical PDFs with the panels open and closed for both layouts, both
 languages, and Preview and Edit. Needs `chromium` and `poppler-utils`.
+
+### PDF import backend
+
+The extraction service lives in `services/pdf-import` (Python 3.12, FastAPI,
+Docling). Its dependencies, OCR languages and models are installed in its Docker
+image, so the tests run there:
+
+```bash
+cd services/pdf-import
+docker build --target test -t pdf-import:test .
+docker run --rm -v "$PWD":/app/src -w /app/src pdf-import:test python -m pytest -q -m "not docling"  # fast
+docker run --rm -v "$PWD":/app/src -w /app/src pdf-import:test python -m pytest -q                   # plus real Docling/Tesseract
+```
+
+The resource gate converts every synthetic fixture as a cold child process
+under the production limits and fails above 2.3 GB peak, on any OOM kill or on
+a timeout:
+
+```bash
+docker run --rm --memory=2750000000 --memory-swap=2750000000 --cpus=2 \
+  -v "$PWD":/app/src -w /app/src pdf-import:test python scripts/benchmark.py
+# against a running deployment: cold conversions, result expiry, cancellation
+python3 scripts/benchmark.py --api http://127.0.0.1:8080 --container <pdf-import container>
+```
+
+To work on the frontend against a local backend, run the service on port 8000
+(`docker run --rm -p 127.0.0.1:8000:8000 pdf-import:runtime` after building
+`--target runtime`) and start Vite with the feature on; it proxies
+`/api/pdf-import` there (override with `PDF_IMPORT_DEV_URL`):
+
+```bash
+VITE_PDF_IMPORT=1 bun run dev
+```
+
+```bash
+bun run verify:pdf-import http://127.0.0.1:8080/                 # combined deployment
+bun run verify:pdf-import http://127.0.0.1:8080/ --backend-down  # with the service stopped
+bun run verify:pdf-import http://127.0.0.1:8080/ --static        # static-only build
+```
+
+`verify-pdf-import.ts` uploads the synthetic PDFs through headless Chromium at
+320, 375, 768 and 1440px, checking fit, 44px targets, focus, keyboard use, long
+extracted text, replacement, cancellation and the unavailable state.
 
 ## Workspace
 
@@ -258,6 +306,36 @@ it to 320px and embeds it in the document itself, which means it survives an
 export and travels with the JSON — and is why it is resized rather than stored
 whole, since the browser's storage budget is a few megabytes in total.
 
+### PDF import
+
+When the deployment enables it, **Import resume** also offers **Convert PDF**
+(PDF only, up to 10 MB and 5 pages). The PDF is uploaded to this site's own
+extraction service, which reads its text and layout with
+[Docling](https://github.com/docling-project/docling) and Tesseract OCR for
+scanned pages, entirely on that server: no external AI service or generative
+model is involved. The upload is deleted as soon as conversion ends, the
+extracted text is deleted once the browser has fetched it (or after ten minutes
+at most), and nothing is logged about its content. The finished resume is stored
+in your browser like any other.
+
+The browser then maps the text to resume fields with fixed bilingual rules:
+section headings, dates, contact details, bullets and entry boundaries it can
+recognise. It fills only what a rule matches with confidence and never invents,
+rewords or translates anything. Uncertain fields stay blank, and any text it
+could not place is listed separately. Conversion will not be perfect for every
+CV layout.
+
+The review lets you correct every field, add or remove entries, choose which
+language the text is in (the other language stays blank and falls back as
+usual), see the PDF text behind each entry, and read all extracted text. If any
+text was not placed, **Replace resume** asks you to confirm you have checked it
+first. Replacement goes through the same validation as
+JSON import and is saved before your current resume changes, so a validation or
+storage failure leaves it untouched. Cancelling or closing at any point, even
+mid-conversion, cancels the job on the server. While you review, Escape and
+clicks outside the dialog are ignored so your corrections are not lost by
+accident; use **Cancel** or **Close**.
+
 Imported data is validated field by field rather than trusted: containers must
 have the right shape, leaves are coerced to safe defaults, URLs are restricted
 to safe schemes (`javascript:` and `data:image/svg+xml` are rejected), and a file
@@ -276,14 +354,21 @@ src/
 │  ├─ pagination/   pure page-break simulation plus DOM measurement
 │  ├─ print/        the print trigger
 │  ├─ themes/       typed theme presets to CSS custom properties
+│  ├─ io/pdf/       PDF service client, contract validation, field mapping, review draft
 │  └─ i18n/         interface strings only, never resume content
 ├─ components/
 │  ├─ shell/        toolbar, Export menu, side panels, inline SVG icons
 │  ├─ editing/      in-page targets, inline editor, contextual forms, phone sheet
+│  ├─ importing/    PDF import review
 │  └─ preview/      the resume paper, plus the two side-effect hosts beside it
 └─ styles/
    ├─ print.css     everything governing how the resume prints
    └─ paper.css     screen-only preview chrome
+
+services/pdf-import/  optional PDF extraction service (FastAPI + Docling)
+├─ app/            routes, settings, job lifecycle, child-process extractor
+├─ tests/          pytest, synthetic CV PDFs, shared contract fixtures
+└─ scripts/        resource benchmark
 ```
 
 Adding a section means adding a folder under `src/lib/sections/` and one entry to
@@ -332,6 +417,49 @@ Set your domain and point its DNS at the Coolify server, then deploy. Enable
 deployment on push for the connected Git integration if you want subsequent
 pushes to the configured branch to deploy automatically. See
 [Coolify's Dockerfile guide](https://coolify.io/docs/applications/builds/dockerfile).
+
+### With PDF import (Docker Compose)
+
+`compose.yaml` runs the same frontend image built with `VITE_PDF_IMPORT=1` and
+`nginx.pdf-import.conf`, plus the `pdf-import` service. Only the website port is
+published; nginx proxies `/api/pdf-import` to the service over the private
+Compose network.
+
+```bash
+cp .env.example .env   # optional; every value has a default
+docker compose up -d --build
+```
+
+| Limit | Default | Where |
+| --- | --- | --- |
+| Upload size | 10 MiB (proxy allows 10 MiB + multipart framing) | `PDF_IMPORT_MAX_BYTES`, nginx `client_max_body_size` |
+| Pages | 5 | `PDF_IMPORT_MAX_PAGES` |
+| Conversion timeout | 180 s, then the whole process group is killed | `PDF_IMPORT_TIMEOUT_SECONDS` |
+| Result retention | 600 s at most | `PDF_IMPORT_RESULT_TTL_SECONDS` |
+| Memory | 2,750,000,000 bytes, no swap on top | `PDF_IMPORT_MEMORY_LIMIT_BYTES` (`mem_limit` = `memswap_limit`) |
+| CPU | 2 cores | `PDF_IMPORT_CPU_LIMIT` |
+| Concurrency | 1 conversion; others get `429` with `Retry-After` | built in |
+| Upload rate | 6 per minute per client, burst 2 | `nginx.pdf-import.conf` |
+
+The service validates its settings at startup and refuses values above these
+caps. It runs as a non-root user on a read-only filesystem with a 96 MB `/tmp`
+tmpfs for uploads, with an init process to reap killed converters, no Linux
+capabilities, and a health check at `/api/pdf-import/health`. Models are baked
+into the image at build time, so conversions need no network access. The image
+is large (PyTorch CPU and the layout model); a cold conversion of the bundled
+fixtures takes 13–20 s on two cores, with peak memory near 1 GB.
+
+The website does not depend on the service: if it is starting, unhealthy or
+stopped, the site, editing, JSON import and export keep working, and **Convert
+PDF** reports that conversion is unavailable and can be retried.
+
+On Coolify, deploy the repository as a **Docker Compose** resource using
+`compose.yaml`, assign the domain to the `web` service only (port `80`), and
+leave `pdf-import` without a domain. The proxy config trusts `X-Forwarded-For`
+from private addresses only, so the upload and polling limits apply per visitor
+behind Coolify's proxy; if your proxy reaches the site from a public address,
+add it with `set_real_ip_from` in `nginx.pdf-import.conf`. The static-only deployment above is
+unchanged and remains the default.
 
 ### Other static hosts
 

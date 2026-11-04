@@ -1,0 +1,240 @@
+{
+ "contract_version": 1,
+ "pages": 1,
+ "blocks": [
+  {
+   "id": "b1",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Budi Santoso",
+   "bbox": {
+    "l": 57.672000885009766,
+    "t": 39.7860107421875,
+    "r": 197.0640106201172,
+    "b": 56.39599609375
+   }
+  },
+  {
+   "id": "b2",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Analis Data",
+   "bbox": {
+    "l": 56.13999938964844,
+    "t": 74.82000732421875,
+    "r": 106.8699951171875,
+    "b": 82.1400146484375
+   }
+  },
+  {
+   "id": "b3",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Bandung, Jawa Barat",
+   "bbox": {
+    "l": 56.7400016784668,
+    "t": 89.82000732421875,
+    "r": 151.39999389648438,
+    "b": 99.19000244140625
+   }
+  },
+  {
+   "id": "b4",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "budi.santoso@example.com | 0812-9876-5432",
+   "bbox": {
+    "l": 56.58000183105469,
+    "t": 104.46002197265625,
+    "r": 268.91998291015625,
+    "b": 114.08001708984375
+   }
+  },
+  {
+   "id": "b5",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Ringkasan",
+   "bbox": {
+    "l": 56.987998962402344,
+    "t": 127.57501220703125,
+    "r": 120.89600372314453,
+    "b": 139.8079833984375
+   }
+  },
+  {
+   "id": "b6",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Analis data dengan pengalaman lima tahun di bidang ritel dan logistik.",
+   "bbox": {
+    "l": 56.13999938964844,
+    "t": 147.82000732421875,
+    "r": 365.2899475097656,
+    "b": 157.19000244140625
+   }
+  },
+  {
+   "id": "b7",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Pengalaman Kerja",
+   "bbox": {
+    "l": 56.987998962402344,
+    "t": 170.57501220703125,
+    "r": 168.33299255371094,
+    "b": 182.8079833984375
+   }
+  },
+  {
+   "id": "b8",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Analis Data Senior, Toko Contoh",
+   "bbox": {
+    "l": 56.20000076293945,
+    "t": 190.6300048828125,
+    "r": 210.9300079345703,
+    "b": 199.66998291015625
+   }
+  },
+  {
+   "id": "b9",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Mar 2022 - Sekarang",
+   "bbox": {
+    "l": 56.72999954223633,
+    "t": 205.6300048828125,
+    "r": 149.3599853515625,
+    "b": 215.19000244140625
+   }
+  },
+  {
+   "id": "b10",
+   "page": 1,
+   "label": "list_item",
+   "group": "g1",
+   "text": "Membangun dasbor penjualan harian untuk tiga ratus cabang.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 220.82000732421875,
+    "r": 348.27996826171875,
+    "b": 230.19000244140625
+   }
+  },
+  {
+   "id": "b11",
+   "page": 1,
+   "label": "list_item",
+   "group": "g1",
+   "text": "Menurunkan waktu pembuatan laporan bulanan dari tiga hari menjadi empat jam.",
+   "bbox": {
+    "l": 62.18000030517578,
+    "t": 235.82000732421875,
+    "r": 432.7398681640625,
+    "b": 245.19000244140625
+   }
+  },
+  {
+   "id": "b12",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Pendidikan",
+   "bbox": {
+    "l": 56.987998962402344,
+    "t": 258.57501220703125,
+    "r": 124.51000213623047,
+    "b": 268.16900634765625
+   }
+  },
+  {
+   "id": "b13",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Institut Teknologi Contoh",
+   "bbox": {
+    "l": 56.63999938964844,
+    "t": 278.6300048828125,
+    "r": 176.4600067138672,
+    "b": 288.15997314453125
+   }
+  },
+  {
+   "id": "b14",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Sarjana Statistika, 2015 - 2019",
+   "bbox": {
+    "l": 56.4900016784668,
+    "t": 293.6300048828125,
+    "r": 192.31997680664062,
+    "b": 303.09002685546875
+   }
+  },
+  {
+   "id": "b15",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Keahlian",
+   "bbox": {
+    "l": 57.13100051879883,
+    "t": 316.57501220703125,
+    "r": 109.33899688720703,
+    "b": 326.16900634765625
+   }
+  },
+  {
+   "id": "b16",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "SQL, Python, Tableau, Statistik Inferensial",
+   "bbox": {
+    "l": 56.4900016784668,
+    "t": 336.6299743652344,
+    "r": 243.19998168945312,
+    "b": 346.1299743652344
+   }
+  },
+  {
+   "id": "b17",
+   "page": 1,
+   "label": "section_header",
+   "group": null,
+   "text": "Penghargaan",
+   "bbox": {
+    "l": 56.987998962402344,
+    "t": 359.66595458984375,
+    "r": 137.50999450683594,
+    "b": 371.8079833984375
+   }
+  },
+  {
+   "id": "b18",
+   "page": 1,
+   "label": "text",
+   "group": null,
+   "text": "Juara 1 Kompetisi Analitik Nasional, 2018",
+   "bbox": {
+    "l": 56.16999816894531,
+    "t": 379.8199768066406,
+    "r": 240.12997436523438,
+    "b": 389.0599670410156
+   }
+  }
+ ]
+}

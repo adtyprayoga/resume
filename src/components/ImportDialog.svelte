@@ -3,19 +3,34 @@
   import { t, translatedMessage, type UiMessage, type UiStringKey } from '$lib/i18n/ui'
   import { parseResumeJson, readResumeFile } from '$lib/io/importJson'
   import { fetchResumeJson } from '$lib/io/importUrl'
+  import { convertPdf, MAX_PDF_MB, MAX_PDF_PAGES, PDF_IMPORT_ENABLED, type PdfStage } from '$lib/io/pdf/client'
+  import { mapExtraction, type Proposal } from '$lib/io/pdf/mapper'
+  import type { Extraction } from '$lib/io/pdf/types'
   import type { ResumeDocument } from '$lib/model/types'
   import type { Result } from '$lib/model/result'
   import { resolve } from '$lib/model/resolve'
   import { resumeDoc } from '$lib/state/document.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
-  import type { SaveStatus } from '$lib/storage/persist'
+  import { saveDocument, type SaveStatus } from '$lib/storage/persist'
   import { focusTrap } from '$lib/ui/focusTrap'
+  import PdfImportReview from './importing/PdfImportReview.svelte'
 
   /**
    * `commit` lets a caller persist before the document changes (recovery does);
    * an error status keeps the review open and the current document untouched.
    */
-  const { onClose, commit }: { onClose: () => void; commit?: (doc: ResumeDocument) => SaveStatus } = $props()
+  const {
+    onClose,
+    commit,
+    pdfImport = PDF_IMPORT_ENABLED,
+    pdfPollMs = 1000,
+  }: {
+    onClose: () => void
+    commit?: (doc: ResumeDocument) => SaveStatus
+    /** PDF conversion needs the optional backend; off in the static-only build. */
+    pdfImport?: boolean
+    pdfPollMs?: number
+  } = $props()
   const uid = $props.id()
   type Source = 'file' | 'url' | 'paste'
 
@@ -29,6 +44,15 @@
   let cancelButton = $state<HTMLButtonElement>()
   let closeButton = $state<HTMLButtonElement>()
   let fileInput = $state<HTMLInputElement>()
+  let titleElement = $state<HTMLHeadingElement>()
+  let pdfFile = $state<File | null>(null)
+  let pdfStage = $state<PdfStage | null>(null)
+  let pdfNotice = $state<({ error: string } & Partial<UiMessage>) | null>(null)
+  let pdfError = $state<({ error: string } & Partial<UiMessage>) | null>(null)
+  let pdfReview = $state.raw<{ proposal: Proposal; extraction: Extraction } | null>(null)
+  let pdfRequest: AbortController | null = null
+  let convertButton = $state<HTMLButtonElement>()
+  let cancelPdfButton = $state<HTMLButtonElement>()
   let closed = false
   let request: AbortController | null = null
 
@@ -36,7 +60,14 @@
   const abortRequest = () => {
     request?.abort()
     request = null
+    pdfRequest?.abort()
+    pdfRequest = null
   }
+
+  const pdfBusy = $derived(pdfStage !== null)
+  const title = $derived<UiStringKey>(
+    pdfReview ? 'pdf.review.title' : pending ? 'import.reviewTitle' : pdfImport ? 'import.titleAny' : 'import.title',
+  )
 
   const review = $derived(pending ? resolve(pending, prefs.documentLocale) : null)
   const counts = $derived(pending?.sections.filter(section => pending!.content[section.kind].length > 0) ?? [])
@@ -55,7 +86,61 @@
     closed = true
     abortRequest()
     pending = null
+    pdfReview = null
     onClose()
+  }
+
+  const convert = async () => {
+    if (!pdfFile || pdfBusy || closed) return
+    pdfError = null
+    pdfNotice = null
+    const current = new AbortController()
+    pdfRequest = current
+    pdfStage = 'uploading'
+    // Convert is about to be disabled; keep focus on a live control in the modal.
+    void tick().then(() => { if (pdfRequest === current) cancelPdfButton?.focus() })
+    const result = await convertPdf(pdfFile, { signal: current.signal, pollMs: pdfPollMs, onStage: (stage) => { if (!current.signal.aborted) pdfStage = stage } })
+    if (closed || pdfRequest !== current) return
+    pdfRequest = null
+    pdfStage = null
+    if (!result.ok) {
+      if (result.messageKey === 'pdf.error.cancelled') pdfNotice = result
+      else pdfError = result
+      await tick()
+      if (!closed) convertButton?.focus()
+      return
+    }
+    pdfReview = { proposal: mapExtraction(result.value, prefs.documentLocale), extraction: result.value }
+    await tick()
+    if (!closed) titleElement?.focus()
+  }
+
+  /**
+   * The PDF review is an editing form whose server copy is already gone, so a
+   * stray Escape or backdrop tap must not throw it away; Cancel and Close still do.
+   */
+  const dismiss = () => {
+    if (!pdfReview) close()
+  }
+
+  const cancelConversion = () => {
+    pdfRequest?.abort()
+  }
+
+  const backFromPdf = async () => {
+    pdfReview = null
+    await tick()
+    document.getElementById(`${uid}-pdf`)?.focus()
+  }
+
+  /** Saved first, so a storage failure leaves the current resume in place. */
+  const replaceFromPdf = (doc: ResumeDocument): ({ message: string } & Partial<UiMessage>) | null => {
+    if (closed) return null
+    const status = commit ? commit(doc) : saveDocument(doc)
+    if (status.kind === 'error') return status
+    if (!commit) resumeDoc.replace(doc)
+    close()
+    return null
   }
 
   const stage = async (result: Result<ResumeDocument>) => {
@@ -134,21 +219,59 @@
   }
 </script>
 
-<svelte:window onkeydown={(event) => { if (event.key === 'Escape') { event.preventDefault(); close() } }} />
+<svelte:window onkeydown={(event) => { if (event.key === 'Escape') { event.preventDefault(); dismiss() } }} />
 
 <div
   class="drawer-overlay import-overlay"
   role="presentation"
-  onclick={(event) => { if (event.target === event.currentTarget) close() }}
+  onclick={(event) => { if (event.target === event.currentTarget) dismiss() }}
 >
-  <div class="drawer import-dialog" role="dialog" aria-modal="true" aria-labelledby="{uid}-title" use:focusTrap>
+  <div class="drawer import-dialog" class:import-dialog-wide={pdfReview !== null} role="dialog" aria-modal="true" aria-labelledby="{uid}-title" use:focusTrap>
     <header class="drawer-head">
-      <h2 id="{uid}-title" class="import-title">{t(prefs.uiLocale, pending ? 'import.reviewTitle' : 'import.title')}</h2>
+      <h2 id="{uid}-title" class="import-title" tabindex="-1" bind:this={titleElement}>{t(prefs.uiLocale, title)}</h2>
       <button type="button" class="repeat-btn" bind:this={closeButton} onclick={close}>{t(prefs.uiLocale, 'action.close')}</button>
     </header>
 
     <div class="drawer-body">
-      <fieldset class="import-sources" hidden={pending !== null} disabled={busy} aria-busy={busy}>
+      {#if pdfImport}
+        <section class="pdf-import-source" hidden={pending !== null || pdfReview !== null} aria-labelledby="{uid}-pdf-heading">
+          <h3 id="{uid}-pdf-heading" class="editor-subhead">{t(prefs.uiLocale, 'pdf.heading')}</h3>
+          {#if pdfError}
+            <p id="{uid}-pdf-error" role="alert" class="save-status error">{translatedMessage(prefs.uiLocale, pdfError, pdfError.error)}</p>
+          {/if}
+          <div class="field">
+            <label class="field-label" for="{uid}-pdf">{t(prefs.uiLocale, 'pdf.file')}</label>
+            <input
+              id="{uid}-pdf"
+              type="file"
+              accept="application/pdf,.pdf"
+              disabled={pdfBusy || busy}
+              aria-describedby="{uid}-pdf-hint {uid}-pdf-limits{pdfError ? ` ${uid}-pdf-error` : ''}"
+              aria-invalid={pdfError !== null}
+              onchange={(event) => { pdfFile = (event.currentTarget as HTMLInputElement).files?.[0] ?? null; pdfError = null; pdfNotice = null }}
+            />
+            <p id="{uid}-pdf-hint" class="field-hint">{t(prefs.uiLocale, 'pdf.privacy')}</p>
+            <p id="{uid}-pdf-limits" class="field-hint">{t(prefs.uiLocale, 'pdf.limits', { size: MAX_PDF_MB, pages: MAX_PDF_PAGES })}</p>
+            <div class="import-actions">
+              <button type="button" class="tool-btn" bind:this={convertButton} disabled={pdfBusy || busy || !pdfFile} onclick={convert}>{t(prefs.uiLocale, 'pdf.convert')}</button>
+              {#if pdfBusy}
+                <button type="button" class="tool-btn" bind:this={cancelPdfButton} onclick={cancelConversion}>{t(prefs.uiLocale, 'pdf.cancel')}</button>
+              {/if}
+            </div>
+            {#if pdfStage || pdfNotice}
+              <p role="status" class="pdf-stage">
+                {pdfStage ? t(prefs.uiLocale, `pdf.stage.${pdfStage}`) : pdfNotice ? translatedMessage(prefs.uiLocale, pdfNotice, pdfNotice.error) : ''}
+              </p>
+            {/if}
+          </div>
+        </section>
+      {/if}
+
+      {#if pdfReview}
+        <PdfImportReview proposal={pdfReview.proposal} extraction={pdfReview.extraction} onCancel={close} onBack={backFromPdf} onConfirm={replaceFromPdf} />
+      {/if}
+
+      <fieldset class="import-sources" hidden={pending !== null || pdfReview !== null} disabled={busy || pdfBusy} aria-busy={busy}>
         {#if error}
           <p id={errorId} role="alert" class="save-status error">{message}</p>
         {/if}
@@ -201,6 +324,7 @@
 <style>
   .import-overlay { align-items: center; justify-content: center; }
   .import-dialog { width: min(32rem, 100%); max-height: 90dvh; border: 1px solid var(--color-hairline); border-radius: 0; }
+  .import-dialog-wide { width: min(48rem, 100%); }
   .import-title { flex: 1; margin: 0; font-size: var(--text-h2); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: 1.2; }
   .import-sources { min-width: 0; padding: 0; border: 0; }
   .import-url-row { display: flex; gap: 0.5rem; }

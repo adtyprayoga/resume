@@ -1,0 +1,11 @@
+{
+  "contract_version": 1,
+  "id": "Q2xhdWRlLXRlc3Qtam9iLWlkLTAwMDAwMDAwMDAwMDA",
+  "status": "failed",
+  "stage": "done",
+  "result": null,
+  "error": {
+    "code": "kaboom",
+    "retryable": true
+  }
+}
