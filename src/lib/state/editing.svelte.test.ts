@@ -11,7 +11,7 @@ const role: FieldRef = { owner: 'item', section: 'experience', id: 'exp_sample_1
 
 beforeEach(() => {
   editing.reset()
-  resumeDoc.replace(sampleDocument())
+  resumeDoc.load(sampleDocument())
   prefs.uiLocale = 'en'
   prefs.documentLocale = 'en'
   prefs.themeKey = defaultTheme.key
@@ -205,5 +205,36 @@ describe('staged entries', () => {
     const id = editing.active!.staged!.item.id
     editing.commit()
     expect(editing.lastAdded).toEqual({ section: 'skills', id })
+  })
+})
+
+describe('undo steps', () => {
+  beforeEach(() => editing.enter())
+
+  it('a committed field edit is one undo step', () => {
+    editing.begin({ kind: 'field', ref: name })
+    editing.setDraft('profile.name', 'New Name')
+    expect(editing.commit()).toBe('applied')
+    resumeDoc.undo()
+    expect(resumeDoc.current.profile.text.en.name).toBe('Aditya Prayoga')
+    expect(resumeDoc.canUndo).toBe(false)
+  })
+
+  it('a confirmed new entry is one undo step', () => {
+    const before = resumeDoc.current.content.experience.length
+    editing.begin({ kind: 'new-entry', section: 'experience' })
+    const roleKey = Object.keys(editing.active!.draft).find((key) => key.endsWith('.role'))!
+    editing.setDraft(roleKey, 'Analyst')
+    expect(editing.commit()).toBe('applied')
+    expect(resumeDoc.current.content.experience).toHaveLength(before + 1)
+    resumeDoc.undo()
+    expect(resumeDoc.current.content.experience).toHaveLength(before)
+    expect(resumeDoc.canUndo).toBe(false)
+  })
+
+  it('an unchanged commit records nothing', () => {
+    editing.begin({ kind: 'field', ref: name })
+    expect(editing.commit()).toBe('unchanged')
+    expect(resumeDoc.canUndo).toBe(false)
   })
 })

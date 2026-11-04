@@ -152,7 +152,10 @@ class EditingSession {
 
     if (!active.refs.every((ref) => itemExists(doc, ref))) return 'stale'
     const changed = active.refs.filter((ref) => !sameDraft(active.draft[refKey(ref)], active.original[refKey(ref)]))
-    for (const ref of changed) applyDraft(doc, ref, active.locale, active.draft[refKey(ref)]!)
+    // One undo step for the whole form, however many fields it changed.
+    resumeDoc.change(() => {
+      for (const ref of changed) applyDraft(doc, ref, active.locale, active.draft[refKey(ref)]!)
+    })
     return changed.length ? 'applied' : 'unchanged'
   }
 

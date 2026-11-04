@@ -20,7 +20,7 @@ class RecoveryStore {
   open(storage?: Storage | null): void {
     const result = loadDocument(storage)
     if (result.kind === 'loaded' || result.kind === 'empty') {
-      resumeDoc.replace(result.kind === 'loaded' ? result.document : sampleDocument())
+      resumeDoc.load(result.kind === 'loaded' ? result.document : sampleDocument())
       this.status = null
     } else {
       this.status = result
@@ -31,7 +31,7 @@ class RecoveryStore {
   commit(doc: ResumeDocument, storage?: Storage | null): SaveStatus {
     const status = saveDocument(doc, storage)
     if (status.kind === 'saved') {
-      resumeDoc.replace(doc)
+      resumeDoc.load(doc)
       this.status = null
     }
     return status
