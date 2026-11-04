@@ -204,8 +204,16 @@ const contactRowLocation = (piece: string): RegExpMatchArray | undefined =>
 const ENTRY_KINDS = ['experience', 'education', 'projects', 'awards', 'certifications', 'references'] as const
 type EntryKind = (typeof ENTRY_KINDS)[number]
 
-/** A course row with its own date: "Title - Issuer | Jun 2025". */
-const datedRow = (block: SourceBlock) => !isBullet(block) && !!splitTitleIssuer(block.text)?.date
+/**
+ * A course row with its own date: "Title - Issuer | Jun 2025". A year after a
+ * comma or dash ("…, 2024") ends many description lines too, so that form
+ * counts only when the title reads as a certificate.
+ */
+const datedRow = (block: SourceBlock) => {
+  if (isBullet(block)) return false
+  const row = splitTitleIssuer(block.text)
+  return !!row?.date && (/\|\s*$/.test(block.text.slice(0, row.date.from)) || isCertificate(row.title))
+}
 
 /**
  * Splits a section into entries. A block starts an entry when the layout calls
@@ -377,43 +385,52 @@ const courseRows = (blocks: SourceBlock[], roleOf: Map<SourceBlock, OutlineRole>
   })
 
 /**
- * References: a name line starts an entry (an h3, or on the rules path a
- * name-like line whose next line has a contact), and that next line gives the
- * position and the first phone and email. Any other line is a note entry.
+ * References: a name line starts an entry, and `lines(i)` says how many of the
+ * following lines belong to it. The first of them, up to its first contact,
+ * is the position; the first phone and email in any of them fill those
+ * fields; another line without contacts is the note. A line outside an entry
+ * becomes a note entry, unless it holds contacts: then it stays unplaced.
  */
-const mapReferences = (blocks: SourceBlock[], named: (index: number) => boolean, document: ResumeDocument, locale: Locale, usage: Usage, ref: Ref) => {
+const mapReferences = (blocks: SourceBlock[], lines: (index: number) => number | null, document: ResumeDocument, locale: Locale, usage: Usage, ref: Ref) => {
   const module = getSectionModule('references')
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]!
     const item = module.emptyItem() as ReferenceItem
     const text = item.text[locale]
     const path = (field: string) => `references.${item.id}.${field}`
-    if (named(i)) {
+    const count = lines(i)
+    if (count !== null) {
       text.name = block.text.trim()
       usage.take(block)
       ref(path('name'), block)
-      const line = i + 1 < blocks.length && !named(i + 1) ? blocks[i + 1]! : undefined
-      if (line) {
-        i++
+      const notes: string[] = []
+      blocks.slice(i + 1, i + 1 + count).forEach((line, index) => {
         const contacts = findContacts(line.text)
         for (const field of ['phone', 'email'] as const) {
           const found = contacts.find((contact) => contact.field === field)
-          if (!found) continue
+          if (!found || item[field]) continue
           item[field] = found.value
           usage.take(line, found.from, found.to)
           ref(path(field), line)
         }
         const end = contacts[0]?.from ?? line.text.length
-        const position = trimPiece(stripBullet(line.text.slice(0, end)).text)
-        if (/[\p{L}\p{N}]/u.test(position)) {
-          text.position = position
+        const lead = trimPiece(stripBullet(line.text.slice(0, end)).text)
+        if (!/[\p{L}\p{N}]/u.test(lead)) return
+        if (index === 0) {
+          text.position = lead
           usage.take(line, 0, end)
           ref(path('position'), line)
+        } else if (!contacts.length) {
+          notes.push(lead)
+          usage.take(line)
+          ref(path('note'), line)
         }
-      }
+      })
+      if (notes.length) text.note = notes.join('\n')
+      i += count
     } else {
       const note = stripBullet(block.text).text.trim()
-      if (!note) continue
+      if (!note || findContacts(block.text).length) continue
       text.note = note
       usage.take(block)
       ref(path('note'), block)
@@ -561,13 +578,21 @@ export const mapExtraction = (extraction: Extraction, locale: Locale): Proposal 
         seen('references')
         const blocks = region.blocks
         const headed = outline.confidence === 'typography' && blocks.some((block) => roleOf.get(block) === 'h3')
-        const named = (i: number) => {
+        const contact = (i: number) => i < blocks.length && findContacts(blocks[i]!.text).length > 0
+        // Typography: every line up to the next h3. Rules path: a name-like line
+        // followed by a contact line, or by a position line and then one.
+        const lines = (i: number): number | null => {
           const block = blocks[i]!
-          if (headed) return roleOf.get(block) === 'h3'
-          const next = blocks[i + 1]
-          return !isBullet(block) && isNameLike(block.text.trim()) && next !== undefined && findContacts(next.text).length > 0
+          if (headed) {
+            if (roleOf.get(block) !== 'h3') return null
+            const next = blocks.findIndex((other, j) => j > i && roleOf.get(other) === 'h3')
+            return (next < 0 ? blocks.length : next) - i - 1
+          }
+          if (isBullet(block) || !isNameLike(block.text.trim())) return null
+          if (contact(i + 1)) return 1
+          return i + 2 < blocks.length && !isBullet(blocks[i + 1]!) && contact(i + 2) && lines(i + 1) === null ? 2 : null
         }
-        mapReferences(blocks, named, document, locale, usage, ref)
+        mapReferences(blocks, lines, document, locale, usage, ref)
         break
       }
       case 'experience':
@@ -692,7 +717,13 @@ const mapEntry = (
   const path = (field: string) => `${kind}.${item.id}.${field}`
   let dated = false
 
-  const dateCandidates = blocks.filter(b => !isBullet(b)).flatMap(block => {
+  const [title, ...rest] = blocks as [SourceBlock, ...SourceBlock[]]
+  // A course's date is on its row or a date line under it, and a date line
+  // wins over the row's inline date; a year in its description is not its date.
+  const courseDate = kind === 'certifications'
+    ? (block: SourceBlock) => rest.some(isDateLine) ? isDateLine(block) : block === title || isDateLine(block)
+    : () => true
+  const dateCandidates = blocks.filter(b => !isBullet(b) && courseDate(b)).flatMap(block => {
     if (kind === 'projects') {
       const found = findProjectDate(block.text)
       return found ? [{ block, found }] : []
@@ -719,8 +750,8 @@ const mapEntry = (
     }
   }
 
-  const [title, ...rest] = blocks as [SourceBlock, ...SourceBlock[]]
-  takeDates(title)
+  if (courseDate(title)) takeDates(title)
+  const titleDated = dated
   let titleText = stripBullet(usage.rest(title)).text.trim()
   const titleLimit = ambiguous ? Math.min(...dateCandidates.filter(c => c.block === title).map(c => c.found.from), title.text.length) : title.text.length
   if (ambiguous) titleText = trimPiece(title.text.slice(0, titleLimit))
@@ -771,9 +802,11 @@ const mapEntry = (
     const metadata = kind === 'projects' ? projectMetadata(titleText) : null
     // The title without its date, or else the whole row, whose date may be what
     // separates "Title, Issuer, 2024".
-    const course = kind === 'certifications' && !ambiguous
-      ? splitTitleIssuer(titleText) ?? splitTitleIssuer(stripBullet(title.text).text)
-      : null
+    const row = stripBullet(title.text)
+    const whole = kind === 'certifications' ? splitTitleIssuer(row.text) : null
+    const course = kind === 'certifications' ? splitTitleIssuer(titleText) ?? whole : null
+    // An inline date that is not the entry's stays unplaced.
+    const keptDate = course && !titleDated && whole?.date ? row.from + whole.date.from : null
     // "School - City, Country" names the place, not a qualification: kept whole.
     const schoolSplit = kind === 'education' ? /^(.+?)\s+[–—-]\s+(.+)$/.exec(titleText) : null
     const school = schoolSplit && !isLocation(schoolSplit[2]!.trim()) ? schoolSplit : null
@@ -798,7 +831,8 @@ const mapEntry = (
         ref(path('issuer'), title)
       }
     } else text[field] = titleText
-    if (ambiguous) usage.take(title, 0, titleLimit)
+    if (keptDate !== null) usage.take(title, 0, keptDate)
+    else if (ambiguous) usage.take(title, 0, titleLimit)
     else usage.takeRest(title)
     ref(path(field), title)
   }
@@ -807,7 +841,7 @@ const mapEntry = (
   if (inlineDescription) ref(path('description'), title)
   for (const block of rest) {
     // A year inside an achievement ("…by 30% in 2019") is not the entry's period.
-    if (!isBullet(block)) takeDates(block)
+    if (!isBullet(block) && courseDate(block)) takeDates(block)
     if (usage.rest(block) === '') continue
     if (ambiguous && dateCandidates.some(c => c.block === block)) continue
 

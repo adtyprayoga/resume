@@ -630,6 +630,52 @@ describe('PDF outline certifications and references', () => {
     expect(proposal.unmatched).toEqual([])
   })
 
+  it('lets a row date win over the inline date and still splits the title', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025', 'text', body),
+      s('b4', 'May 2024', 'text', body),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([['Business English Training', 'Contoh Language Centre', '2024-05', '']])
+    expect(leftovers(proposal)).toBe('Jun 2025')
+  })
+
+  it('keeps a description ending in a year with its course row', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'Course'),
+      s('b3', 'Business English Training - Contoh Language Centre | Jun 2025', 'text', body),
+      s('b4', 'Completed modules in Python, 2024', 'text', body),
+      s('b5', 'Data Analysis with Power BI - Coursera | Mar 2024', 'text', body),
+    ), 'en')
+    expect(certsOf(proposal)).toEqual([
+      ['Business English Training', 'Contoh Language Centre', '2025-06', 'Completed modules in Python, 2024'],
+      ['Data Analysis with Power BI', 'Coursera', '2024-03', ''],
+    ])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('reads name, position and contact lines as one reference (typography)', () => {
+    const proposal = mapExtraction(source(name(), h2('b2', 'References'),
+      s('b3', 'Anggi Pratiwi', 'text', S('f2', 10)),
+      s('b4', 'HR Manager at PT Contoh Abadi', 'text', body),
+      s('b5', '+62 812 0000 1111 | anggi@example.com', 'text', body),
+    ), 'en')
+    expect(refsOf(proposal)).toEqual([anggi])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('reads name, position and contact lines as one reference (fallback)', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'References', 'section_header'),
+      b('b3', 'Anggi Pratiwi'), b('b4', 'HR Manager at PT Contoh Abadi'), b('b5', '+62 812 0000 1111 | anggi@example.com'),
+    ), 'en')
+    expect(refsOf(proposal)).toEqual([anggi])
+    expect(proposal.unmatched).toEqual([])
+  })
+
+  it('never makes a contact line a note', () => {
+    const proposal = mapExtraction(source(header(), b('b2', 'References', 'section_header'), b('b3', '+62 812 0000 1111 | anggi@example.com')), 'en')
+    expect(proposal.document.content.references).toEqual([])
+    expect(leftovers(proposal)).toContain('anggi@example.com')
+  })
+
   it('keeps a skills group labelled "Certifications:" in skills', () => {
     const proposal = mapExtraction(source(header(), b('b2', 'Skills', 'section_header'),
       b('b3', 'Certifications:'), b('b4', 'AWS Solutions Architect, CKA'),
