@@ -255,7 +255,8 @@ export const findContacts = (text: string): FoundContact[] => {
 
 // Entries ---------------------------------------------------------------------
 
-const BULLET = /^\s*(?:[•●▪◦‣∙·¢*➢►➔→➜➤➣✓✔■□◆◇❖○]|[-–](?=\s))\s*/
+// "->" is how Docling transcribes a ➔ bullet glyph.
+const BULLET = /^\s*(?:[•●▪◦‣∙·¢*➢►➔→➜➤➣✓✔■□◆◇❖○]|->(?=\s)|[-–](?=\s))\s*/
 
 /** Text without a leading bullet glyph, and where the kept text starts. */
 export const stripBullet = (text: string): { text: string; from: number } => {

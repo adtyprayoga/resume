@@ -173,6 +173,14 @@ describe('stripBullet', () => {
 
   it.each(['➔ ', '→ ', '➜ ', '➤ ', '➣ ', '✓ ', '✔ ', '■ ', '□ ', '◆ ', '◇ ', '❖ ', '○ '])('strips %s', (g) =>
     expect(stripBullet(`${g}Soft Skills: X`).text).toBe('Soft Skills: X'))
+
+  it('strips the ASCII arrow Docling writes for ➔', () => {
+    expect(stripBullet('-> Soft Skills: X')).toEqual({ text: 'Soft Skills: X', from: 3 })
+  })
+
+  it.each(['A->B', '->', '->B', '=> Soft Skills', '> Soft Skills'])('leaves %j alone', (text) => {
+    expect(stripBullet(text)).toEqual({ text, from: 0 })
+  })
 })
 
 describe('splitRoleCompany', () => {
