@@ -966,7 +966,7 @@ const main = async () => {
         await viewport(375, 812)
         await seed(fixture, { ...prefs, uiLocale })
         const before = await evaluate('window.__activeListeners()')
-        await clickSelector('.app-actions button[aria-controls], .app-actions button')
+        await clickSelector('.app-actions button[aria-expanded]')
         check(await evaluate(`getComputedStyle(document.querySelector('.side-panel')).animationName === 'none'`), `${uiLocale} ${dark ? 'dark' : 'light'}: reduced motion skips popup animation`)
         const contrast = await evaluate(`(() => { const p = getComputedStyle(document.querySelector('.side-panel')); return p.backgroundColor !== p.color && getComputedStyle(document.querySelector('.resume-paper-frame')).colorScheme === 'light' })()`)
         check(contrast, `${uiLocale} ${dark ? 'dark' : 'light'}: popup follows scheme while paper stays light`)

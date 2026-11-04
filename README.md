@@ -230,6 +230,15 @@ Nothing reaches your resume until an edit is applied, and applied edits are
 saved automatically. Changing the resume language or layout applies the open
 edit first. Opening or closing a panel, going to a section, and reordering or
 hiding one also apply it first, and drop a new entry you never typed in.
+
+**Undo** and **Redo** in the toolbar take back and reapply changes to the
+resume, one applied edit or action at a time. That includes moved, deleted or
+added entries, reordered or hidden sections, Fill untranslated, an import, and
+Reset or Start blank. The keyboard shortcuts are **Ctrl/Cmd+Z** to undo and
+**Ctrl/Cmd+Shift+Z** or **Ctrl+Y** to redo. While you are typing in a field, those
+keys undo the typing itself, as in any text box. Settings (layout, theme, font
+size and languages) are not part of undo. The history lasts until you close or
+reload the tab and is never saved.
 Opening Import sets the edit aside and brings it back after.
 Changing the interface language translates labels without touching what you
 have typed. Importing a replacement or resetting discards any edit of the old

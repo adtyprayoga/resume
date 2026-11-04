@@ -373,6 +373,14 @@
   .app-actions {
     position: relative;
     justify-self: start;
+    display: grid;
+    grid-template-columns: repeat(5, 44px);
+  }
+
+  /* Seven actions cannot share one phone row: Undo and Redo (the first two)
+     take their own row, and Sections starts the row of five below. */
+  .app-actions > :nth-child(3) {
+    grid-column-start: 1;
   }
 
   .app-status {
