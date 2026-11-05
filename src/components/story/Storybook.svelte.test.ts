@@ -90,3 +90,15 @@ it('gates confirm and end question prose and never creates an all-skipped entry'
   await user.click(screen.getByRole('button', { name: 'Skip' }))
   expect(resumeDoc.current.content.experience).toEqual([])
 })
+
+it('counts written answers on the ending page', async () => {
+  const pages = buildStory(resumeDoc.current, 'en')
+  render(Storybook, { onClose: vi.fn() })
+  const user = userEvent.setup()
+  const first = within(screen.getByRole('dialog')).getAllByRole('textbox')
+  expect(first.length).toBeGreaterThan(0)
+  for (const [index, input] of first.entries()) await user.type(input, `Answer ${index}`)
+  await user.click(screen.getByRole('button', { name: 'Write it in and turn the page' }))
+  for (let page = 1; page < pages.length - 1; page += 1) await user.click(screen.getByRole('button', { name: 'Skip' }))
+  expect(screen.getByRole('dialog')).toHaveTextContent(new RegExp(`You filled ${first.length} blanks? and skipped \\d+`))
+})
