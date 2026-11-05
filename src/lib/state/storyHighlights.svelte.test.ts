@@ -38,6 +38,32 @@ describe('story highlights', () => {
     expect(storyHighlights.isHighlighted(summary)).toBe(false)
   })
 
+  it('permanently invalidates a tags mark when stored arrays flatten to the same draft', () => {
+    const item = resumeDoc.current.content.skills[0]!
+    const ref: FieldRef = { owner: 'item', section: 'skills', id: item.id, key: 'items' }
+    resumeDoc.change(() => { item.text.en.items = ['A, B'] })
+    storyHighlights.add([{ ref, locale: 'en', value: 'A, B' }])
+    expect(storyHighlights.isHighlighted(ref)).toBe(true)
+    resumeDoc.change(() => { item.text.en.items = ['A', 'B'] })
+    expect(storyHighlights.isHighlighted(ref)).toBe(false)
+    expect(storyHighlights.count).toBe(0)
+    resumeDoc.change(() => { item.text.en.items = ['A, B'] })
+    expect(storyHighlights.isHighlighted(ref)).toBe(false)
+  })
+
+  it('permanently invalidates a bullets mark when stored arrays flatten to the same draft', () => {
+    const item = resumeDoc.current.content.experience[0]!
+    const ref: FieldRef = { owner: 'item', section: 'experience', id: item.id, key: 'bullets' }
+    resumeDoc.change(() => { item.text.en.bullets = ['A\nB'] })
+    storyHighlights.add([{ ref, locale: 'en', value: 'A\nB' }])
+    expect(storyHighlights.isHighlighted(ref)).toBe(true)
+    resumeDoc.change(() => { item.text.en.bullets = ['A', 'B'] })
+    expect(storyHighlights.isHighlighted(ref)).toBe(false)
+    expect(storyHighlights.count).toBe(0)
+    resumeDoc.change(() => { item.text.en.bullets = ['A\nB'] })
+    expect(storyHighlights.isHighlighted(ref)).toBe(false)
+  })
+
   it('keeps unrelated marks and invalidates on undo and redo', () => {
     storyHighlights.add(written('en'))
     resumeDoc.change(() => { resumeDoc.current.profile.text.en.headline = 'Other' })

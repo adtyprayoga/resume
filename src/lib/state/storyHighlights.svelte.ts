@@ -1,5 +1,5 @@
-import { readDraft, refKey, sameDraft, type FieldRef } from '$lib/editing/fields'
-import type { Locale } from '$lib/model/types'
+import { readDraft, refKey, sameDraft, specFor, type FieldRef } from '$lib/editing/fields'
+import type { Locale, ResumeDocument } from '$lib/model/types'
 import type { Written } from '$lib/guidance/apply'
 import { resumeDoc, type DocumentChangeEvent } from './document.svelte'
 import { prefs } from './preferences.svelte'
@@ -9,6 +9,18 @@ interface Mark {
   locale: Locale
   value: Written['value']
   identity: number
+}
+
+const storedValue = (doc: ResumeDocument, ref: FieldRef, locale: Locale): unknown => {
+  if (ref.owner === 'profile') return doc.profile.text[locale][ref.key]
+  if (ref.owner === 'contact') return doc.contact[ref.key]
+  const items = doc.content[ref.section] as unknown as Array<{
+    id: string
+    text: Record<Locale, Record<string, unknown>>
+    [key: string]: unknown
+  }>
+  const item = items.find((entry) => entry.id === ref.id)
+  return specFor(ref).scope === 'shared' ? item?.[ref.key] : item?.text[locale]?.[ref.key]
 }
 
 class StoryHighlights {
@@ -25,7 +37,8 @@ class StoryHighlights {
       return
     }
     for (const [key, mark] of Object.entries(this.marks)) {
-      if (!sameDraft(readDraft(event.before, mark.ref, mark.locale), readDraft(event.after, mark.ref, mark.locale))) {
+      if (JSON.stringify(storedValue(event.before, mark.ref, mark.locale)) !==
+        JSON.stringify(storedValue(event.after, mark.ref, mark.locale))) {
         delete this.marks[key]
       }
     }

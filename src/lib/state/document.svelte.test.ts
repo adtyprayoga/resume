@@ -57,6 +57,43 @@ describe('committed change subscriptions', () => {
     unsubscribe()
   })
 
+  it('coalesces nested load into one event and clears both history stacks', () => {
+    resumeDoc.change(() => { resumeDoc.current.profile.text.en.summary = 'First edit' })
+    resumeDoc.change(() => { resumeDoc.current.profile.text.en.summary = 'Second edit' })
+    resumeDoc.undo()
+    expect(resumeDoc.canUndo).toBe(true)
+    expect(resumeDoc.canRedo).toBe(true)
+    const before = resumeDoc.snapshot()
+    const events: Array<{ kind: string; before: ReturnType<typeof resumeDoc.snapshot>; after: ReturnType<typeof resumeDoc.snapshot> }> = []
+    const unsubscribe = resumeDoc.subscribeChanges((event) => events.push(event))
+    const loaded = sampleDocument()
+    loaded.profile.text.en.summary = 'Loaded'
+    resumeDoc.change(() => {
+      resumeDoc.current.profile.text.en.headline = 'Before load'
+      resumeDoc.load(loaded)
+      resumeDoc.current.profile.text.en.headline = 'After load'
+    })
+    expect(events).toHaveLength(1)
+    expect(events[0]?.kind).toBe('load')
+    expect(events[0]?.before).toEqual(before)
+    expect(events[0]?.after).toEqual(resumeDoc.snapshot())
+    expect(resumeDoc.current.profile.text.en.headline).toBe('After load')
+    expect(resumeDoc.canUndo).toBe(false)
+    expect(resumeDoc.canRedo).toBe(false)
+    expect(resumeDoc.undo()).toBe(false)
+    expect(resumeDoc.redo()).toBe(false)
+    unsubscribe()
+  })
+
+  it('notifies once for an equal-content nested load without creating undo history', () => {
+    const kinds: string[] = []
+    const unsubscribe = resumeDoc.subscribeChanges(({ kind }) => kinds.push(kind))
+    resumeDoc.change(() => resumeDoc.load(resumeDoc.snapshot()))
+    expect(kinds).toEqual(['load'])
+    expect(resumeDoc.canUndo).toBe(false)
+    unsubscribe()
+  })
+
   it('emits detached undo/redo snapshots without extra history steps', () => {
     const events: Array<{ kind: string; before: ReturnType<typeof resumeDoc.snapshot>; after: ReturnType<typeof resumeDoc.snapshot> }> = []
     const unsubscribe = resumeDoc.subscribeChanges((event) => events.push(event))

@@ -48,6 +48,7 @@ class ResumeDocumentStore {
   private undoCount = $state(0)
   private redoCount = $state(0)
   private depth = 0
+  private loadedInChange = false
   private listeners = new Set<(event: DocumentChangeEvent) => void>()
 
   subscribeChanges(listener: (event: DocumentChangeEvent) => void): () => void {
@@ -77,6 +78,7 @@ class ResumeDocumentStore {
     const before = this.snapshot()
     const beforeJson = JSON.stringify(before)
     const beforeIdentity = this.identity
+    this.loadedInChange = false
     this.depth += 1
     try {
       return fn()
@@ -84,13 +86,16 @@ class ResumeDocumentStore {
       this.depth -= 1
       const after = this.snapshot()
       const changed = JSON.stringify(after) !== beforeJson
-      if (changed) {
+      const loaded = this.loadedInChange
+      this.loadedInChange = false
+      if (changed && !loaded) {
         this.undoStack.push(before)
         if (this.undoStack.length > HISTORY_LIMIT) this.undoStack.shift()
         this.redoStack = []
         this.syncCounts()
       }
-      if (this.identity !== beforeIdentity) this.notify(before, after, 'replace')
+      if (loaded) this.notify(before, after, 'load')
+      else if (this.identity !== beforeIdentity) this.notify(before, after, 'replace')
       else if (changed) this.notify(before, after, 'change')
     }
   }
@@ -113,7 +118,8 @@ class ResumeDocumentStore {
     this.undoStack = []
     this.redoStack = []
     this.syncCounts()
-    this.notify(before, this.snapshot(), 'load')
+    if (this.depth > 0) this.loadedInChange = true
+    else this.notify(before, this.snapshot(), 'load')
   }
 
   undo(): boolean {
