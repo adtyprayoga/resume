@@ -102,3 +102,33 @@ it('counts written answers on the ending page', async () => {
   for (let page = 1; page < pages.length - 1; page += 1) await user.click(screen.getByRole('button', { name: 'Skip' }))
   expect(screen.getByRole('dialog')).toHaveTextContent(new RegExp(`You filled ${first.length} blanks? and skipped \\d+`))
 })
+
+it('describes every blank with its tip in the interface language', () => {
+  prefs.documentLocale = 'id'
+  prefs.uiLocale = 'en'
+  render(Storybook, { onClose: vi.fn() })
+  const inputs = within(screen.getByRole('dialog')).getAllByRole('textbox')
+  expect(inputs.length).toBeGreaterThan(0)
+  for (const input of inputs) {
+    const tip = document.getElementById(input.getAttribute('aria-describedby') ?? '')
+    expect(tip).not.toBeNull()
+    expect(tip).toHaveTextContent(/Example:/)
+  }
+})
+
+it('opens one tip band under the paragraph of the focused blank', async () => {
+  render(Storybook, { onClose: vi.fn() })
+  const user = userEvent.setup()
+  const [first, second] = within(screen.getByRole('dialog')).getAllByRole('textbox')
+  expect(document.querySelector('.story-tip-band')).toBeNull()
+  await user.click(first!)
+  const bands = () => [...document.querySelectorAll('.story-tip-band')]
+  expect(bands()).toHaveLength(1)
+  expect(bands()[0]!.previousElementSibling?.contains(first!)).toBe(true)
+  expect(bands()[0]).toHaveTextContent(document.getElementById(first!.getAttribute('aria-describedby')!)!.textContent!)
+  if (second) {
+    await user.click(second)
+    expect(bands()).toHaveLength(1)
+    expect(bands()[0]!.previousElementSibling?.contains(second)).toBe(true)
+  }
+})

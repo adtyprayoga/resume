@@ -16,3 +16,9 @@ it('pulses only icon opacity finitely and suppresses every pulse for reduced mot
   expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.icon-btn\.pulse svg\s*\{\s*animation: none;/)
   expect(read('src/styles/tokens.css')).toContain('--dur-lamp: 1.2s;')
 })
+it('floats tips on desktop and shows them as a band under the line on phones', () => {
+  const css = read('src/components/story/story.css')
+  expect(css).toMatch(/@media \(max-width: 639px\)\s*\{[^}]*\.story-tip-float\s*\{\s*display: none;/)
+  expect(css).toMatch(/@media \(min-width: 640px\)\s*\{[^@]*\.story-slot:hover \.story-tip-float,\s*\.story-slot:focus-within \.story-tip-float\s*\{\s*display: block;/)
+  expect(css).toMatch(/@media \(min-width: 640px\)\s*\{[^@]*\.story-tip-band\s*\{\s*display: none;/)
+})

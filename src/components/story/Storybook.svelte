@@ -3,6 +3,7 @@
   import { buildStory, type Blank } from '$lib/guidance/story'
   import { applyPage, type Answers } from '$lib/guidance/apply'
   import { NARRATION } from '$lib/guidance/templates'
+  import { tipFor } from '$lib/guidance/tips'
   import { t } from '$lib/i18n/ui'
   import { resumeDoc } from '$lib/state/document.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
@@ -17,6 +18,9 @@
   let answers = $state<Record<string, Answers>>({})
   let completed = $state<Record<string, { filled: number; skipped: number }>>({})
   let heading = $state<HTMLHeadingElement>()
+  const uid = $props.id()
+  /** The blank whose tip band is open (phones); desktop shows floating tips on hover and focus. */
+  let focused = $state<{ page: string; blank: string } | null>(null)
   const page = $derived(pages[index]!)
   const current = $derived(answers[page.id] ?? {})
   const readonly = $derived(!!completed[page.id])
@@ -57,16 +61,33 @@
   }
 </script>
 
+{#snippet tipBody(blank: Blank)}
+  {@const tip = tipFor(page.chapter, blank.id)}
+  {#if tip}<b>{blank.label[prefs.uiLocale]}</b> {tip.text[prefs.uiLocale]} <span class="story-tip-example">{tip.example[prefs.uiLocale]}</span>{/if}
+{/snippet}
+
 {#snippet input(blank: Blank)}
-  <input
+  {@const tipId = `${uid}-tip-${page.blanks.indexOf(blank)}`}
+  {@const hasTip = !!tipFor(page.chapter, blank.id)}
+  <span class="story-slot"><input
     class="story-blank"
     type={blank.input === 'month' ? 'month' : 'text'}
     aria-label={blank.input === 'tags' ? t(prefs.uiLocale, 'story.tags', { label: blank.label[prefs.uiLocale] }) : blank.label[prefs.uiLocale]}
+    aria-describedby={hasTip ? tipId : undefined}
     placeholder={blank.label[prefs.uiLocale]}
     value={current[blank.id] ?? ''}
     {readonly}
+    onfocus={() => (focused = { page: page.id, blank: blank.id })}
     oninput={(event) => answer(blank.id, event.currentTarget.value)}
-  />
+  />{#if hasTip}<span class="story-tip-float" id={tipId} role="tooltip" lang={prefs.uiLocale}>{@render tipBody(blank)}</span>{/if}</span>
+{/snippet}
+
+{#snippet band(blanks: Blank[])}
+  {@const open = focused?.page === page.id ? blanks.find(b => b.id === focused!.blank) : undefined}
+  {#if open && tipFor(page.chapter, open.id)}
+    <!-- The same tip is already the input's description; the band is its visible form on phones. -->
+    <p class="story-tip-band" lang={prefs.uiLocale} aria-hidden="true">{@render tipBody(open)}</p>
+  {/if}
 {/snippet}
 
 <div class="storybook" role="dialog" aria-modal="true" aria-label={t(prefs.uiLocale, 'story.title')} use:focusTrap onkeydown={keyboard} tabindex="-1" data-print-hide>
@@ -80,6 +101,7 @@
       {#each page.paragraphs as paragraph}
         {#if paragraph.every(s => s.kind !== 'blank' || visible(page, s.id, current))}
           <p>{#each paragraph as segment}{#if segment.kind === 'text'}{segment.text}{:else if segment.kind === 'resume'}<mark class="story-resume">{segment.text}</mark>{:else}{@render input(page.blanks.find(b => b.id === segment.id)!)}{/if}{/each}</p>
+          {@render band(page.blanks.filter(b => paragraph.some(s => s.kind === 'blank' && s.id === b.id)))}
         {/if}
       {/each}
       {#if page.chapter === 'ending'}
@@ -96,6 +118,7 @@
     {/if}
     {#each page.blanks.filter(b => !inline.has(b.id) && visible(page, b.id, current)) as blank}
       <label class="story-field">{blank.label[prefs.uiLocale]} {@render input(blank)}</label>
+      {@render band([blank])}
     {/each}
     {#each page.choices.filter(c => visible(page, c.id, current)) as choice}
       <fieldset class="story-choice" disabled={readonly}>
