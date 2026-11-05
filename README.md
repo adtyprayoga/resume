@@ -253,6 +253,27 @@ Exporting, or printing from the browser's own menu, applies the open edit
 first. Edit mode prints exactly what Preview prints: prompts, actions and
 editors are never part of the page.
 
+### The storyteller (lamp)
+
+A lamp appears in the toolbar once the resume has a name and a headline and
+there is something worth asking about: a missing contact detail, a summary
+without numbers, a skill group that's missing, a certificate without an issuer,
+and so on. It glows briefly when there is something new. It never pulses with
+reduced motion, and it stops once you have opened the book.
+
+The lamp opens a storybook that tells your resume back to you, one page at a
+time, in the resume's language: "Once upon a time, there lived a…". There is
+one chapter per part of a good resume: Headline, Profile Summary, Competencies,
+Working Experience, Education, Course and References. Where something is
+missing or weak, the story stops and asks. Every question can be skipped.
+
+Answers are written in with fixed sentence templates. Nothing is invented, and
+the storyteller never rewrites your own words: a summary sentence goes in front
+of what you already wrote. **Write it in and turn the page** saves that page as
+one step, so closing the book and pressing **Undo** takes it back. What the
+storyteller wrote stays highlighted on screen until you edit it, undo it, or
+choose **Clear highlights**. Highlights are never printed or saved.
+
 ## Layouts
 
 The **Classic / ATS** selector in Settings switches between two presentations
