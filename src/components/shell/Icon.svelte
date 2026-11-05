@@ -1,6 +1,7 @@
 <script lang="ts" module>
   /** Bundled 24px stroke icons; no icon library. */
   const PATHS = {
+    lamp: 'M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 2H9s0-1-1-2Z',
     goto: 'M4 12h12m0 0-5-5m5 5-5 5M20 5v14',
     sections: 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01',
     export: 'M12 3v12m0 0-4-4m4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2',

@@ -251,6 +251,10 @@
 /* Screen only: a positioned box is painted in a later layer, which would
    change the PDF's text order when printing from Edit mode. */
 @media screen {
+  .resume-paper .story-mark {
+    background: var(--color-fill-hover);
+  }
+
   .resume-paper[data-editing] [data-entry] {
     position: relative;
   }

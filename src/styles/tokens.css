@@ -24,6 +24,10 @@
   --color-danger: #991b1b;
   --color-danger-tint: #fef2f2;
 
+  --text-story: 1.25rem;
+  --leading-story: 1.8;
+  --dur-lamp: 1.2s;
+
   --text-caps: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;

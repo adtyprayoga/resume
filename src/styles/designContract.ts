@@ -133,7 +133,7 @@ export const auditCss = (css: string, source: string): string[] => {
       if (names.some((name) => !TRANSITIONABLE.has(name))) report('transition', prop, value)
     }
     if ((prop === 'font-size' || prop === 'font') && tooSmall(value)) report('font-size', prop, value)
-    if ((prop === 'font-family' || prop === 'font') && value !== 'inherit' && !/var\(--font-(sans|mono)\)/.test(value)) {
+    if ((prop === 'font-family' || prop === 'font') && value !== 'inherit' && !/var\(--font-(sans|mono|story)\)/.test(value)) {
       report('font-family', prop, value)
     }
     if (/\b100vh\b/.test(value)) report('viewport-height', prop, value)

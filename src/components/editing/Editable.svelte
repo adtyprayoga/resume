@@ -10,6 +10,7 @@
   import { refKey, specFor, type FieldRef } from '$lib/editing/fields'
   import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
+  import { storyHighlights } from '$lib/state/storyHighlights.svelte'
 
   const {
     ref,
@@ -27,6 +28,7 @@
   } = $props()
 
   const key = $derived(refKey(ref))
+  const highlighted = $derived(storyHighlights.isHighlighted(ref, value))
   const spec = $derived(specFor(ref))
   const label = $derived(t(prefs.uiLocale, spec.labelKey))
   const name = $derived(
@@ -48,4 +50,16 @@
   }
 </script>
 
-{#if editing.mode !== 'edit'}{#if children}{@render children()}{:else}{value}{/if}{:else if value}<span class="editable" class:editable-block={!!children} role="button" tabindex="0" data-edit-key={key} aria-label={name} onclick={open} {onkeydown}>{#if children}{@render children()}{:else}{value}{/if}</span>{:else if prompt}<span class="edit-prompt" role="button" tabindex="0" data-print-hide data-edit-key={key} aria-label={t(prefs.uiLocale, 'edit.add', { field: label })} onclick={open} {onkeydown}>+ {label}</span>{/if}
+{#if editing.mode !== 'edit'}
+  {#if highlighted}
+    <span class="story-mark">{#if children}{@render children()}{:else}{value}{/if}</span>
+  {:else if children}
+    {@render children()}
+  {:else}
+    {value}
+  {/if}
+{:else if value}
+  <span class="editable" class:editable-block={!!children} class:story-mark={highlighted} role="button" tabindex="0" data-edit-key={key} aria-label={name} onclick={open} {onkeydown}>{#if children}{@render children()}{:else}{value}{/if}</span>
+{:else if prompt}
+  <span class="edit-prompt" role="button" tabindex="0" data-print-hide data-edit-key={key} aria-label={t(prefs.uiLocale, 'edit.add', { field: label })} onclick={open} {onkeydown}>+ {label}</span>
+{/if}

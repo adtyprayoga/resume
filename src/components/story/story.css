@@ -1,0 +1,48 @@
+.storybook {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: var(--z-modal);
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+.story-page { max-width: 40rem; margin: 0 auto; }
+.story-header, .story-navigation { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.story-header { font-size: var(--text-sm); color: var(--color-muted); margin-bottom: 2rem; }
+.story-page h1 { font-size: var(--text-h2); margin-bottom: 2rem; }
+.story-prose { font-family: var(--font-story); font-size: var(--text-story); line-height: var(--leading-story); overflow-wrap: anywhere; }
+.story-prose p { margin-bottom: 1.5rem; }
+.story-resume { color: var(--color-ink); background: var(--color-fill-hover); border-bottom: 1px solid var(--color-accent); }
+.story-blank { font: inherit; color: var(--color-ink); background: var(--color-surface); border: 0; border-bottom: 2px solid var(--color-accent-strong); border-radius: 0; padding: 0.25rem; min-height: 44px; min-width: 44px; width: 14rem; max-width: 100%; }
+.story-blank::placeholder { color: var(--color-muted); opacity: 1; }
+.story-choice { margin: 1.5rem 0; padding: 0; border: 0; }
+.story-choice label { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; min-width: 44px; margin-right: 1rem; }
+.story-choice input { width: 1.25rem; height: 1.25rem; accent-color: var(--color-accent-strong); }
+.story-field { display: block; margin: 1rem 0; }
+.story-navigation { margin: 2rem 0; }
+.storybook :focus-visible { outline: 2px solid var(--color-accent-strong); outline-offset: 3px; }
+/* Tips: what a blank is for and the guide's lesson behind it. Floating on desktop, a band under the line on phones. */
+.story-slot { position: relative; display: inline-block; max-width: 100%; }
+.story-tip-float, .story-tip-band { font-family: var(--font-sans); font-size: var(--text-sm); line-height: var(--leading-body); }
+.story-tip-float b, .story-tip-band b { font-weight: 600; }
+.story-tip-example { display: block; margin-top: 0.375rem; }
+.story-tip-float { display: none; position: absolute; left: 0; top: calc(100% + 0.5rem); z-index: var(--z-sticky); width: max-content; max-width: min(20rem, calc(100vw - 2rem)); white-space: normal; padding: 0.625rem 0.75rem; color: var(--color-surface); background: var(--color-ink); }
+.story-tip-float .story-tip-example { color: var(--color-hairline); }
+.story-tip-float b { display: block; margin-bottom: 0.25rem; }
+.story-tip-band { margin: -0.75rem 0 1.5rem; padding: 0.625rem 0.875rem; color: var(--color-ink); background: var(--color-surface); border-left: 3px solid var(--color-accent-strong); }
+.story-tip-band .story-tip-example { color: var(--color-muted); }
+
+@media (max-width: 639px) {
+  .story-tip-float { display: none; }
+}
+
+@media (min-width: 640px) {
+  .story-slot:hover .story-tip-float,
+  .story-slot:focus-within .story-tip-float { display: block; }
+  .story-tip-band { display: none; }
+}
+
+@media print { .storybook { display: none !important; } }
