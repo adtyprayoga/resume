@@ -175,6 +175,25 @@ it('does not reorder a stale core selection whose bullet changed', () => {
   expect(applyPage(p, { [`experience:${id}:core`]: '1' }, 'en')).toEqual([])
   expect(resumeDoc.current.content.experience[0]!.text.en.bullets).toEqual(['First', 'Replacement'])
 })
+it.each(['French', 'English (basic)'])('ignores a stale level answer when its original item is now %s', current => {
+  const id = add('skills')
+  const group = resumeDoc.current.content.skills[0]!
+  group.text.en = { title: 'Languages', items: ['English'] }
+  const page = buildStory(resumeDoc.current, 'en').find(p => p.id === 'competencies')!
+  group.text.en.items[0] = current
+  expect(applyPage(page, { [`competencies:level:${id}:0`]: 'fluent' }, 'en')).toEqual([])
+  expect(group.text.en.items).toEqual([current])
+  expect(resumeDoc.canUndo).toBe(false)
+})
+it.each(['experience', 'education', 'course', 'references'] as const)('does not create from a stale empty %s page', chapter => {
+  const section = chapter === 'course' ? 'certifications' : chapter
+  const slot = { experience: 'role', education: 'school', course: 'title', references: 'name' }[chapter]
+  const page = buildStory(resumeDoc.current, 'en').find(p => p.id === chapter)!
+  const existingId = add(section)
+  expect(applyPage(page, { [`${chapter}:start`]: 'yes', [`${chapter}:new:${slot}`]: 'Stale answer' }, 'en')).toEqual([])
+  expect(resumeDoc.current.content[section].map(item => item.id)).toEqual([existingId])
+  expect(resumeDoc.canUndo).toBe(false)
+})
 it('preserves explicit false when a stale current choice is ignored while filling start', () => {
   const id = add('education'); const p = buildStory(resumeDoc.current, 'en').find(p => p.id === 'education')!
   resumeDoc.current.content.education[0]!.dates = { start: '', end: '2024-01', current: false }

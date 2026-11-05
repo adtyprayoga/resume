@@ -90,7 +90,11 @@ export function applyPage(page: StoryPage, answers: Answers, locale: Locale): Wr
         if (items.length) createGroup(GROUP_TITLES[kind][locale], items)
       }
       for (const group of view.skills) {
-        const items = group.items.map((item, i) => a[`competencies:level:${group.id}:${i}`] ? `${item} (${a[`competencies:level:${group.id}:${i}`]})` : item)
+        const items = group.items.map((item, i) => {
+          const id = `competencies:level:${group.id}:${i}`
+          const original = page.blanks.find(blank => blank.id === id)?.label[locale]
+          return a[id] && original === item ? `${item} (${a[id]})` : item
+        })
         if (items.some((item, i) => item !== group.items[i])) writeList('skills', group.id, items)
       }
       const wanted = parseTags(a['competencies:wanted'] ?? '')
@@ -107,7 +111,7 @@ export function applyPage(page: StoryPage, answers: Answers, locale: Locale): Wr
       const chapter = page.chapter
       const section = chapter === 'course' ? 'certifications' : chapter
       let newId: string | undefined
-      if (page.confirm && answers[page.confirm.id] === 'yes' && page.blanks.some(b => a[b.id])) {
+      if (page.confirm && doc.content[section].length === 0 && answers[page.confirm.id] === 'yes' && page.blanks.some(b => a[b.id])) {
         staged = getSectionModule(section).emptyItem() as NonNullable<typeof staged>
         newId = staged.id
       }
