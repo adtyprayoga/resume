@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Storybook from './components/story/Storybook.svelte'
+  import { storyAttention } from '$lib/state/storyAttention.svelte'
+  import { storyHighlights } from '$lib/state/storyHighlights.svelte'
   import ImportDialog from './components/ImportDialog.svelte'
   import UploadMenu from './components/shell/UploadMenu.svelte'
   import PersistenceHost from './components/PersistenceHost.svelte'
@@ -30,6 +33,24 @@
   // stored work on first paint. Unreadable data blocks the app behind recovery.
   prefs.hydrate()
   recovery.open()
+
+  let storyOpen = $state(false)
+  let undoButton = $state<HTMLButtonElement | undefined>()
+  $effect(() => {
+    untrack(() => storyAttention.start())
+    return () => storyAttention.stop()
+  })
+  const openStory = () => {
+    editing.dismiss()
+    storyAttention.acknowledge()
+    uploadOpen = false
+    exportOpen = false
+    storyOpen = true
+  }
+  const closeStory = () => {
+    storyOpen = false
+    void tick().then(() => undoButton?.focus())
+  }
 
   let paperElement = $state<HTMLElement | undefined>()
   let previewContainer = $state<HTMLDivElement | undefined>()
@@ -274,7 +295,7 @@
   <RecoveryScreen />
 </div>
 {:else}
-<div class="app-shell">
+<div class="app-shell" inert={storyOpen} aria-hidden={storyOpen ? true : undefined}>
   <header class="app-header" bind:this={headerElement} data-print-hide data-keeps-draft>
     <div class="app-header-row">
       <div class="app-brand">
@@ -287,6 +308,7 @@
       <div class="app-actions" role="toolbar" aria-label={t(prefs.uiLocale, 'app.actions')}>
         <IconButton
           icon="undo"
+          bind:element={undoButton}
           label={t(prefs.uiLocale, 'action.undo')}
           disabled={!resumeDoc.canUndo && !editing.hasChanges}
           onclick={() => undo(prefs.uiLocale)}
@@ -297,7 +319,13 @@
           disabled={!resumeDoc.canRedo}
           onclick={() => redo(prefs.uiLocale)}
         />
+        {#if storyAttention.ready}
+          <IconButton icon="lamp" label={t(prefs.uiLocale, 'story.open')}
+            pulse={storyAttention.pulse} pulseOccurrence={storyAttention.pulseOccurrence}
+            haspopup="dialog" onclick={openStory} />
+        {/if}
         <IconButton
+          rowStart
           icon="sections"
           label={t(prefs.uiLocale, 'action.sections')}
           controls={sectionsOpen ? PANEL_ID.sections : undefined}
@@ -326,6 +354,11 @@
 
     {#if prefs.saveStatus.kind === 'error'}
       <p class="save-status error" role="alert">{translatedMessage(prefs.uiLocale, prefs.saveStatus, prefs.saveStatus.message)}</p>
+    {/if}
+    {#if storyHighlights.count > 0}
+      <p class="app-demo-notice" data-print-hide>{t(prefs.uiLocale, 'story.highlights')}
+        <button type="button" class="tool-btn" onclick={() => storyHighlights.clear()}>{t(prefs.uiLocale, 'story.clearHighlights')}</button>
+      </p>
     {/if}
     {#if isSampleDocument(resumeDoc.current)}
       <p class="app-demo-notice">{t(prefs.uiLocale, 'app.demoNotice')}</p>
@@ -374,7 +407,8 @@
   </div>
 </div>
 
-<EditLayer />
+{#if !storyOpen}<EditLayer />{/if}
+{#if storyOpen}<Storybook onClose={closeStory} />{/if}
 <div class="sr-only" aria-live="polite" aria-atomic="true" data-print-hide>{editing.announcement}</div>
 
 {#if importing}

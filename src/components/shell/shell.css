@@ -377,9 +377,8 @@
     grid-template-columns: repeat(5, 44px);
   }
 
-  /* Seven actions cannot share one phone row: Undo and Redo (the first two)
-     take their own row, and Sections starts the row of five below. */
-  .app-actions > :nth-child(3) {
+  /* History and the optional lamp share the first row; Sections starts the second. */
+  .app-actions > .row-start {
     grid-column-start: 1;
   }
 
@@ -510,4 +509,14 @@
     min-height: 0;
     overscroll-behavior-y: contain;
   }
+}
+
+.icon-btn.lit { color: var(--color-accent-strong); }
+.icon-btn.pulse svg { animation: lamp-glow var(--dur-lamp) var(--ease-out) 3; }
+@keyframes lamp-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn.pulse svg { animation: none; }
 }

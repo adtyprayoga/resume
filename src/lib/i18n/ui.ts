@@ -3,6 +3,20 @@ import type { Locale } from '$lib/model/types'
 /** Chrome only. Resume content lives in the document's per-locale text nodes. */
 export const strings = {
   en: {
+    "story.open": "Tell my story",
+    "story.title": "Your story",
+    "story.chapter": "Chapter {n} of 7 · {title}",
+    "story.previous": "Previous page",
+    "story.next": "Write it in and turn the page",
+    "story.turn": "Turn the page",
+    "story.close": "Close the book",
+    "story.yes": "Yes",
+    "story.no": "No",
+    "story.skip": "Skip",
+    "story.highlights": "Highlighted text was written by the storyteller.",
+    "story.clearHighlights": "Clear highlights",
+    "story.tags": "{label} (comma-separated)",
+
     "action.upload": "Upload",
     "action.uploadPdf": "Upload PDF",
     "action.uploadJson": "Upload JSON",
@@ -287,6 +301,20 @@ export const strings = {
     'app.pageBreakHint': 'Page break guides are approximate; the print preview is authoritative.',
   },
   id: {
+    "story.open": "Ceritakan kisahku",
+    "story.title": "Kisahmu",
+    "story.chapter": "Bab {n} dari 7 · {title}",
+    "story.previous": "Halaman sebelumnya",
+    "story.next": "Tuliskan dan balik halaman",
+    "story.turn": "Balik halaman",
+    "story.close": "Tutup buku",
+    "story.yes": "Ya",
+    "story.no": "Tidak",
+    "story.skip": "Lewati",
+    "story.highlights": "Teks yang disorot ditulis oleh pencerita.",
+    "story.clearHighlights": "Hapus sorotan",
+    "story.tags": "{label} (pisahkan dengan koma)",
+
     "action.upload": "Unggah",
     "action.uploadPdf": "Unggah PDF",
     "action.uploadJson": "Unggah JSON",

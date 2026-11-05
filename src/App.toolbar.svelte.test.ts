@@ -58,9 +58,9 @@ describe('sample disclaimer', () => {
 })
 
 describe('toolbar actions', () => {
-  const NAMES = ['Undo', 'Redo', 'Sections', 'Edit', 'Upload', 'Export', 'Settings']
+  const NAMES = ['Undo', 'Redo', 'Tell my story', 'Sections', 'Edit', 'Upload', 'Export', 'Settings']
 
-  it('offers seven labelled actions in order', () => {
+  it('offers eight labelled actions in order', () => {
     render(App)
     const buttons = within(toolbar()).getAllByRole('button')
     expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual(NAMES)
@@ -71,7 +71,7 @@ describe('toolbar actions', () => {
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ uiLocale: 'id', documentLocale: 'en' }))
     render(App)
     const names = within(screen.getByRole('toolbar', { name: 'Tindakan resume' })).getAllByRole('button').map((button) => button.getAttribute('aria-label'))
-    expect(names).toEqual(['Batalkan', 'Ulangi', 'Bagian', 'Sunting', 'Unggah', 'Ekspor', 'Pengaturan'])
+    expect(names).toEqual(['Batalkan', 'Ulangi', 'Ceritakan kisahku', 'Bagian', 'Sunting', 'Unggah', 'Ekspor', 'Pengaturan'])
   })
 
   it('keeps Edit primary and updates its accessible name', async () => {
@@ -496,5 +496,108 @@ describe('undo and redo', () => {
     await userEvent.setup().keyboard('{Control>}z{/Control}')
     expect(resumeDoc.canUndo).toBe(true)
     modal.remove()
+  })
+})
+
+describe('story lamp integration', () => {
+  it('acknowledges gaps, persists attention, isolates the modal, and restores focus to Undo', async () => {
+    render(App)
+    const user = userEvent.setup()
+    const lamp = within(toolbar()).getByRole('button', { name: 'Tell my story' })
+    expect(lamp).toHaveClass('pulse')
+    expect(within(toolbar()).getByRole('button', { name: 'Sections' }).parentElement).toHaveClass('row-start')
+    resumeDoc.change(() => { resumeDoc.current.contact.phone = '123456' })
+    await user.click(lamp)
+    expect(lamp).not.toHaveClass('pulse')
+    // Svelte sets the inert property; jsdom does not reflect it to an attribute.
+    expect((lamp.closest('.app-shell') as HTMLElement & { inert: boolean }).inert).toBe(true)
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument()
+    const snapshot = JSON.stringify(resumeDoc.snapshot())
+    await user.keyboard('{Control>}z{/Control}')
+    expect(JSON.stringify(resumeDoc.snapshot())).toBe(snapshot)
+    await tick()
+    const saved = JSON.parse(localStorage.getItem(PREFERENCES_KEY)!)
+    expect(saved.storyAttention.en.seen).toEqual(saved.storyAttention.en.present)
+    expect(saved.storyAttention.id.seen).toEqual([])
+    await user.keyboard('{Escape}')
+    expect(within(toolbar()).getByRole('button', { name: 'Undo' })).toHaveFocus()
+    expect((lamp.closest('.app-shell') as HTMLElement & { inert: boolean }).inert).toBe(false)
+  })
+
+  it('restarts only the icon for recurring and additional unseen gaps', async () => {
+    render(App)
+    const user = userEvent.setup()
+    const lamp = within(toolbar()).getByRole('button', { name: 'Tell my story' })
+    await user.click(lamp)
+    await user.keyboard('{Escape}')
+    resumeDoc.change(() => { resumeDoc.current.profile.text.en.headline += ' | Systems | Mentor' })
+    await tick()
+    resumeDoc.undo()
+    await tick()
+    expect(lamp).toHaveClass('pulse')
+    lamp.focus()
+    const icon = lamp.querySelector('svg')
+    resumeDoc.change(() => { resumeDoc.current.contact.email = '' })
+    await tick()
+    expect(within(toolbar()).getByRole('button', { name: 'Tell my story' })).toBe(lamp)
+    expect(lamp.querySelector('svg')).not.toBe(icon)
+    expect(lamp).toHaveFocus()
+  })
+
+  it('restores seen gaps on reload, keeps locale attention separate, resets replacement, and unsubscribes', async () => {
+    const app = render(App)
+    const user = userEvent.setup()
+    await user.click(within(toolbar()).getByRole('button', { name: 'Tell my story' }))
+    await user.keyboard('{Escape}')
+    app.unmount()
+    const again = render(App)
+    expect(within(toolbar()).getByRole('button', { name: 'Tell my story' })).not.toHaveClass('pulse')
+    prefs.documentLocale = 'id'
+    await tick()
+    expect(within(toolbar()).getByRole('button', { name: 'Tell my story' })).toHaveClass('pulse')
+    prefs.documentLocale = 'en'
+    resumeDoc.replace(resumeDoc.snapshot())
+    await tick()
+    expect(within(toolbar()).getByRole('button', { name: 'Tell my story' })).toHaveClass('pulse')
+    again.unmount()
+    const attention = JSON.stringify(prefs.storyAttention)
+    resumeDoc.change(() => { resumeDoc.current.contact.email = '' })
+    expect(JSON.stringify(prefs.storyAttention)).toBe(attention)
+  })
+
+  it('hides the lamp without a name or gaps', async () => {
+    render(App)
+    resumeDoc.change(() => {
+      resumeDoc.current.profile.text.en.name = ''
+      resumeDoc.current.profile.text.id.name = ''
+    })
+    await tick()
+    expect(screen.queryByRole('button', { name: 'Tell my story' })).not.toBeInTheDocument()
+    resumeDoc.change(() => {
+      for (const locale of ['en', 'id'] as const) {
+        Object.assign(resumeDoc.current.profile.text[locale], {
+          name: 'Ayu', headline: 'Engineer | Mentor | Builder', location: 'Bandung',
+          summary: '8 years of experience ' + 'working with teams to deliver useful systems. '.repeat(8),
+        })
+      }
+      Object.assign(resumeDoc.current.contact, { email: 'a@example.com', phone: '123', linkedin: 'https://linkedin.com/in/a' })
+      resumeDoc.current.sections.forEach(s => { s.enabled = false })
+    })
+    await tick()
+    expect(screen.queryByRole('button', { name: 'Tell my story' })).not.toBeInTheDocument()
+  })
+
+  it('clears the print-hidden highlight notice after writing', async () => {
+    render(App)
+    const user = userEvent.setup()
+    await user.click(within(toolbar()).getByRole('button', { name: 'Tell my story' }))
+    await user.click(screen.getByRole('button', { name: 'Turn the page' }))
+    await user.type(screen.getByRole('textbox', { name: /years/i }), '8')
+    await user.click(screen.getByRole('button', { name: 'Write it in and turn the page' }))
+    await user.keyboard('{Escape}')
+    const note = screen.getByText('Highlighted text was written by the storyteller.')
+    expect(note.closest('[data-print-hide]')).not.toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Clear highlights' }))
+    expect(note).not.toBeInTheDocument()
   })
 })

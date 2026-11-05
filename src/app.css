@@ -9,7 +9,10 @@
 @import './components/editing/editing.css';
 @import './styles/importing.css';
 
+@import './components/story/story.css';
+
 @theme {
+  --font-story: Georgia, 'Times New Roman', serif;
   --font-sans: 'Helvetica Neue', Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
