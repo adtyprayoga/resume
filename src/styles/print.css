@@ -76,6 +76,10 @@
 }
 
 @media print {
+  .story-mark {
+    background: none !important;
+  }
+
   .app-shell,
   .preview-container {
     width: auto !important;

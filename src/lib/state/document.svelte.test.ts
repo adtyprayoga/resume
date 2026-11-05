@@ -25,6 +25,54 @@ describe('snapshot', () => {
   })
 })
 
+describe('committed change subscriptions', () => {
+  it('emits once for nested writes, skips a no-op, and detaches both snapshots', () => {
+    const events: Array<{ before: ReturnType<typeof resumeDoc.snapshot>; after: ReturnType<typeof resumeDoc.snapshot>; kind: string }> = []
+    const unsubscribe = resumeDoc.subscribeChanges((event) => events.push(event))
+    resumeDoc.change(() => {
+      resumeDoc.change(() => { resumeDoc.current.profile.text.en.summary = 'First' })
+      resumeDoc.current.profile.text.id.summary = 'Pertama'
+    })
+    resumeDoc.change(() => { resumeDoc.current.profile.text.en.summary = 'First' })
+    expect(events).toHaveLength(1)
+    expect(events[0]?.kind).toBe('change')
+    expect(events[0]?.before.profile.text.en.summary).not.toBe('First')
+    expect(events[0]?.after.profile.text.en.summary).toBe('First')
+    resumeDoc.current.profile.text.en.summary = 'Later'
+    expect(events[0]?.after.profile.text.en.summary).toBe('First')
+    unsubscribe()
+    resumeDoc.change(() => { resumeDoc.current.profile.text.en.summary = 'Again' })
+    expect(events).toHaveLength(1)
+  })
+
+  it('reports nested replace by identity, and equal-content replace/load', () => {
+    const kinds: string[] = []
+    const unsubscribe = resumeDoc.subscribeChanges(({ kind }) => kinds.push(kind))
+    const identity = resumeDoc.identity
+    resumeDoc.change(() => resumeDoc.replace(resumeDoc.snapshot()))
+    expect(resumeDoc.identity).toBe(identity + 1)
+    resumeDoc.replace(resumeDoc.snapshot())
+    resumeDoc.load(resumeDoc.snapshot())
+    expect(kinds).toEqual(['replace', 'replace', 'load'])
+    unsubscribe()
+  })
+
+  it('emits detached undo/redo snapshots without extra history steps', () => {
+    const events: Array<{ kind: string; before: ReturnType<typeof resumeDoc.snapshot>; after: ReturnType<typeof resumeDoc.snapshot> }> = []
+    const unsubscribe = resumeDoc.subscribeChanges((event) => events.push(event))
+    resumeDoc.change(() => { resumeDoc.current.profile.text.en.summary = 'Changed' })
+    resumeDoc.undo()
+    resumeDoc.redo()
+    expect(events.map((event) => event.kind)).toEqual(['change', 'undo', 'redo'])
+    expect(events[1]?.before.profile.text.en.summary).toBe('Changed')
+    expect(events[1]?.after.profile.text.en.summary).toBe(events[0]?.before.profile.text.en.summary)
+    expect(resumeDoc.canRedo).toBe(false)
+    expect(resumeDoc.undo()).toBe(true)
+    expect(resumeDoc.canUndo).toBe(false)
+    unsubscribe()
+  })
+})
+
 describe('items', () => {
   it('appends a valid empty item', () => {
     const before = resumeDoc.current.content.experience.length
