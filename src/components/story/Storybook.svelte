@@ -99,7 +99,7 @@
     {/each}
     {#each page.choices.filter(c => visible(page, c.id, current)) as choice}
       <fieldset class="story-choice" disabled={readonly}>
-        <legend>{choice.prompt[prefs.uiLocale]}</legend>
+        <legend>{choice.prompt[prefs.uiLocale]}{#if choice.about} · <span lang={locale}>{choice.about}</span>{/if}</legend>
         {#each choice.options as option}
           <label><input type="radio" name={choice.id} checked={current[choice.id] === option.value} onchange={() => answer(choice.id, option.value)} />{option.label[prefs.uiLocale]}</label>
         {/each}

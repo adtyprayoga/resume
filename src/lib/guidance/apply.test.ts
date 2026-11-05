@@ -200,3 +200,23 @@ it('preserves explicit false when a stale current choice is ignored while fillin
   applyPage(p, { [`education:${id}:start`]: '2020-01', [`education:${id}:current`]: 'yes' }, 'en')
   expect(resumeDoc.current.content.education[0]!.dates).toEqual({ start: '2020-01', end: '2024-01', current: false })
 })
+
+it('records nothing for "not ongoing" without an end month', () => {
+  const id = add('education')
+  resumeDoc.current.content.education[0]!.dates = { start: '2018-01', end: null }
+  resumeDoc.load(resumeDoc.snapshot())
+  const page = buildStory(resumeDoc.current, 'en').find(p => p.id === 'education')!
+  expect(applyPage(page, { [`education:${id}:current`]: 'no' }, 'en')).toEqual([])
+  expect(resumeDoc.canUndo).toBe(false)
+})
+
+it('lists only the bullets the storyteller added, and none for a reorder', () => {
+  const id = add('experience')
+  resumeDoc.current.content.experience[0]!.text.en.bullets = ['Ran planning', 'Kept notes']
+  resumeDoc.load(resumeDoc.snapshot())
+  const page = () => buildStory(resumeDoc.current, 'en').find(p => p.id === `experience:${id}`)!
+  const reordered = applyPage(page(), { [`experience:${id}:core`]: '1' }, 'en')
+  expect(reordered.find(w => w.ref.owner === 'item' && w.ref.key === 'bullets')?.lines).toEqual([])
+  const added = applyPage(page(), { [`experience:${id}:achievement`]: '20% faster reports' }, 'en')
+  expect(added.find(w => w.ref.owner === 'item' && w.ref.key === 'bullets')?.lines).toEqual(['Contributing to the achievement of 20% faster reports.'])
+})

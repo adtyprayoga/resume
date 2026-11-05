@@ -17,6 +17,8 @@ export interface Blank {
 export interface Choice {
   id: string
   prompt: Bilingual
+  /** The entry a repeated question is about, as written in the resume (e.g. a school's name). */
+  about?: string
   options: { value: string; label: Bilingual }[]
   gap: boolean
 }
@@ -70,16 +72,16 @@ function field(p: StoryPage, prefix: string, slot: keyof typeof LABELS, value: s
   return missing(value) ? blank(p, prefix, slot, LABELS[slot], input) : resume(value)
 }
 
-function yesNo(p: StoryPage, id: string, prompt: Bilingual, gap: boolean) {
-  p.choices.push({ id, prompt, gap, options: ['yes', 'no'].map(value => ({ value, label: LABELS[value as 'yes' | 'no'] })) })
+function yesNo(p: StoryPage, id: string, prompt: Bilingual, gap: boolean, about?: string) {
+  p.choices.push({ id, prompt, gap, ...(about?.trim() ? { about: about.trim() } : {}), options: ['yes', 'no'].map(value => ({ value, label: LABELS[value as 'yes' | 'no'] })) })
 }
 
-function dates(p: StoryPage, prefix: string, value: DateRange, locale: Locale) {
+function dates(p: StoryPage, prefix: string, value: DateRange, locale: Locale, about?: string) {
   if (value.current) paragraph(p, STORY.current, locale)
   else if (!missing(value.end)) paragraph(p, STORY.ended, locale, { end: resume(value.end!) })
   else {
     const choiceId = `${prefix}:current`
-    yesNo(p, choiceId, LABELS.current, true)
+    yesNo(p, choiceId, LABELS.current, true, about)
     const end = blank(p, prefix, 'end', LABELS.end, 'month')
     p.blanks[p.blanks.length - 1]!.when = { choiceId, value: 'no' }
     paragraph(p, STORY.end, locale, { end })
@@ -162,7 +164,7 @@ function experience(view: ResolvedResume, doc: ResumeDocument, locale: Locale): 
     const location = address ? resume(item.location) : field(p, prefix, 'location', item.location)
     paragraph(p, STORY.job, locale, { company, role, location, start: field(p, prefix, 'start', item.dates.start, 'month') })
     if (address) paragraph(p, STORY.address, locale, { location: resume(item.location), city: blank(p, prefix, 'location', LABELS.location) })
-    dates(p, prefix, item.dates, locale)
+    dates(p, prefix, item.dates, locale, item.company)
     if (!empty) {
       if (!missing(item.team)) paragraph(p, STORY.team, locale, { team: resume(item.team) })
       for (const bullet of item.bullets) paragraph(p, STORY.duty, locale, { bullet: resume(bullet) })
@@ -186,7 +188,7 @@ function education(view: ResolvedResume, locale: Locale): StoryPage {
     const subject = field(p, prefix, 'field', item.field)
     const gpa = field(p, prefix, 'gpa', item.gpa)
     paragraph(p, STORY.education, locale, { school, degree, field: subject, gpa, start: field(p, prefix, 'start', item.dates.start, 'month') })
-    dates(p, prefix, item.dates, locale)
+    dates(p, prefix, item.dates, locale, item.school)
     if (!missing(item.description)) paragraph(p, STORY.detail, locale, { description: resume(item.description) })
   }
   if (empty) confirm(p, 'education')
@@ -222,7 +224,7 @@ function references(view: ResolvedResume, locale: Locale): StoryPage {
       name: field(p, prefix, 'name', item.name), position: field(p, prefix, 'position', item.position),
       phone: field(p, prefix, 'phone', item.phone), email: field(p, prefix, 'email', item.email),
     })
-    if (!empty) yesNo(p, `${prefix}:supervisor`, LABELS.supervisor, false)
+    if (!empty) yesNo(p, `${prefix}:supervisor`, LABELS.supervisor, false, item.name)
   }
   if (empty) confirm(p, 'references')
   return p

@@ -8,6 +8,8 @@ interface Mark {
   ref: FieldRef
   locale: Locale
   value: Written['value']
+  /** For list fields: only these lines are marked. */
+  lines?: string[]
   identity: number
 }
 
@@ -47,14 +49,17 @@ class StoryHighlights {
   add(written: Written[]): void {
     for (const entry of written) {
       if (!sameDraft(readDraft(resumeDoc.current, entry.ref, entry.locale), entry.value)) continue
+      if (entry.lines && entry.lines.length === 0) continue
       this.marks[this.key(entry.locale, entry.ref)] = { ...entry, identity: resumeDoc.identity }
     }
   }
 
-  isHighlighted(ref: FieldRef): boolean {
+  /** `shown` is the text being rendered; for a list field only the added lines match. */
+  isHighlighted(ref: FieldRef, shown?: string): boolean {
     const mark = this.marks[this.key(prefs.documentLocale, ref)]
-    return !!mark && mark.identity === resumeDoc.identity &&
-      sameDraft(readDraft(resumeDoc.current, ref, mark.locale), mark.value)
+    if (!mark || mark.identity !== resumeDoc.identity) return false
+    if (mark.lines && (shown === undefined || !mark.lines.includes(shown))) return false
+    return sameDraft(readDraft(resumeDoc.current, ref, mark.locale), mark.value)
   }
 
   get count(): number {

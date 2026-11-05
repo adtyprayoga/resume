@@ -9,7 +9,8 @@ import type { StoryPage } from './story'
 import { bulletSentence, GROUP_TITLES, hardGroupTitle, summarySentence } from './templates'
 
 export type Answers = Record<string, string>
-export interface Written { ref: FieldRef; locale: Locale; value: DraftValue }
+/** `lines`, for list fields, holds only the lines the storyteller added (empty for a reorder). */
+export interface Written { ref: FieldRef; locale: Locale; value: DraftValue; lines?: string[] }
 
 function eligibleAnswers(page: StoryPage, answers: Answers): Answers {
   const result: Answers = {}
@@ -28,6 +29,7 @@ function eligibleAnswers(page: StoryPage, answers: Answers): Answers {
 export function applyPage(page: StoryPage, answers: Answers, locale: Locale): Written[] {
   const a = eligibleAnswers(page, answers)
   const changed = new Map<string, FieldRef>()
+  const addedLines = new Map<string, string[]>()
   const doc = resumeDoc.current
   const view = resolve(doc, locale)
   let staged: ResumeDocument['content'][ListSectionKind][number] | undefined
@@ -54,6 +56,14 @@ export function applyPage(page: StoryPage, answers: Answers, locale: Locale): Wr
     } else {
       const item = doc.content.experience.find(i => i.id === id)
       if (!item) return
+      const remaining = [...item.text[locale].bullets]
+      const added = values.filter(line => {
+        const at = remaining.indexOf(line)
+        if (at < 0) return true
+        remaining.splice(at, 1)
+        return false
+      })
+      addedLines.set(refKey(ref), [...(addedLines.get(refKey(ref)) ?? []), ...added])
       item.text[locale].bullets = values
     }
     if (!sameDraft(before, readDraft(doc, ref, locale, staged))) changed.set(refKey(ref), ref)
@@ -133,8 +143,9 @@ export function applyPage(page: StoryPage, answers: Answers, locale: Locale): Wr
           const ref = itemRef(section, id, 'dates')
           const draft = readDraft(doc, ref, locale, staged) as DateDraft
           const start = a[`${prefix}:start`]
-          const current = a[`${prefix}:current`]
           const end = a[`${prefix}:end`]
+          // "Not ongoing" says nothing storable until an end month is given.
+          const current = a[`${prefix}:current`] === 'no' && !end ? undefined : a[`${prefix}:current`]
           const canSetCurrent = !item.dates.current && !item.dates.end
           if ((start && !draft.start.trim()) || (current && canSetCurrent)) {
             const before = { ...item.dates }
@@ -171,5 +182,8 @@ export function applyPage(page: StoryPage, answers: Answers, locale: Locale): Wr
       }
     }
   })
-  return [...changed.values()].map(ref => ({ ref, locale, value: readDraft(doc, ref, locale, staged)! }))
+  return [...changed.values()].map(ref => {
+    const lines = addedLines.get(refKey(ref))
+    return { ref, locale, value: readDraft(doc, ref, locale, staged)!, ...(lines ? { lines } : {}) }
+  })
 }

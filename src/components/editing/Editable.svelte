@@ -28,7 +28,7 @@
   } = $props()
 
   const key = $derived(refKey(ref))
-  const highlighted = $derived(storyHighlights.isHighlighted(ref))
+  const highlighted = $derived(storyHighlights.isHighlighted(ref, value))
   const spec = $derived(specFor(ref))
   const label = $derived(t(prefs.uiLocale, spec.labelKey))
   const name = $derived(

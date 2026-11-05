@@ -221,3 +221,18 @@ describe('buildStory', () => {
     expect(ids.some(id => /:(wanted|with|goal|core|topics|supervisor)$/.test(id))).toBe(false)
   })
 })
+
+describe('repeated questions name their entry', () => {
+  it('labels each school, job and reference choice with its entry', () => {
+    const doc = emptyDocument()
+    const a = school(); a.id = 'a'; a.dates = { start: '2018-01', end: null, current: false }; a.text = localized({ school: 'Alpha University', degree: '', field: '', description: '' })
+    const b = school(); b.id = 'b'; b.dates = { start: '2019-01', end: null, current: false }; b.text = localized({ school: 'Beta Institute', degree: '', field: '', description: '' })
+    doc.content.education = [a, b]
+    const r1 = reference(); r1.id = 'r1'; r1.text = localized({ name: 'Rina', position: '', note: '' })
+    const r2 = reference(); r2.id = 'r2'; r2.text = localized({ name: 'Budi', position: '', note: '' })
+    doc.content.references = [r1, r2]
+    for (const section of doc.sections) section.enabled = true
+    expect(page(doc, 'education').choices.map(c => c.about)).toEqual(['Alpha University', 'Beta Institute'])
+    expect(page(doc, 'references').choices.map(c => c.about)).toEqual(['Rina', 'Budi'])
+  })
+})
