@@ -124,6 +124,29 @@ describe('lists', () => {
     await user.keyboard('{Escape}')
   })
 
+  it.each(['classic', 'ats'])('Enter creates the next bullet and Alt+Enter stays within one bullet in %s', async (theme) => {
+    prefs.themeKey = theme === 'classic' ? defaultTheme.key : theme
+    const user = await startEditing()
+    const item = resumeDoc.current.content.experience[1]!
+    const before = [...item.text.en.bullets]
+    await user.click(within(paper()).getByRole('button', { name: /^Edit Highlights: Built the seller/ }))
+    await user.keyboard('{Enter}')
+    const next = screen.getByRole('textbox', { name: 'Highlights · this language' })
+    expect(next).toHaveValue('')
+    expect(next).toHaveFocus()
+    expect(item.text.en.bullets).toEqual(before)
+    const placeholder = paper().querySelector('[data-edit-key="bullet.experience.exp_sample_2.append.0"]')!
+    expect(placeholder.closest('li')).toHaveAttribute('data-print-hide')
+    await user.type(next, 'New{Alt>}{Enter}{/Alt}detail')
+    expect(next).toHaveValue('New\ndetail')
+    expect(item.text.en.bullets).toEqual(before)
+    await user.keyboard('{Enter}')
+    expect(item.text.en.bullets).toEqual([before[0], 'New\ndetail', before[1]])
+    expect(screen.getByRole('textbox', { name: 'Highlights · this language' })).toHaveValue('')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('textbox', { name: 'Highlights · this language' })).not.toBeInTheDocument()
+  })
+
   it('adds and removes an individual highlight and restores focus', async () => {
     const user = await startEditing()
     const item = resumeDoc.current.content.experience[0]!
@@ -136,6 +159,8 @@ describe('lists', () => {
     await user.type(screen.getByRole('textbox', { name: 'Highlights · this language' }), 'Added{Enter}')
     expect(item.text.en.bullets).toEqual([...before, 'Added'])
     const added = within(entry).getByRole('button', { name: 'Edit Highlights: Added' })
+    expect(screen.getByRole('textbox', { name: 'Highlights · this language' })).toHaveValue('')
+    await user.keyboard('{Escape}')
     expect(added).toHaveFocus()
     await user.click(added)
     await user.click(screen.getByRole('button', { name: 'Remove highlight' }))

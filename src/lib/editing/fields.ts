@@ -29,6 +29,8 @@ export type BulletRef = {
   id: string
   key: 'bullets'
   index: number | 'append'
+  /** For a staged insertion after an existing bullet. */
+  after?: number | undefined
 }
 
 export type FieldRef =
@@ -131,7 +133,7 @@ export const SECTION_FIELDS: Record<ListSectionKind, readonly FieldSpec[]> = {
 }
 
 export const refKey = (ref: FieldRef): string =>
-  ref.owner === 'bullet' ? `bullet.${ref.section}.${ref.id}.${ref.index}` :
+  ref.owner === 'bullet' ? `bullet.${ref.section}.${ref.id}.${ref.index}${ref.index === 'append' && ref.after !== undefined ? `.${ref.after}` : ''}` :
   ref.owner === 'item' ? `item.${ref.section}.${ref.id}.${ref.key}` : `${ref.owner}.${ref.key}`
 
 export const specFor = (ref: FieldRef): FieldSpec => {
@@ -208,7 +210,10 @@ export const readDraft = (
   if (ref.owner === 'bullet') {
     const primary = item.text[locale]!.bullets as string[]
     const values = primary.length ? primary : item.text[locale === 'en' ? 'id' : 'en']!.bullets as string[]
-    if (ref.index === 'append') return ''
+    if (ref.index === 'append') {
+      if (ref.after !== undefined && (!Number.isInteger(ref.after) || ref.after < 0 || ref.after >= values.length)) return undefined
+      return ''
+    }
     return Number.isInteger(ref.index) && ref.index >= 0 ? values[ref.index] : undefined
   }
   return toDraft(type, scope === 'shared' ? item[ref.key] : item.text[locale]?.[ref.key])
@@ -240,7 +245,7 @@ export const applyDraft = (
     if (ref.index === 'append' && !value) return true
     const primary = item.text[locale]!.bullets as string[]
     const values = [...(primary.length ? primary : item.text[locale === 'en' ? 'id' : 'en']!.bullets as string[])]
-    if (ref.index === 'append') values.push(value)
+    if (ref.index === 'append') values.splice(ref.after === undefined ? values.length : ref.after + 1, 0, value)
     else values.splice(ref.index, 1, ...(value ? [value] : []))
     item.text[locale]!.bullets = values
     return true
@@ -268,4 +273,13 @@ export const editKeyAction = (
   if (event.key !== 'Enter') return null
   if (!multiline) return 'commit'
   return event.ctrlKey || event.metaKey ? 'commit' : null
+}
+
+export const bulletKeyAction = (
+  event: Parameters<typeof editKeyAction>[0] & { altKey: boolean },
+): EditKeyAction | 'next' | 'newline' => {
+  const action = editKeyAction(event, false)
+  if (action !== 'commit') return action
+  if (event.altKey) return 'newline'
+  return event.ctrlKey || event.metaKey ? 'commit' : 'next'
 }

@@ -348,3 +348,40 @@ describe.each(['experience', 'projects'] as const)('%s bullet language isolation
     expect(item.text[other].bullets).toEqual(before)
   })
 })
+
+describe('continuing a bullet with Enter', () => {
+  it('saves the current row and stages a new row immediately after it', () => {
+    editing.enter()
+    const item = resumeDoc.current.content.experience[0]!
+    item.text.en.bullets = ['first', 'second']
+    editing.begin({ kind: 'field', ref: { owner: 'bullet', section: 'experience', id: item.id, key: 'bullets', index: 0 } })
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'edited')
+    expect(editing.continueBullet()).toBe(true)
+    expect(item.text.en.bullets).toEqual(['edited', 'second'])
+    expect(editing.active?.target).toMatchObject({ ref: { index: 'append', after: 0 } })
+    expect(Object.values(editing.active!.draft)).toEqual([''])
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'new')
+    expect(editing.continueBullet()).toBe(true)
+    expect(item.text.en.bullets).toEqual(['edited', 'new', 'second'])
+    editing.cancel()
+    expect(item.text.en.bullets).toEqual(['edited', 'new', 'second'])
+    resumeDoc.undo()
+    expect(resumeDoc.current.content.experience[0]!.text.en.bullets).toEqual(['edited', 'second'])
+  })
+
+  it('does not create another row for blank or stale drafts', () => {
+    editing.enter()
+    const item = resumeDoc.current.content.projects[0]!
+    const ref = { owner: 'bullet' as const, section: 'projects' as const, id: item.id, key: 'bullets' as const, index: 'append' as const }
+    const before = [...item.text.en.bullets]
+    editing.begin({ kind: 'field', ref })
+    expect(editing.continueBullet()).toBe(false)
+    expect(editing.active).toBeNull()
+    expect(item.text.en.bullets).toEqual(before)
+    editing.begin({ kind: 'field', ref })
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'stale')
+    resumeDoc.change(() => { item.text.en.bullets.push('external') })
+    expect(editing.continueBullet()).toBe(false)
+    expect(item.text.en.bullets).not.toContain('stale')
+  })
+})

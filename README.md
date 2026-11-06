@@ -225,13 +225,16 @@ keys:
   **Enter** or clicking away applies, **Escape** cancels. Multi-line text keeps
   Enter as a newline and applies with **Apply**, **Ctrl/Cmd+Enter**, or clicking
   away.
-- **Highlights** edit one bullet at a time. **Enter** or **Apply** saves that
-  bullet, **Escape** cancels, and **Remove highlight** deletes it. **+ Add
-  highlight** beneath each Experience or Project list opens a new bullet draft;
-  an empty or cancelled draft adds nothing. Pasted line breaks stay within the
-  same bullet. Entry forms and PDF import review show separate, visibly bulleted
-  rows with Add and Remove controls. In those forms, Enter finishes the row;
-  the surrounding Apply/Cancel or import confirmation controls save the changes.
+- **Highlights** edit one bullet at a time. **Enter** saves the current bullet
+  and opens a new input directly below it. **Alt+Enter** inserts a line break
+  within the same bullet; pasted line breaks stay in that bullet too.
+  **Apply** or **Ctrl/Cmd+Enter** saves without opening another input.
+  **Escape** cancels the current draft, and **Remove highlight** deletes it.
+  **+ Add highlight** beneath each Experience or Project list opens a new bullet
+  draft. An empty or cancelled draft adds nothing; Enter on an empty input
+  finishes without creating another bullet. Entry forms and PDF import review
+  use the same Enter/Alt+Enter keys in their separate, visibly bulleted rows;
+  their surrounding Apply/Cancel or import confirmation still controls saving.
 - **Skills and technologies** use a comma-separated list, tidied when applied.
 - **Dates, contact details, links, tags and the photo** open a small labelled
   form beside what you clicked. Classic shows shortened URLs, but the form edits

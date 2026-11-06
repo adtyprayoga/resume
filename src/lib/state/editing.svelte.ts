@@ -188,6 +188,21 @@ class EditingSession {
     return changed.length ? 'applied' : 'unchanged'
   }
 
+  continueBullet(): boolean {
+    const active = this.active
+    if (!active || active.target.kind !== 'field' || active.target.ref.owner !== 'bullet') return false
+    const ref = active.target.ref
+    const text = (active.draft[refKey(ref)] as string).trim()
+    const primary = active.lists[0]?.value
+    const source = Array.isArray(primary) && primary.length ? primary : active.lists[1]?.value
+    const index = ref.index === 'append'
+      ? ref.after === undefined ? (Array.isArray(source) ? source.length : 0) : ref.after + 1
+      : ref.index
+    const result = this.commit()
+    if (!text || result === 'stale') return false
+    return this.begin({ kind: 'field', ref: { ...ref, index: 'append', after: index } })
+  }
+
   /**
    * Closing without choosing Apply or Cancel (an outside click): keeps what was
    * typed, but a new entry nobody typed into is dropped rather than added blank.

@@ -216,6 +216,10 @@
   list-style: disc;
 }
 
+.item-bullets li {
+  white-space: pre-line;
+}
+
 .item-bullets li + li {
   margin-top: 0.8mm;
 }

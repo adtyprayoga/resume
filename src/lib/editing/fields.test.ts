@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyDraft,
+  bulletKeyAction,
   editKeyAction,
   entryRefs,
   profileRefs,
@@ -172,5 +173,28 @@ describe('editing keys', () => {
     expect(editKeyAction(key({ key: 'Enter', isComposing: true }), false)).toBeNull()
     expect(editKeyAction(key({ key: 'Process' }), false)).toBeNull()
     expect(editKeyAction(key({ key: 'Escape', isComposing: true }), false)).toBeNull()
+  })
+})
+
+
+describe('bullet keyboard actions', () => {
+  const enter = { key: 'Enter', isComposing: false, ctrlKey: false, metaKey: false, altKey: false }
+  it('distinguishes the next bullet from a line break and explicit apply', () => {
+    expect(bulletKeyAction(enter)).toBe('next')
+    expect(bulletKeyAction({ ...enter, altKey: true })).toBe('newline')
+    expect(bulletKeyAction({ ...enter, ctrlKey: true })).toBe('commit')
+    expect(bulletKeyAction({ ...enter, metaKey: true })).toBe('commit')
+    expect(bulletKeyAction({ ...enter, isComposing: true })).toBeNull()
+    expect(bulletKeyAction({ ...enter, keyCode: 229 })).toBeNull()
+    expect(bulletKeyAction({ ...enter, key: 'Escape' })).toBe('cancel')
+  })
+
+  it('rejects invalid insertion positions', () => {
+    const doc = sampleDocument()
+    for (const after of [-1, 999, 0.5]) {
+      const ref: FieldRef = { owner: 'bullet', section: 'experience', id: 'exp_sample_1', key: 'bullets', index: 'append', after }
+      expect(readDraft(doc, ref, 'en')).toBeUndefined()
+      expect(applyDraft(doc, ref, 'en', 'wrong')).toBe(false)
+    }
   })
 })

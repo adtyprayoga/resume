@@ -2,8 +2,10 @@
   /** One labelled control for a draft value, used by contextual forms and sheets. */
   import BulletRows from '$components/ui/BulletRows.svelte'
   import PhotoField from './PhotoField.svelte'
+  import { insertLineBreak } from '$lib/ui/textarea'
   import { t } from '$lib/i18n/ui'
-  import { editKeyAction, specFor, type DateDraft, type DraftValue, type FieldRef } from '$lib/editing/fields'
+  import { bulletKeyAction, specFor, type DateDraft, type DraftValue, type FieldRef } from '$lib/editing/fields'
+  import { editing } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
 
   const { ref, value, onchange }: { ref: FieldRef; value: DraftValue; onchange: (value: DraftValue) => void } = $props()
@@ -64,11 +66,15 @@
     <label class="field-label" for="{uid}-input">{label}<span class="field-scope {spec.scope}">{scopeText}</span></label>
     {#if spec.type === 'bullet'}
       <textarea id="{uid}-input" class="field-textarea" rows="3" value={text} oninput={fromInput} onkeydown={(event) => {
-        if (editKeyAction(event, false) !== 'commit') return
+        const action = bulletKeyAction(event)
+        if (action === 'newline') { insertLineBreak(event); return }
+        if (action !== 'commit' && action !== 'next') return
         event.preventDefault()
         event.stopPropagation()
-        event.currentTarget.form?.requestSubmit()
+        if (action === 'next' && text.trim()) editing.continueBullet()
+        else event.currentTarget.form?.requestSubmit()
       }}></textarea>
+      <p class="field-hint">{t(prefs.uiLocale, 'bullet.keys')}</p>
     {:else if spec.type === 'multiline'}
       <textarea id="{uid}-input" class="field-textarea" rows="3" {placeholder} value={text} oninput={fromInput}></textarea>
     {:else}

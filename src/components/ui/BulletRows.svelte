@@ -1,7 +1,8 @@
 <script lang="ts">
   import { tick, untrack } from 'svelte'
   import Icon from '$components/shell/Icon.svelte'
-  import { editKeyAction, sameDraft } from '$lib/editing/fields'
+  import { bulletKeyAction, sameDraft } from '$lib/editing/fields'
+  import { insertLineBreak } from '$lib/ui/textarea'
   import { t } from '$lib/i18n/ui'
   import { prefs } from '$lib/state/preferences.svelte'
 
@@ -60,8 +61,9 @@
   }
 
   const onkeydown = (event: KeyboardEvent, row: Row) => {
-    const action = editKeyAction(event, false)
+    const action = bulletKeyAction(event)
     if (!action) return
+    if (action === 'newline') { insertLineBreak(event); return }
     event.preventDefault()
     event.stopPropagation()
     if (action === 'cancel') {
@@ -69,7 +71,13 @@
       else { row.value = row.original; emit() }
     } else {
       const index = rows.indexOf(row)
+      const nonempty = !!row.value.trim()
       finish(row)
+      if (action === 'next' && nonempty) {
+        const next = makeRow('', false)
+        rows.splice(index + 1, 0, next)
+        void focus(next.id)
+      }
       if (!rows.includes(row)) void focus((rows[index] ?? rows[index - 1])?.id)
     }
   }
@@ -83,6 +91,7 @@
 
 <fieldset class="field bullet-field" bind:this={container}>
   <legend class="field-label">{label}<span class="field-scope {scope}">{t(prefs.uiLocale, scope === 'shared' ? 'scope.shared' : 'scope.localized')}</span></legend>
+  <p class="field-hint">{t(prefs.uiLocale, 'bullet.keys')}</p>
   {#if rows.length}
     <ul class="bullet-rows">
       {#each rows as row, index (row.id)}

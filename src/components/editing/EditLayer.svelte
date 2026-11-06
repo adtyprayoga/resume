@@ -71,9 +71,11 @@
       const primary = readDraft(resumeDoc.current, parent, prefs.documentLocale)
       const fallback = readDraft(resumeDoc.current, parent, prefs.documentLocale === 'en' ? 'id' : 'en')
       const count = (Array.isArray(primary) && primary.length ? primary : Array.isArray(fallback) ? fallback : []).length
-      const index = ref.index === 'append' ? (applied ? count - 1 : 'append') : Math.min(ref.index, count - 1)
+      const index = ref.index === 'append'
+        ? ref.after !== undefined ? ref.after + (applied ? 1 : 0) : applied ? count - 1 : 'append'
+        : Math.min(ref.index, count - 1)
       const destination = index === 'append' || index < 0 ? 'append' : index
-      const target: EditTarget = { kind: 'field', ref: { ...ref, index: destination } }
+      const target: EditTarget = { kind: 'field', ref: { ...ref, index: destination, after: undefined } }
       find(target)?.focus()
       return
     }

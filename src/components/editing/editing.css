@@ -405,3 +405,10 @@
     height: calc(20px / var(--preview-zoom, 1));
   }
 }
+
+@media screen {
+  .bullet-draft-anchor {
+    display: block;
+    min-height: calc(44px / var(--preview-zoom, 1));
+  }
+}

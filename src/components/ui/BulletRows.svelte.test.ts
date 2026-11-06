@@ -17,7 +17,7 @@ it('edits one row, preserves siblings verbatim and keeps multiline paste in one 
   await user.paste('New\ntext')
   await user.keyboard('{Enter}')
   expect(onchange).toHaveBeenLastCalledWith([' padded ', 'same', 'New\ntext', 'A\nB'])
-  expect(screen.getAllByRole('textbox')).toHaveLength(4)
+  expect(screen.getAllByRole('textbox')).toHaveLength(5)
 })
 
 it('stages empty additions and Escape discards them', async () => {
@@ -72,4 +72,30 @@ it('keeps untouched whitespace-only rows while editing another row', async () =>
   await user.clear(screen.getAllByRole('textbox')[1]!)
   await user.type(screen.getAllByRole('textbox')[1]!, 'changed{Enter}')
   expect(onchange).toHaveBeenLastCalledWith(['  ', 'changed'])
+})
+
+it('Enter inserts and focuses a new row directly below the current bullet', async () => {
+  const user = userEvent.setup()
+  const onchange = vi.fn()
+  render(BulletRows, { value: ['first', 'second'], label: 'Highlights', onchange })
+  await user.click(screen.getAllByRole('textbox')[0]!)
+  await user.keyboard('{Enter}')
+  const inputs = screen.getAllByRole('textbox')
+  expect(inputs).toHaveLength(3)
+  expect(inputs[1]).toHaveValue('')
+  expect(inputs[1]).toHaveFocus()
+  expect(inputs[2]).toHaveValue('second')
+  await user.type(inputs[1]!, 'inserted{Enter}')
+  expect(onchange).toHaveBeenLastCalledWith(['first', 'inserted', 'second'])
+  await user.keyboard('{Escape}')
+  expect(screen.getAllByRole('textbox')).toHaveLength(3)
+})
+
+it('Alt+Enter inserts a line break in the same bullet', async () => {
+  const user = userEvent.setup()
+  const onchange = vi.fn()
+  render(BulletRows, { value: [''], label: 'Highlights', onchange })
+  await user.type(screen.getByRole('textbox'), 'First{Alt>}{Enter}{/Alt}Second')
+  expect(screen.getByRole('textbox')).toHaveValue('First\nSecond')
+  expect(screen.getAllByRole('textbox')).toHaveLength(1)
 })

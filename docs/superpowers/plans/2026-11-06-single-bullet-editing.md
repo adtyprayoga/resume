@@ -68,3 +68,16 @@
 - `bun run verify:ats http://127.0.0.1:5173/`: passed, including Classic/ATS Preview/Edit equivalence, text order, print exclusions and responsive checks.
 - Additional Chromium interactions: 352 checks passed across Classic/ATS, English/Indonesian, 320/375/639/640/1280px widths, long/empty lists, individual saves, form markers/spacing, Add focus, Escape cancellation and reduced mobile viewport height.
 - Final review added regressions for untouched whitespace-only siblings and section/language isolation. Stored schema, theme presets and print styles were unchanged.
+
+## Follow-up: Enter continues the bullet list
+
+The user changed the keyboard behavior after reviewing the single-bullet editor:
+
+- Enter saves the current nonempty bullet and opens a fresh, focused input immediately after it, including in entry forms and PDF review.
+- Alt+Enter inserts a line break at the caret or replaces the selection, within the same bullet. Preserve that break on screen and in PDF output.
+- New blank inputs are session-only, print-hidden, and discarded on cancellation/empty completion. IME confirmation must not continue the list.
+- Apply and Ctrl/Cmd+Enter retain explicit completion; Escape cancels the current draft. Keep locale, stale-edit, undo and form-transaction behavior.
+
+Implementation: optional insertion position on BulletRef, session continuation, a print-hidden draft-row anchor, shared keyboard interpretation/native textarea insertion, localized shortcut hints, and regression/browser/PDF checks.
+
+Follow-up verification: 1,237 tests passed (1 existing skipped), zero Svelte diagnostics, production build and diff checks passed. Print/ATS verification passed. Chromium keyboard checks passed 140 assertions across both layouts/languages and 375/640/1280px, including next-input focus, insertion position, Alt+Enter, form cancellation and PDF line breaks; an additional bottom-of-viewport continuation check passed.
