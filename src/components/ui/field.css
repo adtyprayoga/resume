@@ -217,3 +217,11 @@ input[type='file']::file-selector-button {
   min-width: 0;
   min-height: 44px;
 }
+
+.bullet-row-actions {
+  display: flex;
+}
+
+.bullet-row-actions .tool-btn + .tool-btn {
+  border-inline-start: 0;
+}

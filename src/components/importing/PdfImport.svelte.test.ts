@@ -248,7 +248,7 @@ describe('PDF review', () => {
     const secondValue = (second as HTMLTextAreaElement).value
     await user.clear(area)
     await user.type(area, 'Reviewed highlight{Enter}')
-    await user.click(within(group).getByRole('button', { name: 'Add highlight' }))
+    await user.click(within(group).getAllByRole('button', { name: 'Add highlight' }).at(-1)!)
     await user.type(within(group).getAllByRole('textbox').at(-1)!, 'Added in review{Enter}')
     expect(resumeDoc.snapshot()).toEqual(before)
     expect(second).toHaveValue(secondValue)

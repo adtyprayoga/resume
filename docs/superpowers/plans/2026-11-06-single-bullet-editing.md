@@ -81,3 +81,14 @@ The user changed the keyboard behavior after reviewing the single-bullet editor:
 Implementation: optional insertion position on BulletRef, session continuation, a print-hidden draft-row anchor, shared keyboard interpretation/native textarea insertion, localized shortcut hints, and regression/browser/PDF checks.
 
 Follow-up verification: 1,237 tests passed (1 existing skipped), zero Svelte diagnostics, production build and diff checks passed. Print/ATS verification passed. Chromium keyboard checks passed 140 assertions across both layouts/languages and 375/640/1280px, including next-input focus, insertion position, Alt+Enter, form cancellation and PDF line breaks; an additional bottom-of-viewport continuation check passed.
+
+## Follow-up: always-ready input and joined row actions
+
+- Empty highlight lists in entry forms/PDF review show one staged input automatically.
+- Each row has joined icon-only trash/add controls on the right; remove the separate Add highlight button below the list.
+- Add inserts after its own row and focuses the new input. Row actions must remain clickable during textarea blur.
+- Removing/cancelling the final row leaves one empty staged input; never persist a placeholder. Preserve Enter/Alt+Enter, stable row identity, and surrounding Apply/Cancel behavior.
+
+The user also requested removing the visible Enter/Alt+Enter hint. Remove it from inline, mobile and full-list editors while preserving both keyboard actions.
+
+Verification: 1,241 tests passed (1 existing skipped), build/type-check and diff check passed, print check passed. Chromium passed 200 assertions across both layouts/languages and 320/375/639/640/1280px, including automatic drafts, joined 44px controls, real pointer clicks across empty rows, stable focus, Enter, last-row removal and draft isolation.

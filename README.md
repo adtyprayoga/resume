@@ -233,8 +233,11 @@ keys:
   **+ Add highlight** beneath each Experience or Project list opens a new bullet
   draft. An empty or cancelled draft adds nothing; Enter on an empty input
   finishes without creating another bullet. Entry forms and PDF import review
-  use the same Enter/Alt+Enter keys in their separate, visibly bulleted rows;
-  their surrounding Apply/Cancel or import confirmation still controls saving.
+  use the same Enter/Alt+Enter keys in their separate, visibly bulleted rows.
+  Empty lists start with one input ready; each row has joined Remove and Add
+  buttons on its right. Removing the final row leaves one empty input without
+  saving a blank bullet. The surrounding Apply/Cancel or import confirmation
+  still controls saving.
 - **Skills and technologies** use a comma-separated list, tidied when applied.
 - **Dates, contact details, links, tags and the photo** open a small labelled
   form beside what you clicked. Classic shows shortened URLs, but the form edits

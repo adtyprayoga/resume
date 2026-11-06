@@ -180,7 +180,7 @@ describe('lists', () => {
     await user.type(area, 'Edited{Enter}')
     expect(editing.active?.target.kind).toBe('entry')
     expect(resumeDoc.snapshot()).toEqual(before)
-    await user.click(within(form).getByRole('button', { name: 'Add highlight' }))
+    await user.click(within(form).getAllByRole('button', { name: 'Add highlight' }).at(-1)!)
     await user.type(within(form).getAllByRole('textbox').at(-1)!, 'New draft{Enter}')
     await user.click(within(form).getByRole('button', { name: 'Cancel' }))
     expect(resumeDoc.snapshot()).toEqual(before)

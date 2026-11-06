@@ -74,7 +74,6 @@
         if (action === 'next' && text.trim()) editing.continueBullet()
         else event.currentTarget.form?.requestSubmit()
       }}></textarea>
-      <p class="field-hint">{t(prefs.uiLocale, 'bullet.keys')}</p>
     {:else if spec.type === 'multiline'}
       <textarea id="{uid}-input" class="field-textarea" rows="3" {placeholder} value={text} oninput={fromInput}></textarea>
     {:else}
