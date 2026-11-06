@@ -330,3 +330,21 @@ describe('individual bullets', () => {
     expect(editing.commit()).toBe('stale')
   })
 })
+
+
+describe.each(['experience', 'projects'] as const)('%s bullet language isolation', (section) => {
+  it.each(['en', 'id'] as const)('changes only the selected %s row', (locale) => {
+    editing.enter()
+    prefs.documentLocale = locale
+    const item = resumeDoc.current.content[section][0]!
+    item.text[locale].bullets = ['same', 'same', ' untouched ']
+    const other = locale === 'en' ? 'id' : 'en'
+    const before = [...item.text[other].bullets]
+    const ref: FieldRef = { owner: 'bullet', section, id: item.id, key: 'bullets', index: 1 }
+    editing.begin({ kind: 'field', ref })
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'changed')
+    editing.commit()
+    expect(item.text[locale].bullets).toEqual(['same', 'changed', ' untouched '])
+    expect(item.text[other].bullets).toEqual(before)
+  })
+})

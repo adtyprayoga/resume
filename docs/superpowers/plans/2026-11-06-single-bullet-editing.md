@@ -20,41 +20,51 @@
 
 ## Task 1: Preserve arrays in drafts
 
-- [ ] Add failing tests for duplicate bullets, embedded newlines and whitespace.
-- [ ] Expand DraftValue to string | DateDraft | string[]; read/write list drafts as cloned arrays. Only normalize edited rows.
-- [ ] Narrow union consumers; update storyteller snapshots and invalidation tests.
-- [ ] Run focused field/session/guidance/storyteller tests and commit.
+- [x] Add failing tests for duplicate bullets, embedded newlines and whitespace.
+- [x] Expand DraftValue to string | DateDraft | string[]; read/write list drafts as cloned arrays. Only normalize edited rows.
+- [x] Narrow union consumers; update storyteller snapshots and invalidation tests.
+- [x] Run focused field/session/guidance/storyteller tests and commit.
 
 ## Task 2: Independent bullet targets
 
-- [ ] Add failing tests for indexed edits, duplicate text, append/remove, fallback, cancellation, stale lists and undo.
-- [ ] Add BulletRef: owner bullet, section experience/projects, entry id, key bullets, index number/append.
-- [ ] Implement unique keys, specifications, existence checks and row read/write.
-- [ ] Capture source lists in sessions; reject document/list changes. Fallback edits copy displayed bullets into the captured active locale only on a changed commit.
-- [ ] Trim edited rows, discard blank additions, remove blank existing rows, and record one undo step per commit.
-- [ ] Run focused tests and commit.
+- [x] Add failing tests for indexed edits, duplicate text, append/remove, fallback, cancellation, stale lists and undo.
+- [x] Add BulletRef: owner bullet, section experience/projects, entry id, key bullets, index number/append.
+- [x] Implement unique keys, specifications, existence checks and row read/write.
+- [x] Capture source lists in sessions; reject document/list changes. Fallback edits copy displayed bullets into the captured active locale only on a changed commit.
+- [x] Trim edited rows, discard blank additions, remove blank existing rows, and record one undo step per commit.
+- [x] Run focused tests and commit.
 
 ## Task 3: Paper interaction
 
-- [ ] Replace combined-list regression with independent first/second-row tests.
-- [ ] Add shared EditableBullets and dedicated BulletEditor; preserve ul/li print DOM.
-- [ ] Add print-hidden Add action and Apply/Cancel/Remove surfaces with desktop anchoring/mobile sheet.
-- [ ] Restore focus to saved row; after removal use next, previous, then Add. Resolve storyteller marks through parent references.
-- [ ] Run section/mobile-print/storyteller tests and commit.
+- [x] Replace combined-list regression with independent first/second-row tests.
+- [x] Add shared EditableBullets and dedicated BulletEditor; preserve ul/li print DOM.
+- [x] Add print-hidden Add action and Apply/Cancel/Remove surfaces with desktop anchoring/mobile sheet.
+- [x] Restore focus to saved row; after removal use next, previous, then Add. Resolve storyteller marks through parent references.
+- [x] Run section/mobile-print/storyteller tests and commit.
 
 ## Task 4: Explicit form rows
 
-- [ ] Add failing component tests for edit/add/remove, focus identity, Enter/Escape and outer cancellation.
-- [ ] Add shared BulletRows with array value, label, scope and onchange callback; visible bullet markers, row labels, SVG removal and Add.
-- [ ] Keep stable local row ids and empty new drafts local. Escape restores opening value; Enter stops submission.
-- [ ] Wire entry/PDF draft state; remove obsolete LinesField and One per line copy.
-- [ ] Add English/Indonesian labels. Run focused component/import tests and commit.
+- [x] Add failing component tests for edit/add/remove, focus identity, Enter/Escape and outer cancellation.
+- [x] Add shared BulletRows with array value, label, scope and onchange callback; visible bullet markers, row labels, SVG removal and Add.
+- [x] Keep stable local row ids and empty new drafts local. Escape restores opening value; Enter stops submission.
+- [x] Wire entry/PDF draft state; remove obsolete LinesField and One per line copy.
+- [x] Add English/Indonesian labels. Run focused component/import tests and commit.
 
 ## Task 5: Verification and documentation
 
-- [ ] Update README; run full test suite, build and diff check.
-- [ ] Check Chromium at 320, 375, 639, 640 and desktop widths, long/empty lists, keyboard/focus and mobile viewport resizing.
-- [ ] Run verify:print and verify:ats; confirm Preview/Edit PDF equivalence and control exclusion.
-- [ ] Review scoped diff and commit final documentation/fixes.
+- [x] Update README; run full test suite, build and diff check.
+- [x] Check Chromium at 320, 375, 639, 640 and desktop widths, long/empty lists, keyboard/focus and mobile viewport resizing.
+- [x] Run verify:print and verify:ats; confirm Preview/Edit PDF equivalence and control exclusion.
+- [x] Review scoped diff and commit final documentation/fixes.
 
 **Completion:** All highlight editors have explicit rows; selecting one never loads siblings; bilingual add/remove/cancel/undo and required automated/browser checks pass.
+
+## Verification results
+
+- `bun run test`: 1,229 passed, 1 existing skipped test (74 passing files, 1 skipped).
+- `bun run build`: zero Svelte errors/warnings; production build passed.
+- `git diff --check`: passed.
+- `bun run verify:print http://127.0.0.1:5173/`: passed; A4, selectable text and page margins confirmed.
+- `bun run verify:ats http://127.0.0.1:5173/`: passed, including Classic/ATS Preview/Edit equivalence, text order, print exclusions and responsive checks.
+- Additional Chromium interactions: 352 checks passed across Classic/ATS, English/Indonesian, 320/375/639/640/1280px widths, long/empty lists, individual saves, form markers/spacing, Add focus, Escape cancellation and reduced mobile viewport height.
+- Final review added regressions for untouched whitespace-only siblings and section/language isolation. Stored schema, theme presets and print styles were unchanged.

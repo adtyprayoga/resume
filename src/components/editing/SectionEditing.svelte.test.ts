@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/svelte'
+import { fireEvent, render, screen, within } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.svelte'
 import { editing } from '$lib/state/editing.svelte'
@@ -266,6 +266,18 @@ describe('entry actions', () => {
     expect(actions.closest('[data-print-hide]')).not.toBeNull()
     expect(within(actions).getByRole('button', { name: 'Move up' })).toBeDisabled()
     expect(within(actions).getByRole('button', { name: 'Move down' })).toBeEnabled()
+  })
+
+  it('commits a bullet draft before moving its entry without relying on blur', async () => {
+    const user = await startEditing()
+    const item = resumeDoc.current.content.experience[0]!
+    await user.click(within(paper()).getByRole('button', { name: `Edit Highlights: ${item.text.en.bullets[0]}` }))
+    const input = screen.getByRole('textbox', { name: 'Highlights · this language' })
+    await user.clear(input)
+    await user.type(input, 'Before move')
+    await fireEvent.click(screen.getByRole('button', { name: 'Move down' }))
+    expect(editing.active).toBeNull()
+    expect(resumeDoc.current.content.experience[1]!.text.en.bullets[0]).toBe('Before move')
   })
 
   it('move an entry, keep focus on it, and announce the move', async () => {

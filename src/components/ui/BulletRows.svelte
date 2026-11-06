@@ -31,7 +31,7 @@
   })
 
   const emit = () => {
-    lastValue = rows.filter((row) => row.persisted && row.value.trim()).map((row) => row.value)
+    lastValue = rows.filter((row) => row.persisted).map((row) => row.value)
     onchange([...lastValue])
   }
 

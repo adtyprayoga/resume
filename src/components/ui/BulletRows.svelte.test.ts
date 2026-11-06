@@ -63,3 +63,13 @@ it('restores the opening value on Escape and ignores IME Enter', async () => {
   expect(input).toHaveValue('old')
   expect(onchange).toHaveBeenLastCalledWith(['old'])
 })
+
+it('keeps untouched whitespace-only rows while editing another row', async () => {
+  const user = userEvent.setup()
+  const onchange = vi.fn()
+  render(BulletRows, { value: ['  ', 'old'], label: 'Highlights', onchange })
+  await user.click(screen.getAllByRole('textbox')[1]!)
+  await user.clear(screen.getAllByRole('textbox')[1]!)
+  await user.type(screen.getAllByRole('textbox')[1]!, 'changed{Enter}')
+  expect(onchange).toHaveBeenLastCalledWith(['  ', 'changed'])
+})
