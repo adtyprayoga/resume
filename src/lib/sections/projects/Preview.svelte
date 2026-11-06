@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EditableBullets from '$components/editing/EditableBullets.svelte'
   import Editable from '$components/editing/Editable.svelte'
   import EntryShell from '$components/editing/EntryShell.svelte'
   import { formatRange } from '$lib/model/dates'
@@ -24,15 +25,7 @@
   {:else if editMode}
     <p class="item-desc" data-print-hide><Editable ref={R(item.id, 'description')} value="" /></p>
   {/if}
-  {#if item.bullets.length}
-    <ul class="item-bullets">
-      {#each item.bullets as bullet, index (index)}
-        <li><Editable ref={R(item.id, 'bullets')} value={bullet} /></li>
-      {/each}
-    </ul>
-  {:else if editMode}
-    <p class="item-desc" data-print-hide><Editable ref={R(item.id, 'bullets')} value="" /></p>
-  {/if}
+  <EditableBullets section="projects" id={item.id} bullets={item.bullets} />
   {#if item.link}
     <p class="item-link"><Editable ref={R(item.id, 'link')} value={item.link} /></p>
   {:else if editMode}

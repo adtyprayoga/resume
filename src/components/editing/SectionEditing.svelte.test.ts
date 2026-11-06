@@ -108,18 +108,39 @@ describe('dates', () => {
 })
 
 describe('lists', () => {
-  it('edit bullets one per line, normalizing only when applied', async () => {
+  it.each(['classic', 'ats'])('edits only the selected bullet in %s', async (theme) => {
+    prefs.themeKey = theme === 'classic' ? defaultTheme.key : theme
     const user = await startEditing()
+    const item = resumeDoc.current.content.experience[1]!
+    const before = [...item.text.en.bullets]
     await user.click(within(paper()).getByRole('button', { name: /^Edit Highlights: Built the seller/ }))
     const area = screen.getByRole('textbox', { name: 'Highlights · this language' })
-    expect(area).toHaveValue(
-      'Built the seller analytics dashboard used by over 12,000 active merchants.\nCut catalogue page load time by 55% through bundle splitting and edge caching.',
-    )
+    expect(area).toHaveValue(before[0])
     await user.clear(area)
-    await user.type(area, '  First  {Enter}{Enter}Second ')
-    expect(area).toHaveValue('  First  \n\nSecond ')
-    await user.keyboard('{Control>}{Enter}{/Control}')
-    expect(resumeDoc.current.content.experience[1]!.text.en.bullets).toEqual(['First', 'Second'])
+    await user.type(area, '  First  {Enter}')
+    expect(item.text.en.bullets).toEqual(['First', before[1]])
+    await user.click(within(paper()).getByRole('button', { name: /^Edit Highlights: Cut catalogue/ }))
+    expect(screen.getByRole('textbox', { name: 'Highlights · this language' })).toHaveValue(before[1])
+    await user.keyboard('{Escape}')
+  })
+
+  it('adds and removes an individual highlight and restores focus', async () => {
+    const user = await startEditing()
+    const item = resumeDoc.current.content.experience[0]!
+    const entry = paper().querySelector('[data-entry="experience:exp_sample_1"]') as HTMLElement
+    const before = [...item.text.en.bullets]
+    const add = within(entry).getByRole('button', { name: 'Add highlight' })
+    expect(add.closest('[data-print-hide]')).not.toBeNull()
+    await user.click(add)
+    expect(screen.queryByRole('button', { name: 'Remove highlight' })).not.toBeInTheDocument()
+    await user.type(screen.getByRole('textbox', { name: 'Highlights · this language' }), 'Added{Enter}')
+    expect(item.text.en.bullets).toEqual([...before, 'Added'])
+    const added = within(entry).getByRole('button', { name: 'Edit Highlights: Added' })
+    expect(added).toHaveFocus()
+    await user.click(added)
+    await user.click(screen.getByRole('button', { name: 'Remove highlight' }))
+    expect(item.text.en.bullets).toEqual(before)
+    expect(within(entry).getByRole('button', { name: `Edit Highlights: ${before.at(-1)}` })).toHaveFocus()
   })
 
   it('edit technologies as a comma-separated draft', async () => {

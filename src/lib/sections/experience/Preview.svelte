@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EditableBullets from '$components/editing/EditableBullets.svelte'
   import Editable from '$components/editing/Editable.svelte'
   import EntryShell from '$components/editing/EntryShell.svelte'
   import Joined from '$components/editing/Joined.svelte'
@@ -35,15 +36,7 @@
       </div>
       {#if item.role}<p class="ats-role"><Editable ref={R(item.id, 'role')} value={item.role} /></p>{:else if editMode}<p class="ats-role" data-print-hide><Editable ref={R(item.id, 'role')} value="" /></p>{/if}
       {#if parts.some((part) => part.value)}<p class="item-meta"><Joined {parts} separator=", " /></p>{:else if editMode}<p class="item-meta" data-print-hide><Joined {parts} separator=", " /></p>{/if}
-      {#if item.bullets.length}
-        <ul class="item-bullets">
-          {#each item.bullets as bullet, index (index)}
-            <li><Editable ref={R(item.id, 'bullets')} value={bullet} /></li>
-          {/each}
-        </ul>
-      {:else if editMode}
-        <p class="item-desc" data-print-hide><Editable ref={R(item.id, 'bullets')} value="" /></p>
-      {/if}
+      <EditableBullets section="experience" id={item.id} bullets={item.bullets} />
     </EntryShell>
   {/each}
 {:else}
@@ -54,15 +47,7 @@
         <span class="item-dates"><Editable ref={R(item.id, 'dates')} value={formatRange(item.dates, locale, t(locale, 'date.present'))} /></span>
       </div>
       <p class="item-meta"><Joined parts={meta(item)} separator=" · " /></p>
-      {#if item.bullets.length}
-        <ul class="item-bullets">
-          {#each item.bullets as bullet, index (index)}
-            <li><Editable ref={R(item.id, 'bullets')} value={bullet} /></li>
-          {/each}
-        </ul>
-      {:else if editMode}
-        <p class="item-desc" data-print-hide><Editable ref={R(item.id, 'bullets')} value="" /></p>
-      {/if}
+      <EditableBullets section="experience" id={item.id} bullets={item.bullets} />
     </EntryShell>
   {/each}
 {/if}

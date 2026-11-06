@@ -2,7 +2,7 @@
   /** One labelled control for a draft value, used by contextual forms and sheets. */
   import PhotoField from './PhotoField.svelte'
   import { t } from '$lib/i18n/ui'
-  import { specFor, type DateDraft, type DraftValue, type FieldRef } from '$lib/editing/fields'
+  import { editKeyAction, specFor, type DateDraft, type DraftValue, type FieldRef } from '$lib/editing/fields'
   import { prefs } from '$lib/state/preferences.svelte'
 
   const { ref, value, onchange }: { ref: FieldRef; value: DraftValue; onchange: (value: DraftValue) => void } = $props()
@@ -61,7 +61,14 @@
 {:else}
   <div class="field">
     <label class="field-label" for="{uid}-input">{label}<span class="field-scope {spec.scope}">{scopeText}</span></label>
-    {#if spec.type === 'multiline' || spec.type === 'lines'}
+    {#if spec.type === 'bullet'}
+      <textarea id="{uid}-input" class="field-textarea" rows="3" value={text} oninput={fromInput} onkeydown={(event) => {
+        if (editKeyAction(event, false) !== 'commit') return
+        event.preventDefault()
+        event.stopPropagation()
+        event.currentTarget.form?.requestSubmit()
+      }}></textarea>
+    {:else if spec.type === 'multiline' || spec.type === 'lines'}
       <textarea id="{uid}-input" class="field-textarea" rows={spec.type === 'lines' ? 5 : 3} {placeholder} value={text} oninput={fromInput}></textarea>
     {:else}
       <input id="{uid}-input" class="field-input" type={inputType} {placeholder} value={text} oninput={fromInput} />
