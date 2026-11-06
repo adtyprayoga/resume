@@ -248,3 +248,85 @@ describe('announcements', () => {
     expect(editing.announcement.replace(/​/g, '')).toBe('Undone')
   })
 })
+
+describe('individual bullets', () => {
+  const bullet = (index: number | 'append' = 1): FieldRef => ({ owner: 'bullet', section: 'experience', id: 'exp_sample_1', key: 'bullets', index })
+  beforeEach(() => {
+    editing.enter()
+    resumeDoc.current.content.experience[0]!.text.en.bullets = [' padded ', 'same', 'same', 'A\nB']
+  })
+  const values = () => resumeDoc.current.content.experience[0]!.text.en.bullets
+  const type = (value: string) => editing.setDraft(Object.keys(editing.active!.draft)[0]!, value)
+
+  it('edits only the indexed row and makes one undo step', () => {
+    const before = [...values()]
+    expect(editing.begin({ kind: 'field', ref: bullet(2) })).toBe(true)
+    expect(Object.values(editing.active!.draft)).toEqual(['same'])
+    type(' Changed ')
+    expect(values()).toEqual(before)
+    expect(editing.commit()).toBe('applied')
+    expect(values()).toEqual([' padded ', 'same', 'Changed', 'A\nB'])
+    resumeDoc.undo()
+    expect(values()).toEqual(before)
+    resumeDoc.redo()
+    expect(values()[2]).toBe('Changed')
+  })
+
+  it('stages additions, cancels and discards blank additions', () => {
+    const before = [...values()]
+    editing.begin({ kind: 'field', ref: bullet('append') })
+    type('new')
+    editing.cancel()
+    expect(values()).toEqual(before)
+    editing.begin({ kind: 'field', ref: bullet('append') })
+    type('   ')
+    expect(editing.commit()).toBe('unchanged')
+    expect(values()).toEqual(before)
+    editing.begin({ kind: 'field', ref: bullet('append') })
+    type('new\nline')
+    editing.commit()
+    expect(values()).toEqual([...before, 'new\nline'])
+  })
+
+  it('removes only a cleared row', () => {
+    editing.begin({ kind: 'field', ref: bullet() })
+    type(' ')
+    editing.commit()
+    expect(values()).toEqual([' padded ', 'same', 'A\nB'])
+  })
+
+  it('rejects invalid indices and shifted or replaced lists', () => {
+    expect(editing.begin({ kind: 'field', ref: bullet(20) })).toBe(false)
+    expect(editing.begin({ kind: 'field', ref: bullet(-1) })).toBe(false)
+    editing.begin({ kind: 'field', ref: bullet() })
+    type('wrong')
+    resumeDoc.change(() => { values().unshift('inserted') })
+    expect(editing.isStale).toBe(true)
+    expect(editing.commit()).toBe('stale')
+    expect(values()).not.toContain('wrong')
+  })
+
+  it('copies displayed fallback bullets only on a changed commit', () => {
+    prefs.documentLocale = 'id'
+    const item = resumeDoc.current.content.experience[0]!
+    item.text.id.bullets = []
+    editing.begin({ kind: 'field', ref: bullet() })
+    expect(Object.values(editing.active!.draft)).toEqual(['same'])
+    editing.commit()
+    expect(item.text.id.bullets).toEqual([])
+    editing.begin({ kind: 'field', ref: bullet() })
+    type('Terjemahan')
+    editing.commit()
+    expect(item.text.id.bullets).toEqual([' padded ', 'Terjemahan', 'same', 'A\nB'])
+    expect(item.text.en.bullets).toEqual([' padded ', 'same', 'same', 'A\nB'])
+  })
+
+  it('rejects a changed fallback source', () => {
+    prefs.documentLocale = 'id'
+    resumeDoc.current.content.experience[0]!.text.id.bullets = []
+    editing.begin({ kind: 'field', ref: bullet() })
+    type('stale')
+    resumeDoc.change(() => { values()[0] = 'changed' })
+    expect(editing.commit()).toBe('stale')
+  })
+})
