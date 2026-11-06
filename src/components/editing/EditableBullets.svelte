@@ -32,6 +32,6 @@
 {/if}
 {#if editing.mode === 'edit'}
   <div class="bullet-add" data-print-hide>
-    <button type="button" class="tool-btn" data-edit-key={refKey(ref('append'))} onclick={(event) => { event.stopPropagation(); editing.begin({ kind: 'field', ref: ref('append') }) }}><Icon name="plus" />{t(prefs.uiLocale, 'bullet.add')}</button>
+    <button type="button" class="tool-btn" aria-label={t(prefs.uiLocale, 'bullet.add')} title={t(prefs.uiLocale, 'bullet.add')} data-edit-key={refKey(ref('append'))} onclick={(event) => { event.stopPropagation(); editing.begin({ kind: 'field', ref: ref('append') }) }}><Icon name="plus" /></button>
   </div>
 {/if}
