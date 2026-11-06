@@ -97,7 +97,6 @@
 <div class="inline-editor" class:multiline data-edit-surface data-print-hide {style} bind:this={container} {onfocusout}>
   {#if multiline}
     <textarea class="inline-input" aria-label={label} rows={spec.type === 'bullet' ? 3 : 4} {value} {oninput} {onkeydown}></textarea>
-    {#if spec.type === 'bullet'}<p class="field-hint">{t(prefs.uiLocale, 'bullet.keys')}</p>{/if}
     <div class="inline-actions">
       {#if ref.owner === 'bullet' && ref.index !== 'append'}
         <button type="button" class="tool-btn" aria-label={t(prefs.uiLocale, 'bullet.remove')} onclick={() => { editing.setDraft(key, ''); apply(true) }}><Icon name="trash" /></button>
