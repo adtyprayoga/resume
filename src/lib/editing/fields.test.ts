@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyDraft,
+  bulletKeyAction,
   editKeyAction,
   entryRefs,
   profileRefs,
@@ -51,6 +52,18 @@ describe('field targets', () => {
 })
 
 describe('reading drafts', () => {
+  it('preserves duplicate bullets, whitespace and embedded newlines in array drafts', () => {
+    const doc = sampleDocument()
+    const values = [' padded ', 'A\nB', 'same', 'same']
+    doc.content.experience[0]!.text.en.bullets = values
+    const draft = readDraft(doc, exp('bullets'), 'en')
+    expect(draft).toEqual(values)
+    expect(draft).not.toBe(values)
+    applyDraft(doc, exp('bullets'), 'en', draft!)
+    expect(doc.content.experience[0]!.text.en.bullets).toEqual(values)
+    expect(doc.content.experience[0]!.text.en.bullets).not.toBe(draft)
+  })
+
   it('reads localized text from the requested locale', () => {
     const doc = sampleDocument()
     expect(readDraft(doc, { owner: 'profile', key: 'headline' }, 'id')).toBe(doc.profile.text.id.headline)
@@ -62,10 +75,10 @@ describe('reading drafts', () => {
     expect(readDraft(doc, { owner: 'contact', key: 'github' }, 'en')).toBe('https://github.com/example')
   })
 
-  it('turns lists into one line per bullet and tags into a comma list', () => {
+  it('reads bullet arrays and tags as a comma list', () => {
     const doc = sampleDocument()
     const item = doc.content.experience[0]!
-    expect(readDraft(doc, exp('bullets'), 'en')).toBe(item.text.en.bullets.join('\n'))
+    expect(readDraft(doc, exp('bullets'), 'en')).toEqual(item.text.en.bullets)
     const project = doc.content.projects[0]!
     expect(readDraft(doc, { owner: 'item', section: 'projects', id: project.id, key: 'techStack' }, 'en'))
       .toBe(project.techStack.join(', '))
@@ -97,10 +110,10 @@ describe('applying drafts', () => {
     expect(doc.content.experience[0]!.company).toBe('PT Baru')
   })
 
-  it('normalizes lines and tags only when applied', () => {
+  it('preserves list rows and normalizes tags when applied', () => {
     const doc = sampleDocument()
-    applyDraft(doc, exp('bullets'), 'en', '  first \n\n second\n')
-    expect(doc.content.experience[0]!.text.en.bullets).toEqual(['first', 'second'])
+    applyDraft(doc, exp('bullets'), 'en', [' first ', 'second'])
+    expect(doc.content.experience[0]!.text.en.bullets).toEqual([' first ', 'second'])
     const project = doc.content.projects[0]!
     applyDraft(doc, { owner: 'item', section: 'projects', id: project.id, key: 'techStack' }, 'en', 'Go, , Rust ,')
     expect(project.techStack).toEqual(['Go', 'Rust'])
@@ -160,5 +173,28 @@ describe('editing keys', () => {
     expect(editKeyAction(key({ key: 'Enter', isComposing: true }), false)).toBeNull()
     expect(editKeyAction(key({ key: 'Process' }), false)).toBeNull()
     expect(editKeyAction(key({ key: 'Escape', isComposing: true }), false)).toBeNull()
+  })
+})
+
+
+describe('bullet keyboard actions', () => {
+  const enter = { key: 'Enter', isComposing: false, ctrlKey: false, metaKey: false, altKey: false }
+  it('distinguishes the next bullet from a line break and explicit apply', () => {
+    expect(bulletKeyAction(enter)).toBe('next')
+    expect(bulletKeyAction({ ...enter, altKey: true })).toBe('newline')
+    expect(bulletKeyAction({ ...enter, ctrlKey: true })).toBe('commit')
+    expect(bulletKeyAction({ ...enter, metaKey: true })).toBe('commit')
+    expect(bulletKeyAction({ ...enter, isComposing: true })).toBeNull()
+    expect(bulletKeyAction({ ...enter, keyCode: 229 })).toBeNull()
+    expect(bulletKeyAction({ ...enter, key: 'Escape' })).toBe('cancel')
+  })
+
+  it('rejects invalid insertion positions', () => {
+    const doc = sampleDocument()
+    for (const after of [-1, 999, 0.5]) {
+      const ref: FieldRef = { owner: 'bullet', section: 'experience', id: 'exp_sample_1', key: 'bullets', index: 'append', after }
+      expect(readDraft(doc, ref, 'en')).toBeUndefined()
+      expect(applyDraft(doc, ref, 'en', 'wrong')).toBe(false)
+    }
   })
 })

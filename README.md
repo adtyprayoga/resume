@@ -4,6 +4,10 @@ A bilingual (Indonesian / English) resume builder that runs entirely in the
 browser. No account, no server, no tracking: your resume lives in this browser's
 local storage and exports to PDF through the browser's own print dialog.
 
+**Try it: <https://resume.lab.adityapryg.dev>**
+
+![The resume builder: a toolbar with Undo, Redo, the storyteller lamp, Sections, Edit, Upload, Export and Settings above an A4 resume preview](.github/screenshots/app.png)
+
 The one exception is optional: a deployment can add **PDF import**, which sends
 an uploaded CV to a small extraction service on the same site for temporary
 processing (see [PDF import](#pdf-import)). The static-only build has no server
@@ -16,6 +20,15 @@ remains available; screen scaling does not change the exported PDF's dimensions
 or typography.
 
 Built with Svelte 5, Vite and Tailwind v4.
+
+What it does:
+
+- **Edit in place** in Indonesian and English, with Classic and ATS layouts.
+- **Import** a JSON file or, with the optional service, a PDF
+  ([how accurate is that?](#how-accurate-is-pdf-import)).
+- **Undo and Redo** for everything you change in the resume.
+- **A storyteller** (the lamp) that tells your resume back to you as a story and
+  asks about what is missing ([details](#the-storyteller-lamp)).
 
 ## Why it works the way it does
 
@@ -211,8 +224,18 @@ keys:
 - **Click any text** on the page. Single-line text opens a native input over it:
   **Enter** or clicking away applies, **Escape** cancels. Multi-line text keeps
   Enter as a newline and applies with **Apply**, **Ctrl/Cmd+Enter**, or clicking
-  away. Bullets are edited one per line; skills and technologies as a
-  comma-separated list. Lists are tidied only when you apply.
+  away.
+- **Highlights** edit one bullet at a time. **Enter** saves the current bullet
+  and opens a new input directly below it. **Alt+Enter** inserts a line break
+  within the same bullet; pasted line breaks stay in that bullet too.
+  **Apply** or **Ctrl/Cmd+Enter** saves without opening another input.
+  **Escape** cancels the current draft, and **Remove highlight** deletes it.
+  **+ Add highlight** beneath each Experience or Project list opens a new bullet
+  draft. An empty or cancelled draft adds nothing; Enter on an empty input
+  finishes without creating another bullet. Entry forms and PDF import review
+  use the same Enter/Alt+Enter keys in their separate, visibly bulleted rows;
+  their surrounding Apply/Cancel or import confirmation still controls saving.
+- **Skills and technologies** use a comma-separated list, tidied when applied.
 - **Dates, contact details, links, tags and the photo** open a small labelled
   form beside what you clicked. Classic shows shortened URLs, but the form edits
   the full stored address.
@@ -267,12 +290,22 @@ one chapter per part of a good resume: Headline, Profile Summary, Competencies,
 Working Experience, Education, Course and References. Where something is
 missing or weak, the story stops and asks. Every question can be skipped.
 
+![The storybook's first page: "Once upon a time, there lived a Senior Software Engineer called…", with a blank open and its tip showing](.github/screenshots/storybook.png)
+
+Every blank explains itself. On a desktop, focusing or hovering a blank shows a
+small tip beside it. On a phone (below 640px) the tip opens as a band under the
+line. Each tip says what the blank is for and what a good answer looks like,
+with an example. Tips follow the interface language, while the story follows the
+resume's language.
+
 Answers are written in with fixed sentence templates. Nothing is invented, and
 the storyteller never rewrites your own words: a summary sentence goes in front
 of what you already wrote. **Write it in and turn the page** saves that page as
 one step, so closing the book and pressing **Undo** takes it back. What the
 storyteller wrote stays highlighted on screen until you edit it, undo it, or
-choose **Clear highlights**. Highlights are never printed or saved.
+choose **Clear highlights**. Only what it wrote is marked: a new achievement
+marks that bullet, not the ones you wrote. Highlights are never printed or
+saved.
 
 ## Layouts
 
@@ -482,7 +515,8 @@ src/
 │  ├─ model/        document shape, resolve(), validation, migration, sanitizing
 │  ├─ sections/     one folder per section: descriptor and Preview
 │  ├─ editing/      typed edit targets: field registry, drafts, normalization
-│  ├─ state/        reactive stores and the autosave logic
+│  ├─ guidance/     the storyteller: templates, shape checks, story pages, tips, writing answers
+│  ├─ state/        reactive stores, autosave, undo history, storyteller attention and highlights
 │  ├─ storage/      versioned localStorage read/write
 │  ├─ pagination/   pure page-break simulation plus DOM measurement
 │  ├─ print/        the print trigger
@@ -493,6 +527,7 @@ src/
 │  ├─ shell/        toolbar, Export menu, side panels, inline SVG icons
 │  ├─ editing/      in-page targets, inline editor, contextual forms, phone sheet
 │  ├─ importing/    PDF import review
+│  ├─ story/        the storybook
 │  └─ preview/      the resume paper, plus the two side-effect hosts beside it
 └─ styles/
    ├─ print.css     everything governing how the resume prints

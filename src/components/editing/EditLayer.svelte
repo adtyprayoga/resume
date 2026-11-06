@@ -7,12 +7,14 @@
   import { tick } from 'svelte'
   import EditSheet from './EditSheet.svelte'
   import FormPopover from './FormPopover.svelte'
+  import BulletEditor from './BulletEditor.svelte'
   import InlineEditor from './InlineEditor.svelte'
   import { findEntry } from './entryFocus'
   import { t, type UiStringKey } from '$lib/i18n/ui'
-  import { refKey, specFor } from '$lib/editing/fields'
+  import { readDraft, refKey, specFor } from '$lib/editing/fields'
   import { getSectionModule } from '$lib/sections/registry'
   import { editing, type EditTarget } from '$lib/state/editing.svelte'
+  import { resumeDoc } from '$lib/state/document.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
 
   const PHONE_QUERY = '(max-width: 639px)'
@@ -61,13 +63,27 @@
       ['text', 'multiline', 'lines'].includes(specFor(target.ref).type),
   )
 
-  const restore = async (subject: EditTarget) => {
+  const restore = async (subject: EditTarget, applied = false) => {
     await tick()
+    if (subject.kind === 'field' && subject.ref.owner === 'bullet') {
+      const ref = subject.ref
+      const parent = { owner: 'item' as const, section: ref.section, id: ref.id, key: 'bullets' }
+      const primary = readDraft(resumeDoc.current, parent, prefs.documentLocale)
+      const fallback = readDraft(resumeDoc.current, parent, prefs.documentLocale === 'en' ? 'id' : 'en')
+      const count = (Array.isArray(primary) && primary.length ? primary : Array.isArray(fallback) ? fallback : []).length
+      const index = ref.index === 'append'
+        ? ref.after !== undefined ? ref.after + (applied ? 1 : 0) : applied ? count - 1 : 'append'
+        : Math.min(ref.index, count - 1)
+      const destination = index === 'append' || index < 0 ? 'append' : index
+      const target: EditTarget = { kind: 'field', ref: { ...ref, index: destination, after: undefined } }
+      find(target)?.focus()
+      return
+    }
     find(subject)?.focus()
   }
 
-  const close = (subject: EditTarget, restoreFocus: boolean) => {
-    if (restoreFocus) void restore(subject)
+  const close = (subject: EditTarget, restoreFocus: boolean, applied = false) => {
+    if (restoreFocus) void restore(subject, applied)
   }
 
   const apply = async () => {
@@ -82,7 +98,7 @@
       findEntry(added.section, added.id)?.focus()
       return
     }
-    void restore(subject)
+    void restore(subject, result === 'applied')
   }
 
   const cancel = () => {
@@ -95,7 +111,9 @@
 
 {#if active && target}
   {#key active.target}
-    {#if inline && target.kind === 'field'}
+    {#if target.kind === 'field' && target.ref.owner === 'bullet'}
+      <BulletEditor ref={target.ref} {phone} anchor={() => find(target)} onClose={(restoreFocus, subject, applied) => close(subject, restoreFocus, applied)} onApply={apply} onCancel={cancel} />
+    {:else if inline && target.kind === 'field'}
       <InlineEditor ref={target.ref} anchor={() => find(target)} onClose={(restoreFocus, subject) => close(subject, restoreFocus)} />
     {:else if phone}
       <EditSheet title={title(target)} refs={active.refs} onApply={apply} onCancel={cancel} />

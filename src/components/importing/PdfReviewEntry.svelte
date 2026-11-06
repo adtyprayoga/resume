@@ -5,7 +5,7 @@
   import type { ListSectionKind } from '$lib/sections/kinds'
   import { prefs } from '$lib/state/preferences.svelte'
   import DateRangeField from '../ui/DateRangeField.svelte'
-  import LinesField from '../ui/LinesField.svelte'
+  import BulletRows from '../ui/BulletRows.svelte'
   import TagsField from '../ui/TagsField.svelte'
   import TextArea from '../ui/TextArea.svelte'
   import TextField from '../ui/TextField.svelte'
@@ -47,7 +47,7 @@
     <TextField label={label('team')} bind:value={text.team} />
     <TextField label={label('location')} bind:value={text.location} />
     <DateRangeField bind:value={entry.dates} presentLabel={t(ui, 'date.present')} />
-    <LinesField label={label('highlights')} bind:value={text.bullets} />
+    <BulletRows label={label('highlights')} value={text.bullets} onchange={(value) => { text.bullets = value }} />
   {:else if kind === 'education'}
     <TextField label={label('school')} bind:value={text.school} />
     <TextField label={label('degree')} bind:value={text.degree} />
@@ -62,7 +62,7 @@
     <TagsField label={label('techStack')} scope="shared" bind:value={entry.techStack} />
     <DateRangeField bind:value={entry.dates} presentLabel={t(ui, 'date.present')} />
     <TextArea label={label('description')} bind:value={text.description} />
-    <LinesField label={label('highlights')} bind:value={text.bullets} />
+    <BulletRows label={label('highlights')} value={text.bullets} onchange={(value) => { text.bullets = value }} />
   {:else if kind === 'references'}
     <TextField label={label('name')} bind:value={text.name} />
     <TextField label={label('position')} bind:value={text.position} />

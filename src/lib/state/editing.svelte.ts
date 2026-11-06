@@ -6,6 +6,7 @@ import {
   readDraft,
   refKey,
   sameDraft,
+  specFor,
   type DraftValue,
   type FieldRef,
 } from '$lib/editing/fields'
@@ -40,6 +41,7 @@ export interface ActiveEdit {
   /** Document identity; a replaced document makes the edit stale. */
   generation: number
   staged?: StagedEntry
+  lists: { ref: FieldRef; locale: Locale; value: DraftValue | undefined }[]
 }
 
 export type CommitResult = 'applied' | 'unchanged' | 'stale' | 'none'
@@ -107,10 +109,23 @@ class EditingSession {
       original[refKey(ref)] = value
     }
 
+    const lists: ActiveEdit['lists'] = []
+    if (!staged) for (const ref of refs) {
+      if (ref.owner !== 'bullet' && ref.owner !== 'item') continue
+      if (ref.owner !== 'bullet' && specFor(ref).type !== 'lines') continue
+      const parent: FieldRef = { owner: 'item', section: ref.section, id: ref.id, key: 'bullets' }
+      const value = readDraft(doc, parent, locale)
+      lists.push({ ref: parent, locale, value })
+      if (ref.owner === 'bullet' && Array.isArray(value) && !value.length) {
+        const other = locale === 'en' ? 'id' : 'en'
+        lists.push({ ref: parent, locale: other, value: readDraft(doc, parent, other) })
+      }
+    }
     this.suspended = false
     this.active = {
       target,
       refs,
+      lists,
       original,
       draft: structuredClone(original),
       locale,
@@ -131,7 +146,8 @@ class EditingSession {
     if (!active) return false
     if (active.generation !== resumeDoc.generation) return true
     if (active.staged) return false
-    return !active.refs.every((ref) => itemExists(resumeDoc.current, ref))
+    return !active.refs.every((ref) => itemExists(resumeDoc.current, ref)) ||
+      active.lists.some(({ ref, locale, value }) => !sameDraft(readDraft(resumeDoc.current, ref, locale), value))
   }
 
   get hasChanges(): boolean {
@@ -144,10 +160,11 @@ class EditingSession {
   commit(): CommitResult {
     const active = this.active
     if (!active) return 'none'
+    const stale = this.isStale
     this.active = null
     this.suspended = false
 
-    if (active.generation !== resumeDoc.generation) return 'stale'
+    if (stale) return 'stale'
     const doc = resumeDoc.current
 
     if (active.staged) {
@@ -159,12 +176,31 @@ class EditingSession {
     }
 
     if (!active.refs.every((ref) => itemExists(doc, ref))) return 'stale'
-    const changed = active.refs.filter((ref) => !sameDraft(active.draft[refKey(ref)], active.original[refKey(ref)]))
+    const changed = active.refs.filter((ref) => {
+      const draft = active.draft[refKey(ref)]!
+      if (ref.owner === 'bullet' && ref.index === 'append' && !(draft as string).trim()) return false
+      return !sameDraft(draft, active.original[refKey(ref)])
+    })
     // One undo step for the whole form, however many fields it changed.
     resumeDoc.change(() => {
       for (const ref of changed) applyDraft(doc, ref, active.locale, active.draft[refKey(ref)]!)
     })
     return changed.length ? 'applied' : 'unchanged'
+  }
+
+  continueBullet(): boolean {
+    const active = this.active
+    if (!active || active.target.kind !== 'field' || active.target.ref.owner !== 'bullet') return false
+    const ref = active.target.ref
+    const text = (active.draft[refKey(ref)] as string).trim()
+    const primary = active.lists[0]?.value
+    const source = Array.isArray(primary) && primary.length ? primary : active.lists[1]?.value
+    const index = ref.index === 'append'
+      ? ref.after === undefined ? (Array.isArray(source) ? source.length : 0) : ref.after + 1
+      : ref.index
+    const result = this.commit()
+    if (!text || result === 'stale') return false
+    return this.begin({ kind: 'field', ref: { ...ref, index: 'append', after: index } })
   }
 
   /**

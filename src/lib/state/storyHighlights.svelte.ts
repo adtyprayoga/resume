@@ -56,6 +56,7 @@ class StoryHighlights {
 
   /** `shown` is the text being rendered; for a list field only the added lines match. */
   isHighlighted(ref: FieldRef, shown?: string): boolean {
+    if (ref.owner === 'bullet') ref = { owner: 'item', section: ref.section, id: ref.id, key: 'bullets' }
     const mark = this.marks[this.key(prefs.documentLocale, ref)]
     if (!mark || mark.identity !== resumeDoc.identity) return false
     if (mark.lines && (shown === undefined || !mark.lines.includes(shown))) return false

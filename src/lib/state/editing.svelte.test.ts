@@ -80,7 +80,7 @@ describe('apply and cancel', () => {
   it('edits a whole entry as one draft', () => {
     editing.begin({ kind: 'entry', section: 'experience', id: 'exp_sample_1' })
     editing.setDraft('item.experience.exp_sample_1.company', 'PT Lain')
-    editing.setDraft('item.experience.exp_sample_1.bullets', 'one\ntwo')
+    editing.setDraft('item.experience.exp_sample_1.bullets', ['one', 'two'])
     editing.commit()
     const item = resumeDoc.current.content.experience[0]!
     expect(item.company).toBe('PT Lain')
@@ -246,5 +246,142 @@ describe('announcements', () => {
     editing.announce('Undone')
     expect(editing.announcement).not.toBe(first)
     expect(editing.announcement.replace(/​/g, '')).toBe('Undone')
+  })
+})
+
+describe('individual bullets', () => {
+  const bullet = (index: number | 'append' = 1): FieldRef => ({ owner: 'bullet', section: 'experience', id: 'exp_sample_1', key: 'bullets', index })
+  beforeEach(() => {
+    editing.enter()
+    resumeDoc.current.content.experience[0]!.text.en.bullets = [' padded ', 'same', 'same', 'A\nB']
+  })
+  const values = () => resumeDoc.current.content.experience[0]!.text.en.bullets
+  const type = (value: string) => editing.setDraft(Object.keys(editing.active!.draft)[0]!, value)
+
+  it('edits only the indexed row and makes one undo step', () => {
+    const before = [...values()]
+    expect(editing.begin({ kind: 'field', ref: bullet(2) })).toBe(true)
+    expect(Object.values(editing.active!.draft)).toEqual(['same'])
+    type(' Changed ')
+    expect(values()).toEqual(before)
+    expect(editing.commit()).toBe('applied')
+    expect(values()).toEqual([' padded ', 'same', 'Changed', 'A\nB'])
+    resumeDoc.undo()
+    expect(values()).toEqual(before)
+    resumeDoc.redo()
+    expect(values()[2]).toBe('Changed')
+  })
+
+  it('stages additions, cancels and discards blank additions', () => {
+    const before = [...values()]
+    editing.begin({ kind: 'field', ref: bullet('append') })
+    type('new')
+    editing.cancel()
+    expect(values()).toEqual(before)
+    editing.begin({ kind: 'field', ref: bullet('append') })
+    type('   ')
+    expect(editing.commit()).toBe('unchanged')
+    expect(values()).toEqual(before)
+    editing.begin({ kind: 'field', ref: bullet('append') })
+    type('new\nline')
+    editing.commit()
+    expect(values()).toEqual([...before, 'new\nline'])
+  })
+
+  it('removes only a cleared row', () => {
+    editing.begin({ kind: 'field', ref: bullet() })
+    type(' ')
+    editing.commit()
+    expect(values()).toEqual([' padded ', 'same', 'A\nB'])
+  })
+
+  it('rejects invalid indices and shifted or replaced lists', () => {
+    expect(editing.begin({ kind: 'field', ref: bullet(20) })).toBe(false)
+    expect(editing.begin({ kind: 'field', ref: bullet(-1) })).toBe(false)
+    editing.begin({ kind: 'field', ref: bullet() })
+    type('wrong')
+    resumeDoc.change(() => { values().unshift('inserted') })
+    expect(editing.isStale).toBe(true)
+    expect(editing.commit()).toBe('stale')
+    expect(values()).not.toContain('wrong')
+  })
+
+  it('copies displayed fallback bullets only on a changed commit', () => {
+    prefs.documentLocale = 'id'
+    const item = resumeDoc.current.content.experience[0]!
+    item.text.id.bullets = []
+    editing.begin({ kind: 'field', ref: bullet() })
+    expect(Object.values(editing.active!.draft)).toEqual(['same'])
+    editing.commit()
+    expect(item.text.id.bullets).toEqual([])
+    editing.begin({ kind: 'field', ref: bullet() })
+    type('Terjemahan')
+    editing.commit()
+    expect(item.text.id.bullets).toEqual([' padded ', 'Terjemahan', 'same', 'A\nB'])
+    expect(item.text.en.bullets).toEqual([' padded ', 'same', 'same', 'A\nB'])
+  })
+
+  it('rejects a changed fallback source', () => {
+    prefs.documentLocale = 'id'
+    resumeDoc.current.content.experience[0]!.text.id.bullets = []
+    editing.begin({ kind: 'field', ref: bullet() })
+    type('stale')
+    resumeDoc.change(() => { values()[0] = 'changed' })
+    expect(editing.commit()).toBe('stale')
+  })
+})
+
+
+describe.each(['experience', 'projects'] as const)('%s bullet language isolation', (section) => {
+  it.each(['en', 'id'] as const)('changes only the selected %s row', (locale) => {
+    editing.enter()
+    prefs.documentLocale = locale
+    const item = resumeDoc.current.content[section][0]!
+    item.text[locale].bullets = ['same', 'same', ' untouched ']
+    const other = locale === 'en' ? 'id' : 'en'
+    const before = [...item.text[other].bullets]
+    const ref: FieldRef = { owner: 'bullet', section, id: item.id, key: 'bullets', index: 1 }
+    editing.begin({ kind: 'field', ref })
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'changed')
+    editing.commit()
+    expect(item.text[locale].bullets).toEqual(['same', 'changed', ' untouched '])
+    expect(item.text[other].bullets).toEqual(before)
+  })
+})
+
+describe('continuing a bullet with Enter', () => {
+  it('saves the current row and stages a new row immediately after it', () => {
+    editing.enter()
+    const item = resumeDoc.current.content.experience[0]!
+    item.text.en.bullets = ['first', 'second']
+    editing.begin({ kind: 'field', ref: { owner: 'bullet', section: 'experience', id: item.id, key: 'bullets', index: 0 } })
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'edited')
+    expect(editing.continueBullet()).toBe(true)
+    expect(item.text.en.bullets).toEqual(['edited', 'second'])
+    expect(editing.active?.target).toMatchObject({ ref: { index: 'append', after: 0 } })
+    expect(Object.values(editing.active!.draft)).toEqual([''])
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'new')
+    expect(editing.continueBullet()).toBe(true)
+    expect(item.text.en.bullets).toEqual(['edited', 'new', 'second'])
+    editing.cancel()
+    expect(item.text.en.bullets).toEqual(['edited', 'new', 'second'])
+    resumeDoc.undo()
+    expect(resumeDoc.current.content.experience[0]!.text.en.bullets).toEqual(['edited', 'second'])
+  })
+
+  it('does not create another row for blank or stale drafts', () => {
+    editing.enter()
+    const item = resumeDoc.current.content.projects[0]!
+    const ref = { owner: 'bullet' as const, section: 'projects' as const, id: item.id, key: 'bullets' as const, index: 'append' as const }
+    const before = [...item.text.en.bullets]
+    editing.begin({ kind: 'field', ref })
+    expect(editing.continueBullet()).toBe(false)
+    expect(editing.active).toBeNull()
+    expect(item.text.en.bullets).toEqual(before)
+    editing.begin({ kind: 'field', ref })
+    editing.setDraft(Object.keys(editing.active!.draft)[0]!, 'stale')
+    resumeDoc.change(() => { item.text.en.bullets.push('external') })
+    expect(editing.continueBullet()).toBe(false)
+    expect(item.text.en.bullets).not.toContain('stale')
   })
 })

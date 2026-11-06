@@ -4,8 +4,10 @@
    * the scaled paper, so it keeps a 16px font and the paper's observers never
    * see it. Plain text only: no contenteditable, no markup.
    */
+  import Icon from '$components/shell/Icon.svelte'
+  import { insertLineBreak } from '$lib/ui/textarea'
   import { t } from '$lib/i18n/ui'
-  import { editKeyAction, refKey, specFor, type FieldRef } from '$lib/editing/fields'
+  import { bulletKeyAction, editKeyAction, refKey, specFor, type FieldRef } from '$lib/editing/fields'
   import { editing, type EditTarget } from '$lib/state/editing.svelte'
   import { prefs } from '$lib/state/preferences.svelte'
   import { trackAnchor } from '$lib/ui/anchor'
@@ -18,7 +20,7 @@
     ref: FieldRef
     anchor: () => Element | null
     /** `restoreFocus` is false when the user moved focus elsewhere themselves. */
-    onClose: (restoreFocus: boolean, target: EditTarget) => void
+    onClose: (restoreFocus: boolean, target: EditTarget, applied?: boolean) => void
   } = $props()
 
   const key = $derived(refKey(ref))
@@ -57,8 +59,8 @@
 
   const apply = (restoreFocus: boolean) => {
     if (!mine()) return
-    editing.commit()
-    onClose(restoreFocus, session)
+    const result = editing.commit()
+    onClose(restoreFocus, session, result === 'applied')
   }
 
   const cancel = () => {
@@ -68,11 +70,14 @@
   }
 
   const onkeydown = (event: KeyboardEvent) => {
-    const action = editKeyAction(event, multiline)
+    const action = spec.type === 'bullet' ? bulletKeyAction(event) : editKeyAction(event, multiline)
     if (!action) return
+    if (action === 'newline') { insertLineBreak(event); return }
     event.preventDefault()
     event.stopPropagation()
-    if (action === 'commit') apply(true)
+    if (action === 'next') {
+      if (mine() && !editing.continueBullet()) onClose(true, session)
+    } else if (action === 'commit') apply(true)
     else cancel()
   }
 
@@ -91,8 +96,12 @@
 
 <div class="inline-editor" class:multiline data-edit-surface data-print-hide {style} bind:this={container} {onfocusout}>
   {#if multiline}
-    <textarea class="inline-input" aria-label={label} rows={spec.type === 'lines' ? 6 : 4} {value} {oninput} {onkeydown}></textarea>
+    <textarea class="inline-input" aria-label={label} rows={spec.type === 'bullet' ? 3 : 4} {value} {oninput} {onkeydown}></textarea>
+    {#if spec.type === 'bullet'}<p class="field-hint">{t(prefs.uiLocale, 'bullet.keys')}</p>{/if}
     <div class="inline-actions">
+      {#if ref.owner === 'bullet' && ref.index !== 'append'}
+        <button type="button" class="tool-btn" aria-label={t(prefs.uiLocale, 'bullet.remove')} onclick={() => { editing.setDraft(key, ''); apply(true) }}><Icon name="trash" /></button>
+      {/if}
       <button type="button" class="tool-btn" onclick={cancel}>{t(prefs.uiLocale, 'action.cancel')}</button>
       <button type="button" class="tool-btn primary" onclick={() => apply(true)}>{t(prefs.uiLocale, 'action.apply')}</button>
     </div>

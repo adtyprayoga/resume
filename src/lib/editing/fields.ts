@@ -9,6 +9,7 @@ import type { ContactInfo, DateRange, Locale, ProfileText, ResumeDocument } from
 import type { ListSectionKind } from '$lib/sections/kinds'
 
 export type FieldType =
+  | 'bullet'
   | 'text'
   | 'multiline'
   | 'lines'
@@ -22,7 +23,18 @@ export type FieldType =
 
 export type FieldScope = 'shared' | 'localized'
 
+export type BulletRef = {
+  owner: 'bullet'
+  section: 'experience' | 'projects'
+  id: string
+  key: 'bullets'
+  index: number | 'append'
+  /** For a staged insertion after an existing bullet. */
+  after?: number | undefined
+}
+
 export type FieldRef =
+  | BulletRef
   | { owner: 'profile'; key: keyof ProfileText }
   | { owner: 'contact'; key: keyof ContactInfo }
   | { owner: 'item'; section: ListSectionKind; id: string; key: string }
@@ -42,7 +54,7 @@ export interface DateDraft {
   current: boolean
 }
 
-export type DraftValue = string | DateDraft
+export type DraftValue = string | DateDraft | string[]
 
 const spec = (
   key: string,
@@ -121,9 +133,11 @@ export const SECTION_FIELDS: Record<ListSectionKind, readonly FieldSpec[]> = {
 }
 
 export const refKey = (ref: FieldRef): string =>
+  ref.owner === 'bullet' ? `bullet.${ref.section}.${ref.id}.${ref.index}${ref.index === 'append' && ref.after !== undefined ? `.${ref.after}` : ''}` :
   ref.owner === 'item' ? `item.${ref.section}.${ref.id}.${ref.key}` : `${ref.owner}.${ref.key}`
 
 export const specFor = (ref: FieldRef): FieldSpec => {
+  if (ref.owner === 'bullet') return spec('bullets', 'localized', 'bullet', 'field.highlights')
   const list =
     ref.owner === 'profile' ? PROFILE_FIELDS : ref.owner === 'contact' ? CONTACT_FIELDS : SECTION_FIELDS[ref.section]
   const found = list.find((entry) => entry.key === ref.key)
@@ -152,20 +166,17 @@ const findItem = (doc: ResumeDocument, section: ListSectionKind, id: string, sta
 }
 
 export const itemExists = (doc: ResumeDocument, ref: FieldRef, staged?: { id: string }): boolean =>
-  ref.owner !== 'item' || findItem(doc, ref.section, ref.id, staged) !== undefined
+  (ref.owner !== 'item' && ref.owner !== 'bullet') || findItem(doc, ref.section, ref.id, staged) !== undefined
 
 const toDraft = (type: FieldType, value: unknown): DraftValue => {
   if (type === 'dates') {
     const range = (value ?? { start: '', end: null }) as DateRange
     return { start: range.start, end: range.end ?? '', current: range.current === true }
   }
-  if (type === 'lines') return (value as string[]).join('\n')
+  if (type === 'lines') return [...value as string[]]
   if (type === 'tags') return (value as string[]).join(', ')
   return typeof value === 'string' ? value : ''
 }
-
-export const parseLines = (draft: string): string[] =>
-  draft.split('\n').map((line) => line.trim()).filter(Boolean)
 
 export const parseTags = (draft: string): string[] =>
   draft.split(',').map((entry) => entry.trim()).filter(Boolean)
@@ -177,8 +188,8 @@ const fromDraft = (type: FieldType, draft: DraftValue): unknown => {
       ? { start: range.start, end: null, current: true }
       : { start: range.start, end: range.end || null }
   }
+  if (type === 'lines') return [...draft as string[]]
   const text = draft as string
-  if (type === 'lines') return parseLines(text)
   if (type === 'tags') return parseTags(text)
   if (type === 'url') return normalizeUrl(text)
   return text
@@ -196,6 +207,15 @@ export const readDraft = (
   if (ref.owner === 'contact') return toDraft(type, doc.contact[ref.key])
   const item = findItem(doc, ref.section, ref.id, staged)
   if (!item) return undefined
+  if (ref.owner === 'bullet') {
+    const primary = item.text[locale]!.bullets as string[]
+    const values = primary.length ? primary : item.text[locale === 'en' ? 'id' : 'en']!.bullets as string[]
+    if (ref.index === 'append') {
+      if (ref.after !== undefined && (!Number.isInteger(ref.after) || ref.after < 0 || ref.after >= values.length)) return undefined
+      return ''
+    }
+    return Number.isInteger(ref.index) && ref.index >= 0 ? values[ref.index] : undefined
+  }
   return toDraft(type, scope === 'shared' ? item[ref.key] : item.text[locale]?.[ref.key])
 }
 
@@ -219,6 +239,17 @@ export const applyDraft = (
   }
   const item = findItem(doc, ref.section, ref.id, staged)
   if (!item) return false
+  if (ref.owner === 'bullet') {
+    if (readDraft(doc, ref, locale, staged) === undefined) return false
+    const value = (draft as string).trim()
+    if (ref.index === 'append' && !value) return true
+    const primary = item.text[locale]!.bullets as string[]
+    const values = [...(primary.length ? primary : item.text[locale === 'en' ? 'id' : 'en']!.bullets as string[])]
+    if (ref.index === 'append') values.splice(ref.after === undefined ? values.length : ref.after + 1, 0, value)
+    else values.splice(ref.index, 1, ...(value ? [value] : []))
+    item.text[locale]!.bullets = values
+    return true
+  }
   if (scope === 'shared') item[ref.key] = value
   else item.text[locale]![ref.key] = value
   return true
@@ -242,4 +273,13 @@ export const editKeyAction = (
   if (event.key !== 'Enter') return null
   if (!multiline) return 'commit'
   return event.ctrlKey || event.metaKey ? 'commit' : null
+}
+
+export const bulletKeyAction = (
+  event: Parameters<typeof editKeyAction>[0] & { altKey: boolean },
+): EditKeyAction | 'next' | 'newline' => {
+  const action = editKeyAction(event, false)
+  if (action !== 'commit') return action
+  if (event.altKey) return 'newline'
+  return event.ctrlKey || event.metaKey ? 'commit' : 'next'
 }

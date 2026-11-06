@@ -69,6 +69,29 @@ describe('phone editing', () => {
     expect(within(paper()).getByRole('button', { name: 'Edit Headline: Senior Software Engineer' })).toHaveFocus()
   })
 
+  it.each(['minimal', 'ats'])('edits a single bullet in the %s phone sheet with Enter', async (theme) => {
+    prefs.themeKey = theme
+    const user = await startEditing()
+    const item = resumeDoc.current.content.experience[1]!
+    const before = [...item.text.en.bullets]
+    await user.click(within(paper()).getByRole('button', { name: /^Edit Highlights: Cut catalogue/ }))
+    const sheet = screen.getByRole('dialog', { name: 'Highlights' })
+    const input = within(sheet).getByRole('textbox', { name: /^Highlights/ })
+    expect(input).toHaveValue(before[1])
+    await user.clear(input)
+    await user.type(input, 'Phone edit{Enter}')
+    expect(item.text.en.bullets).toEqual([before[0], 'Phone edit'])
+    const next = within(screen.getByRole('dialog', { name: 'Highlights' })).getByRole('textbox')
+    expect(next).toHaveValue('')
+    expect(next).toHaveFocus()
+    await user.type(next, 'Next{Alt>}{Enter}{/Alt}line')
+    expect(next).toHaveValue('Next\nline')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(item.text.en.bullets).toEqual([before[0], 'Phone edit'])
+    expect(within(paper()).getByRole('button', { name: 'Edit Highlights: Phone edit' })).toHaveFocus()
+  })
+
   it('opens the whole entry in a sheet when tapping between its fields', async () => {
     const user = await startEditing()
     const entry = paper().querySelector<HTMLElement>('[data-entry="experience:exp_sample_1"]')!
