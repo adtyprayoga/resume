@@ -237,6 +237,32 @@ describe('PDF review', () => {
     }
   })
 
+  it.each(['cancel', 'apply'])('keeps individual highlight rows in review until %s', async (action) => {
+    service()
+    mount()
+    const before = resumeDoc.snapshot()
+    const user = await review()
+    const area = screen.getAllByRole('textbox', { name: 'Highlights 1' })[0]!
+    const group = area.closest('.pdf-entry') as HTMLElement
+    const second = within(group).getByRole('textbox', { name: 'Highlights 2' })
+    const secondValue = (second as HTMLTextAreaElement).value
+    await user.clear(area)
+    await user.type(area, 'Reviewed highlight{Enter}')
+    await user.click(within(group).getByRole('button', { name: 'Add highlight' }))
+    await user.type(within(group).getAllByRole('textbox').at(-1)!, 'Added in review{Enter}')
+    expect(resumeDoc.snapshot()).toEqual(before)
+    expect(second).toHaveValue(secondValue)
+    expect(screen.getByRole('heading', { name: 'Review PDF import' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: action === 'cancel' ? 'Cancel' : 'Replace resume' }))
+    if (action === 'cancel') expect(resumeDoc.snapshot()).toEqual(before)
+    else {
+      const bullets = resumeDoc.current.content.experience[0]!.text.en.bullets
+      expect(bullets[0]).toBe('Reviewed highlight')
+      expect(bullets[1]).toBe(secondValue)
+      expect(bullets.at(-1)).toBe('Added in review')
+    }
+  })
+
   it('reviews and confirms the real progression fixture without changing stored work early', async () => {
     service(load('extraction_progression.json'))
     const before = JSON.stringify(resumeDoc.snapshot())

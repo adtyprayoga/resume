@@ -1,5 +1,6 @@
 <script lang="ts">
   /** One labelled control for a draft value, used by contextual forms and sheets. */
+  import BulletRows from '$components/ui/BulletRows.svelte'
   import PhotoField from './PhotoField.svelte'
   import { t } from '$lib/i18n/ui'
   import { editKeyAction, specFor, type DateDraft, type DraftValue, type FieldRef } from '$lib/editing/fields'
@@ -14,24 +15,24 @@
   const placeholder = $derived(
     spec.placeholderKey
       ? t(prefs.uiLocale, spec.placeholderKey)
-      : spec.type === 'lines'
-        ? t(prefs.uiLocale, 'placeholder.lines')
-        : spec.type === 'tags'
-          ? t(prefs.uiLocale, 'placeholder.tags')
-          : '',
+      : spec.type === 'tags'
+        ? t(prefs.uiLocale, 'placeholder.tags')
+        : '',
   )
   const inputType = $derived(
     spec.type === 'email' ? 'email' : spec.type === 'tel' ? 'tel' : spec.type === 'url' ? 'url' : 'text',
   )
 
   const text = $derived(typeof value === 'string' ? value : '')
-  const range = $derived((typeof value === 'string' ? { start: '', end: '', current: false } : value) as DateDraft)
+  const range = $derived((typeof value === 'object' && !Array.isArray(value) ? value : { start: '', end: '', current: false }) as DateDraft)
 
   const fromInput = (event: Event) => onchange((event.currentTarget as HTMLInputElement | HTMLTextAreaElement).value)
 </script>
 
 {#if spec.type === 'photo'}
   <PhotoField value={text} {label} {scopeText} {onchange} />
+{:else if spec.type === 'lines'}
+  <BulletRows value={Array.isArray(value) ? value : []} {label} scope={spec.scope} {onchange} />
 {:else if spec.type === 'dates'}
   <fieldset class="field date-field">
     <legend class="field-label"><span>{label}</span><span class="field-scope {spec.scope}">{scopeText}</span></legend>
@@ -68,8 +69,8 @@
         event.stopPropagation()
         event.currentTarget.form?.requestSubmit()
       }}></textarea>
-    {:else if spec.type === 'multiline' || spec.type === 'lines'}
-      <textarea id="{uid}-input" class="field-textarea" rows={spec.type === 'lines' ? 5 : 3} {placeholder} value={text} oninput={fromInput}></textarea>
+    {:else if spec.type === 'multiline'}
+      <textarea id="{uid}-input" class="field-textarea" rows="3" {placeholder} value={text} oninput={fromInput}></textarea>
     {:else}
       <input id="{uid}-input" class="field-input" type={inputType} {placeholder} value={text} oninput={fromInput} />
     {/if}

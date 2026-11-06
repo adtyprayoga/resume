@@ -143,6 +143,24 @@ describe('lists', () => {
     expect(within(entry).getByRole('button', { name: `Edit Highlights: ${before.at(-1)}` })).toHaveFocus()
   })
 
+  it('keeps row edits inside the entry draft until Apply and discards them on Cancel', async () => {
+    const user = await startEditing()
+    const before = resumeDoc.snapshot()
+    await user.click(within(paper()).getByRole('button', { name: 'Edit Role: Senior Software Engineer' }))
+    await user.keyboard('{Escape}')
+    await user.click(screen.getByRole('button', { name: 'Edit entry' }))
+    const form = screen.getByRole('form', { name: 'Experience' })
+    const area = within(form).getByRole('textbox', { name: 'Highlights 2' })
+    await user.clear(area)
+    await user.type(area, 'Edited{Enter}')
+    expect(editing.active?.target.kind).toBe('entry')
+    expect(resumeDoc.snapshot()).toEqual(before)
+    await user.click(within(form).getByRole('button', { name: 'Add highlight' }))
+    await user.type(within(form).getAllByRole('textbox').at(-1)!, 'New draft{Enter}')
+    await user.click(within(form).getByRole('button', { name: 'Cancel' }))
+    expect(resumeDoc.snapshot()).toEqual(before)
+  })
+
   it('edit technologies as a comma-separated draft', async () => {
     const user = await startEditing()
     await user.click(within(paper()).getByRole('button', { name: 'Edit Tech stack: TypeScript · PostgreSQL · Redis' }))
@@ -287,9 +305,10 @@ describe('entry actions', () => {
     const actions = await selectFirstExperience(user)
     await user.click(within(actions).getByRole('button', { name: 'Edit entry' }))
     const form = screen.getByRole('form', { name: 'Experience' })
-    for (const label of ['Role', 'Company', 'Team', 'Location', 'Highlights']) {
+    for (const label of ['Role', 'Company', 'Team', 'Location']) {
       expect(within(form).getByLabelText(new RegExp(`^${label}`))).toBeInTheDocument()
     }
+    expect(within(form).getByRole('textbox', { name: 'Highlights 1' })).toBeInTheDocument()
     expect(within(form).getByRole('textbox', { name: 'From' })).toBeInTheDocument()
     await user.clear(within(form).getByLabelText(/^Location/))
     await user.type(within(form).getByLabelText(/^Location/), 'Surabaya')
