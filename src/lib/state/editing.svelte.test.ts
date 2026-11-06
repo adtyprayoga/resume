@@ -80,7 +80,7 @@ describe('apply and cancel', () => {
   it('edits a whole entry as one draft', () => {
     editing.begin({ kind: 'entry', section: 'experience', id: 'exp_sample_1' })
     editing.setDraft('item.experience.exp_sample_1.company', 'PT Lain')
-    editing.setDraft('item.experience.exp_sample_1.bullets', 'one\ntwo')
+    editing.setDraft('item.experience.exp_sample_1.bullets', ['one', 'two'])
     editing.commit()
     const item = resumeDoc.current.content.experience[0]!
     expect(item.company).toBe('PT Lain')

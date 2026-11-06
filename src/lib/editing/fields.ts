@@ -42,7 +42,7 @@ export interface DateDraft {
   current: boolean
 }
 
-export type DraftValue = string | DateDraft
+export type DraftValue = string | DateDraft | string[]
 
 const spec = (
   key: string,
@@ -159,13 +159,10 @@ const toDraft = (type: FieldType, value: unknown): DraftValue => {
     const range = (value ?? { start: '', end: null }) as DateRange
     return { start: range.start, end: range.end ?? '', current: range.current === true }
   }
-  if (type === 'lines') return (value as string[]).join('\n')
+  if (type === 'lines') return [...value as string[]]
   if (type === 'tags') return (value as string[]).join(', ')
   return typeof value === 'string' ? value : ''
 }
-
-export const parseLines = (draft: string): string[] =>
-  draft.split('\n').map((line) => line.trim()).filter(Boolean)
 
 export const parseTags = (draft: string): string[] =>
   draft.split(',').map((entry) => entry.trim()).filter(Boolean)
@@ -177,8 +174,8 @@ const fromDraft = (type: FieldType, draft: DraftValue): unknown => {
       ? { start: range.start, end: null, current: true }
       : { start: range.start, end: range.end || null }
   }
+  if (type === 'lines') return [...draft as string[]]
   const text = draft as string
-  if (type === 'lines') return parseLines(text)
   if (type === 'tags') return parseTags(text)
   if (type === 'url') return normalizeUrl(text)
   return text

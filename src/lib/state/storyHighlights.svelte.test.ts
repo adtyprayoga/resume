@@ -55,7 +55,7 @@ describe('story highlights', () => {
     const item = resumeDoc.current.content.experience[0]!
     const ref: FieldRef = { owner: 'item', section: 'experience', id: item.id, key: 'bullets' }
     resumeDoc.change(() => { item.text.en.bullets = ['A\nB'] })
-    storyHighlights.add([{ ref, locale: 'en', value: 'A\nB' }])
+    storyHighlights.add([{ ref, locale: 'en', value: ['A\nB'] }])
     expect(storyHighlights.isHighlighted(ref)).toBe(true)
     resumeDoc.change(() => { item.text.en.bullets = ['A', 'B'] })
     expect(storyHighlights.isHighlighted(ref)).toBe(false)

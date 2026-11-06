@@ -37,7 +37,7 @@ it('marks only the bullets the storyteller added, not the person\'s own', () => 
   storyHighlights.add([{
     ref: { owner: 'item', section: 'experience', id: item.id, key: 'bullets' },
     locale: 'en',
-    value: item.text.en.bullets.join('\n'),
+    value: [...item.text.en.bullets],
     lines: [added],
   }])
   const { container } = render(ResumePaper, { resume: resolve(resumeDoc.current, 'en'), locale: 'en' })
@@ -51,7 +51,7 @@ it('marks nothing for a list write that added no lines (a reorder)', () => {
   storyHighlights.add([{
     ref: { owner: 'item', section: 'experience', id: item.id, key: 'bullets' },
     locale: 'en',
-    value: item.text.en.bullets.join('\n'),
+    value: [...item.text.en.bullets],
     lines: [],
   }])
   const { container } = render(ResumePaper, { resume: resolve(resumeDoc.current, 'en'), locale: 'en' })
